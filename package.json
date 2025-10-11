@@ -1,7 +1,7 @@
 {
-    "name": "monorepo-starter-template",
+    "name": "grouchess",
     "version": "1.0.0",
-    "description": "A monorepo starter template for Vite, TypeScript, and React frontend with empty backend",
+    "description": "Lichess clone using Vite React and Express + Socket.io just for fun or practice",
     "private": true,
     "type": "module",
     "workspaces": [
@@ -29,19 +29,20 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^8.43.0",
-        "@typescript-eslint/parser": "^8.43.0",
+        "@eslint/js": "^9.37.0",
+        "@typescript-eslint/eslint-plugin": "^8.46.0",
+        "@typescript-eslint/parser": "^8.46.0",
         "concurrently": "^9.2.1",
-        "eslint": "^9.35.0",
+        "eslint": "^9.37.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-react": "^7.37.5",
-        "eslint-plugin-react-hooks": "^5.2.0",
+        "eslint-plugin-react-hooks": "^7.0.0",
         "husky": "^9.1.7",
-        "lint-staged": "^16.1.6",
+        "lint-staged": "^16.2.4",
         "prettier": "^3.6.2",
         "tsc-files": "^1.1.4",
-        "typescript": "^5.9.2"
+        "typescript": "^5.9.3"
     },
     "lint-staged": {
         "**/*.{ts,tsx}": [

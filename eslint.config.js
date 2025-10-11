@@ -37,6 +37,8 @@ export default [
                 process: 'readonly',
                 document: 'readonly',
                 window: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
             },
         },
         plugins: {
