@@ -74,13 +74,34 @@ function ChessBoard() {
         });
     }
 
-    const createClickHandler = (piece: PieceShortAlias | undefined, index: number) => () => {
-        const isSelectedSquare = index === selectedIndex;
-        const isGlowing = glowingIndices.includes(index);
-        const isEmptySquare = board[index] === undefined;
+    function movePiece(pieceAlias: PieceShortAlias, prevIndex: number, nextIndex: number) {
+        setBoard((prevBoard) => {
+            const nextBoard = [...prevBoard];
+            nextBoard[prevIndex] = undefined;
+            nextBoard[nextIndex] = pieceAlias;
+            return nextBoard;
+        });
+        setSelectedIndex(null);
+        setGlowingSquares([
+            {
+                index: prevIndex,
+                type: 'last-move',
+            },
+            {
+                index: nextIndex,
+                type: 'last-move',
+            },
+        ]);
+        setPlayerTurn((prevTurn) => (prevTurn === 'white' ? 'black' : 'white'));
+    }
+
+    const createClickHandler = (pieceAlias: PieceShortAlias | undefined, clickedIndex: number) => () => {
+        const isSelectedSquare = clickedIndex === selectedIndex;
+        const isGlowing = glowingIndices.includes(clickedIndex);
+        const isEmptySquare = board[clickedIndex] === undefined;
         const isNotGlowingAndEmpty = !isGlowing && isEmptySquare;
 
-        const currPiece = piece ? getPiece(piece) : null;
+        const currPiece = pieceAlias ? getPiece(pieceAlias) : null;
         const isNotPlayersOwnPiece = currPiece && currPiece.color !== playerTurn;
 
         if (isSelectedSquare || isNotGlowingAndEmpty || isNotPlayersOwnPiece) {
@@ -88,77 +109,104 @@ function ChessBoard() {
             return;
         }
 
-        // if selected piece exists and current square is a glowing square, move selected piece to glowing square
         if (isGlowing && selectedPiece) {
-            setBoard((prevBoard) => {
-                const nextBoard = [...prevBoard];
-                nextBoard[selectedIndex as number] = undefined;
-                nextBoard[index] = selectedPiece.shortAlias;
-                return nextBoard;
-            });
-            setSelectedIndex(null);
-            setGlowingSquares([
-                {
-                    index: selectedIndex as number,
-                    type: 'last-move',
-                },
-                {
-                    index,
-                    type: 'last-move',
-                },
-            ]);
-            setPlayerTurn((prevTurn) => (prevTurn === 'white' ? 'black' : 'white'));
+            movePiece(selectedPiece.shortAlias, selectedIndex as number, clickedIndex);
             return;
         }
-
-        // if no selected piece, set current square to selected index and set glowing indices to possible moves for the selected piece
 
         if (!currPiece) {
             clearSelection();
             return;
         }
 
-        setSelectedIndex(index);
+        // if no selected piece, set current square to selected index and set glowing indices to possible moves for the selected piece
+        setSelectedIndex(clickedIndex);
 
-        const { row, col } = indexToRowCol(index);
+        const { row, col } = indexToRowCol(clickedIndex);
 
         let nextGlowingSquares: GlowingSquare[] = [];
-        if (piece === 'P') {
-            nextGlowingSquares = [row - 1, row - 2].reduce((result, currRow) => {
-                if (currRow < 0) return result;
-
+        if (pieceAlias === 'P') {
+            for (const currRow of [row - 1, row - 2]) {
+                if (currRow < 0) continue;
                 const index = rowColToIndex({ row: currRow, col });
-
                 if (board[index] === undefined) {
-                    return [
-                        ...result,
-                        {
+                    nextGlowingSquares.push({
+                        index,
+                        type: 'possible-move',
+                    });
+                } else {
+                    break;
+                }
+            }
+        } else if (pieceAlias === 'p') {
+            for (const currRow of [row + 1, row + 2]) {
+                if (currRow >= 8) continue;
+                const index = rowColToIndex({ row: currRow, col });
+                if (board[index] === undefined) {
+                    nextGlowingSquares.push({
+                        index,
+                        type: 'possible-move',
+                    });
+                } else {
+                    break;
+                }
+            }
+        } else if (pieceAlias === 'B') {
+            const directions = [
+                // down-right
+                [
+                    rowColToIndex({ row: row + 1, col: col + 1 }),
+                    rowColToIndex({ row: row + 2, col: col + 2 }),
+                    rowColToIndex({ row: row + 3, col: col + 3 }),
+                    rowColToIndex({ row: row + 4, col: col + 4 }),
+                    rowColToIndex({ row: row + 5, col: col + 5 }),
+                    rowColToIndex({ row: row + 6, col: col + 6 }),
+                    rowColToIndex({ row: row + 7, col: col + 7 }),
+                ],
+                // down-left
+                [
+                    rowColToIndex({ row: row + 1, col: col - 1 }),
+                    rowColToIndex({ row: row + 2, col: col - 2 }),
+                    rowColToIndex({ row: row + 3, col: col - 3 }),
+                    rowColToIndex({ row: row + 4, col: col - 4 }),
+                    rowColToIndex({ row: row + 5, col: col - 5 }),
+                    rowColToIndex({ row: row + 6, col: col - 6 }),
+                    rowColToIndex({ row: row + 7, col: col - 7 }),
+                ],
+                // up-left
+                [
+                    rowColToIndex({ row: row - 1, col: col - 1 }),
+                    rowColToIndex({ row: row - 2, col: col - 2 }),
+                    rowColToIndex({ row: row - 3, col: col - 3 }),
+                    rowColToIndex({ row: row - 4, col: col - 4 }),
+                    rowColToIndex({ row: row - 5, col: col - 5 }),
+                    rowColToIndex({ row: row - 6, col: col - 6 }),
+                    rowColToIndex({ row: row - 7, col: col - 7 }),
+                ],
+                // up-right
+                [
+                    rowColToIndex({ row: row - 1, col: col + 1 }),
+                    rowColToIndex({ row: row - 2, col: col + 2 }),
+                    rowColToIndex({ row: row - 3, col: col + 3 }),
+                    rowColToIndex({ row: row - 4, col: col + 4 }),
+                    rowColToIndex({ row: row - 5, col: col + 5 }),
+                    rowColToIndex({ row: row - 6, col: col + 6 }),
+                    rowColToIndex({ row: row - 7, col: col + 7 }),
+                ],
+            ];
+            for (const direction of directions) {
+                for (const index of direction) {
+                    if (index < 0 || index >= NUM_SQUARES) continue;
+                    if (board[index] === undefined) {
+                        nextGlowingSquares.push({
                             index,
                             type: 'possible-move',
-                        },
-                    ];
+                        });
+                    } else {
+                        break;
+                    }
                 }
-
-                return result;
-            }, [] as GlowingSquare[]);
-        } else if (piece === 'p') {
-            nextGlowingSquares = [row + 1, row + 2].reduce((result, currRow) => {
-                if (currRow >= 8) return result;
-
-                const index = rowColToIndex({ row: currRow, col });
-
-                if (board[index] === undefined) {
-                    return [
-                        ...result,
-                        {
-                            index,
-                            type: 'possible-move',
-                        },
-                    ];
-                }
-
-                return result;
-            }, [] as GlowingSquare[]);
+            }
         }
 
         setGlowingSquares((prevGlowingSquares) => {
@@ -186,7 +234,7 @@ function ChessBoard() {
                         highlightClasses = '';
                     } else if (isGlowing) {
                         if (glowType === 'last-move') {
-                            backgroundClasses = isDarkSquare ? 'bg-emerald-800 text-white' : 'bg-emerald-400';
+                            backgroundClasses = isDarkSquare ? 'bg-purple-300' : 'bg-purple-200';
                             highlightClasses = '';
                             hoverClasses = '';
                         } else if (glowType === 'possible-move') {
