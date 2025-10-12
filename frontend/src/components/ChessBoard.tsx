@@ -9,6 +9,8 @@ type GlowingSquare = {
 };
 
 const NUM_SQUARES = 64;
+const CHESS_SQUARE_BASE_CLASSES =
+    'relative h-20 cursor-pointer flex items-center justify-center transition-colors border-r border-b border-blue-900';
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -65,6 +67,13 @@ function ChessBoard() {
         setPlayerTurn('white');
     }
 
+    function clearSelection() {
+        setSelectedIndex(null);
+        setGlowingSquares((prevGlowingSquares) => {
+            return prevGlowingSquares.filter(({ type }) => type === 'last-move');
+        });
+    }
+
     const createClickHandler = (piece: PieceShortAlias | undefined, index: number) => () => {
         const isSelectedSquare = index === selectedIndex;
         const isGlowing = glowingIndices.includes(index);
@@ -75,8 +84,7 @@ function ChessBoard() {
         const isNotPlayersOwnPiece = currPiece && currPiece.color !== playerTurn;
 
         if (isSelectedSquare || isNotGlowingAndEmpty || isNotPlayersOwnPiece) {
-            setSelectedIndex(null);
-            setGlowingSquares([]);
+            clearSelection();
             return;
         }
 
@@ -104,6 +112,11 @@ function ChessBoard() {
         }
 
         // if no selected piece, set current square to selected index and set glowing indices to possible moves for the selected piece
+
+        if (!currPiece) {
+            clearSelection();
+            return;
+        }
 
         setSelectedIndex(index);
 
@@ -148,7 +161,10 @@ function ChessBoard() {
             }, [] as GlowingSquare[]);
         }
 
-        setGlowingSquares(nextGlowingSquares);
+        setGlowingSquares((prevGlowingSquares) => {
+            const lastMoveSquares = prevGlowingSquares.filter(({ type }) => type === 'last-move');
+            return [...lastMoveSquares, ...nextGlowingSquares];
+        });
     };
 
     return (
@@ -157,33 +173,42 @@ function ChessBoard() {
                 {board.map((piece, index) => {
                     const { row, col } = indexToRowCol(index);
                     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
-                    const isGlowing = glowingIndices.includes(index);
+                    const glowMatch = glowingSquares.find(({ index: glowingIndex }) => glowingIndex === index);
+                    const glowType = glowMatch?.type;
+                    const isGlowing = Boolean(glowType);
                     const isSelected = index === selectedIndex;
 
-                    const gridLines = 'border-r border-b border-blue-900';
-                    const baseClasses =
-                        'relative h-20 cursor-pointer flex items-center justify-center transition-colors';
                     let backgroundClasses = isDarkSquare ? 'bg-slate-700 text-white' : 'bg-stone-50';
-
                     let highlightClasses = '';
                     let hoverClasses = '';
                     if (isSelected) {
                         backgroundClasses = isDarkSquare ? 'bg-emerald-600 text-white' : 'bg-emerald-200';
                         highlightClasses = '';
                     } else if (isGlowing) {
-                        const dotContrast = isDarkSquare
-                            ? 'after:bg-lime-200/90 after:ring-2 after:ring-lime-50/80'
-                            : 'after:bg-emerald-300/80 after:ring-2 after:ring-emerald-500/40';
-                        highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${dotContrast} after:content-[""] hover:after:opacity-0`;
-                        // On hover, softly recolor the square to match the dot color and hide the dot
-                        hoverClasses = isDarkSquare
-                            ? 'hover:bg-lime-200 hover:text-slate-900'
-                            : 'hover:bg-emerald-300 hover:text-white';
+                        if (glowType === 'last-move') {
+                            backgroundClasses = isDarkSquare ? 'bg-emerald-800 text-white' : 'bg-emerald-400';
+                            highlightClasses = '';
+                            hoverClasses = '';
+                        } else if (glowType === 'possible-move') {
+                            const dotContrast = isDarkSquare
+                                ? 'after:bg-lime-200/90 after:ring-2 after:ring-lime-50/80'
+                                : 'after:bg-emerald-300/80 after:ring-2 after:ring-emerald-500/40';
+                            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${dotContrast} after:content-[""] hover:after:opacity-0`;
+                            // On hover, softly recolor the square to match the dot color and hide the dot
+                            hoverClasses = isDarkSquare
+                                ? 'hover:bg-lime-200 hover:text-slate-900'
+                                : 'hover:bg-emerald-300 hover:text-white';
+                        } else if (glowType === 'check') {
+                            backgroundClasses = isDarkSquare ? 'bg-red-700 text-white' : 'bg-red-200';
+                            highlightClasses = '';
+                            hoverClasses = '';
+                        }
                     }
 
                     let content;
                     if (piece) {
                         const { imgSrc, altText, shortAlias } = getPiece(piece);
+                        // fallback to displaying short alias text if img fails to load
                         content = failedImageIndices.has(index) ? (
                             <span aria-label={altText} className="text-xl font-semibold select-none">
                                 {shortAlias}
@@ -209,7 +234,7 @@ function ChessBoard() {
                             key={`position-${index}`}
                             type="button"
                             onClick={createClickHandler(piece, index)}
-                            className={`${baseClasses} ${gridLines} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
+                            className={`${CHESS_SQUARE_BASE_CLASSES} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
                         >
                             {content}
                         </button>
