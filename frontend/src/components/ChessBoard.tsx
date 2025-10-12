@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import { indexToRowCol, NUM_SQUARES, type GlowingSquare } from '../utils/board';
 import { getPiece, aliasToPieceData } from '../utils/pieces';
-import type { PieceShortAlias, ChessBoardType } from '../utils/pieces';
+import type { PieceShortAlias, PieceColor, ChessBoardType } from '../utils/pieces';
+import {
+    computePossibleMovesForPiece,
+    computeNextChessBoardFromMove,
+    computeCastleMetadataChangesFromMove,
+    type CastleMetadata,
+} from '../utils/moves';
 
-type RowCol = { row: number; col: number };
-
-const NUM_SQUARES = 64;
+const CHESS_SQUARE_BASE_CLASSES = 'relative h-20 cursor-pointer flex items-center justify-center transition-colors';
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -33,94 +38,132 @@ function createInitialBoard(): ChessBoardType {
     return board;
 }
 
-function indexToRowCol(index: number): RowCol {
+function createInitialCastleMetadata(): CastleMetadata {
     return {
-        row: Math.floor(index / 8),
-        col: index % 8,
+        whiteKingHasMoved: false,
+        whiteShortRookHasMoved: false,
+        whiteLongRookHasMoved: false,
+        blackKingHasMoved: false,
+        blackShortRookHasMoved: false,
+        blackLongRookHasMoved: false,
     };
-}
-
-function rowColToIndex({ row, col }: RowCol): number {
-    return row * 8 + col;
 }
 
 function ChessBoard() {
     const [board, setBoard] = useState<ChessBoardType>(createInitialBoard);
-    const [glowingIndices, setGlowingIndices] = useState<number[]>([]);
+    const [castleMetadata, setCastleMetadata] = useState<CastleMetadata>(createInitialCastleMetadata);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [playerTurn, setPlayerTurn] = useState<PieceColor>('white');
+    const [previousMoveIndices, setPreviousMoveIndices] = useState<number[]>([]);
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+
+    const selectedPiece = selectedIndex !== null ? getPiece(board[selectedIndex] as PieceShortAlias) : null;
+    const possibleMoveIndices = selectedPiece
+        ? computePossibleMovesForPiece(selectedPiece, selectedIndex as number, board, castleMetadata)
+        : [];
+    const glowingSquares = [
+        ...previousMoveIndices.map((index) => ({ index, type: 'previous-move' })),
+        ...possibleMoveIndices.map((index) => ({ index, type: 'possible-move' })),
+    ] as GlowingSquare[];
 
     function handleResetClick() {
         setBoard(createInitialBoard);
+        setCastleMetadata(createInitialCastleMetadata);
         setSelectedIndex(null);
-        setGlowingIndices([]);
+        setPlayerTurn('white');
+        setPreviousMoveIndices([]);
     }
 
-    const createClickHandler = (piece: PieceShortAlias | undefined, index: number) => () => {
-        const isSelectedSquare = index === selectedIndex;
-        const isNotGlowing = !glowingIndices.includes(index);
-        const isEmptySquare = board[index] === undefined;
-        const isNotGlowingAndEmpty = isNotGlowing && isEmptySquare;
+    function clearSelection() {
+        setSelectedIndex(null);
+    }
 
-        if (isSelectedSquare || isNotGlowingAndEmpty) {
-            setSelectedIndex(null);
-            setGlowingIndices([]);
+    function movePiece(pieceAlias: PieceShortAlias, prevIndex: number, nextIndex: number) {
+        const pieceData = getPiece(pieceAlias);
+
+        setBoard((prevBoard) => computeNextChessBoardFromMove(pieceData, prevIndex, nextIndex, prevBoard));
+        if (pieceData.type === 'king' || pieceData.type === 'rook') {
+            setCastleMetadata((prevData) => ({
+                ...prevData,
+                ...computeCastleMetadataChangesFromMove(pieceData, prevIndex),
+            }));
+        }
+        clearSelection();
+        setPreviousMoveIndices([prevIndex, nextIndex]);
+        setPlayerTurn((prevTurn) => (prevTurn === 'white' ? 'black' : 'white'));
+    }
+
+    const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
+        const isSelectedSquare = clickedIndex === selectedIndex;
+        const glowTypesAtSquare = glowingSquares.filter(({ index }) => index === clickedIndex).map(({ type }) => type);
+        const isPossibleMoveSquare = glowTypesAtSquare.includes('possible-move');
+        const isEmptySquare = pieceAliasAtSquare === undefined;
+        const isNotGlowingAndEmpty = !isPossibleMoveSquare && isEmptySquare;
+
+        const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
+        const isNotPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color !== playerTurn;
+
+        if (isSelectedSquare || isNotGlowingAndEmpty || isNotPlayersOwnPiece) {
+            clearSelection();
             return;
         }
 
-        setSelectedIndex(index);
-
-        const { row, col } = indexToRowCol(index);
-
-        let possibleIndices: number[] = [];
-        if (piece === 'P') {
-            possibleIndices = [row - 1, row - 2]
-                .filter((rowNum) => rowNum >= 0)
-                .map((rowNum) => rowColToIndex({ row: rowNum, col }))
-                .filter((index) => board[index] === undefined);
-        } else if (piece === 'p') {
-            possibleIndices = [row + 1, row + 2]
-                .filter((rowNum) => rowNum < 8)
-                .map((rowNum) => rowColToIndex({ row: rowNum, col }))
-                .filter((index) => board[index] === undefined);
+        if (isPossibleMoveSquare && selectedPiece) {
+            movePiece(selectedPiece.shortAlias, selectedIndex as number, clickedIndex);
+            return;
         }
 
-        setGlowingIndices(possibleIndices);
+        if (!pieceAtSquare) {
+            clearSelection();
+            return;
+        }
+
+        // if no selected piece, set current square to selected index
+        setSelectedIndex(clickedIndex);
     };
 
     return (
         <main className="flex flex-col gap-y-8">
-            <div className="grid grid-cols-8 border-t border-l border-blue-900">
+            <div className="grid grid-cols-8 border border-blue-900">
                 {board.map((piece, index) => {
                     const { row, col } = indexToRowCol(index);
                     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
-                    const isGlowing = glowingIndices.includes(index);
+                    const glowTypesForSquare = glowingSquares
+                        .filter(({ index: glowingIndex }) => glowingIndex === index)
+                        .map(({ type }) => type);
+                    const isPreviousMove = glowTypesForSquare.includes('previous-move');
+                    const isPossibleMove = glowTypesForSquare.includes('possible-move');
+                    const isCheck = glowTypesForSquare.includes('check');
                     const isSelected = index === selectedIndex;
 
-                    const gridLines = 'border-r border-b border-blue-900';
-                    const baseClasses =
-                        'relative h-20 cursor-pointer flex items-center justify-center transition-colors';
                     let backgroundClasses = isDarkSquare ? 'bg-slate-700 text-white' : 'bg-stone-50';
-
                     let highlightClasses = '';
                     let hoverClasses = '';
                     if (isSelected) {
                         backgroundClasses = isDarkSquare ? 'bg-emerald-600 text-white' : 'bg-emerald-200';
                         highlightClasses = '';
-                    } else if (isGlowing) {
-                        const dotContrast = isDarkSquare
-                            ? 'after:bg-lime-200/90 after:ring-2 after:ring-lime-50/80'
-                            : 'after:bg-emerald-300/80 after:ring-2 after:ring-emerald-500/40';
-                        highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${dotContrast} after:content-[""] hover:after:opacity-0`;
-                        // On hover, softly recolor the square to match the dot color and hide the dot
-                        hoverClasses = isDarkSquare
-                            ? 'hover:bg-lime-200 hover:text-slate-900'
-                            : 'hover:bg-emerald-300 hover:text-white';
+                    } else {
+                        if (isCheck) {
+                            backgroundClasses = isDarkSquare ? 'bg-red-700 text-white' : 'bg-red-200';
+                        } else if (isPreviousMove) {
+                            backgroundClasses = isDarkSquare ? 'bg-purple-300 text-white' : 'bg-purple-200';
+                        }
+                        if (isPossibleMove) {
+                            const dotContrast = isDarkSquare
+                                ? 'after:bg-lime-200/90 after:ring-2 after:ring-lime-50/80'
+                                : 'after:bg-emerald-300/80 after:ring-2 after:ring-emerald-500/40';
+                            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${dotContrast} after:content-[""] hover:after:opacity-0`;
+                            // On hover, softly recolor the square to match the dot color and hide the dot
+                            hoverClasses = isDarkSquare
+                                ? 'hover:bg-lime-200 hover:text-slate-900'
+                                : 'hover:bg-emerald-300 hover:text-white';
+                        }
                     }
 
                     let content;
                     if (piece) {
                         const { imgSrc, altText, shortAlias } = getPiece(piece);
+                        // fallback to displaying short alias text if img fails to load
                         content = failedImageIndices.has(index) ? (
                             <span aria-label={altText} className="text-xl font-semibold select-none">
                                 {shortAlias}
@@ -145,8 +188,8 @@ function ChessBoard() {
                         <button
                             key={`position-${index}`}
                             type="button"
-                            onClick={createClickHandler(piece, index)}
-                            className={`${baseClasses} ${gridLines} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
+                            onMouseDown={createClickHandler(piece, index)}
+                            className={`${CHESS_SQUARE_BASE_CLASSES} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
                         >
                             {content}
                         </button>
