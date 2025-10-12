@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { indexToRowCol, NUM_SQUARES, type GlowingSquare } from '../utils/board';
-import { getPiece, aliasToPieceData } from '../utils/pieces';
+import { getPiece, aliasToPieceData, uniquePieceImgSrcs } from '../utils/pieces';
 import type { PieceShortAlias, PieceColor, ChessBoardType } from '../utils/pieces';
 import {
     computePossibleMovesForPiece,
@@ -8,6 +8,7 @@ import {
     computeCastleMetadataChangesFromMove,
     type CastleMetadata,
 } from '../utils/moves';
+import { usePreloadedImages } from '../utils/preload';
 
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors';
@@ -51,12 +52,15 @@ function createInitialCastleMetadata(): CastleMetadata {
 }
 
 function ChessBoard() {
+    // Preload and decode piece images; hide until ready to avoid flicker
+    const { imgSrcMap, isReady: isFinishedLoadingImages } = usePreloadedImages(uniquePieceImgSrcs);
+    const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+
     const [board, setBoard] = useState<ChessBoardType>(createInitialBoard);
     const [castleMetadata, setCastleMetadata] = useState<CastleMetadata>(createInitialCastleMetadata);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [playerTurn, setPlayerTurn] = useState<PieceColor>('white');
     const [previousMoveIndices, setPreviousMoveIndices] = useState<number[]>([]);
-    const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
 
     const selectedPiece = selectedIndex !== null ? getPiece(board[selectedIndex] as PieceShortAlias) : null;
     const possibleMoveIndices = selectedPiece
@@ -160,7 +164,7 @@ function ChessBoard() {
                     }
 
                     let content;
-                    if (piece) {
+                    if (isFinishedLoadingImages && piece) {
                         const { imgSrc, altText, shortAlias } = getPiece(piece);
                         // fallback to displaying short alias text if img fails to load
                         content = failedImageIndices.has(index) ? (
@@ -170,7 +174,9 @@ function ChessBoard() {
                         ) : (
                             <img
                                 className="w-full h-full"
-                                src={imgSrc}
+                                src={imgSrcMap[imgSrc] ?? imgSrc}
+                                loading="eager"
+                                decoding="async"
                                 alt={altText}
                                 onError={() =>
                                     setFailedImageIndices((prev) => {
