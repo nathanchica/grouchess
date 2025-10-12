@@ -156,3 +156,5 @@ export const aliasOrShortToPieceData: Record<PieceAlias | PieceShortAlias, Piece
 
 // Small helper for ergonomic access
 export const getPiece = (key: PieceAlias | PieceShortAlias): Piece => aliasOrShortToPieceData[key];
+
+export const uniquePieceImgSrcs = Array.from(new Set(Object.values(aliasToPieceData).map(({ imgSrc }) => imgSrc)));

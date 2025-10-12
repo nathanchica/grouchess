@@ -39,6 +39,10 @@ export default [
                 window: 'readonly',
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
+                Image: 'readonly',
+                HTMLImageElement: 'readonly',
+                fetch: 'readonly',
+                URL: 'readonly',
             },
         },
         plugins: {

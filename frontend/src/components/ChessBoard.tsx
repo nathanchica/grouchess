@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { indexToRowCol, NUM_SQUARES, type GlowingSquare } from '../utils/board';
-import { getPiece, aliasToPieceData } from '../utils/pieces';
+import { getPiece, aliasToPieceData, uniquePieceImgSrcs } from '../utils/pieces';
 import type { PieceShortAlias, PieceColor, ChessBoardType } from '../utils/pieces';
 import {
     computePossibleMovesForPiece,
@@ -8,8 +8,10 @@ import {
     computeCastleMetadataChangesFromMove,
     type CastleMetadata,
 } from '../utils/moves';
+import { usePreloadedImages } from '../utils/preload';
 
-const CHESS_SQUARE_BASE_CLASSES = 'relative h-20 cursor-pointer flex items-center justify-center transition-colors';
+const CHESS_SQUARE_BASE_CLASSES =
+    'relative aspect-square cursor-pointer flex items-center justify-center transition-colors';
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -50,12 +52,15 @@ function createInitialCastleMetadata(): CastleMetadata {
 }
 
 function ChessBoard() {
+    // Preload and decode piece images; hide until ready to avoid flicker
+    const { imgSrcMap, isReady: isFinishedLoadingImages } = usePreloadedImages(uniquePieceImgSrcs);
+    const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+
     const [board, setBoard] = useState<ChessBoardType>(createInitialBoard);
     const [castleMetadata, setCastleMetadata] = useState<CastleMetadata>(createInitialCastleMetadata);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [playerTurn, setPlayerTurn] = useState<PieceColor>('white');
     const [previousMoveIndices, setPreviousMoveIndices] = useState<number[]>([]);
-    const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
 
     const selectedPiece = selectedIndex !== null ? getPiece(board[selectedIndex] as PieceShortAlias) : null;
     const possibleMoveIndices = selectedPiece
@@ -124,7 +129,7 @@ function ChessBoard() {
 
     return (
         <main className="flex flex-col gap-y-8">
-            <div className="grid grid-cols-8 border border-blue-900">
+            <div className="grid grid-cols-8 rounded-lg overflow-hidden shadow-lg shadow-white/30">
                 {board.map((piece, index) => {
                     const { row, col } = indexToRowCol(index);
                     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
@@ -136,7 +141,7 @@ function ChessBoard() {
                     const isCheck = glowTypesForSquare.includes('check');
                     const isSelected = index === selectedIndex;
 
-                    let backgroundClasses = isDarkSquare ? 'bg-slate-700 text-white' : 'bg-stone-50';
+                    let backgroundClasses = isDarkSquare ? 'bg-slate-500 text-white' : 'bg-stone-50';
                     let highlightClasses = '';
                     let hoverClasses = '';
                     if (isSelected) {
@@ -149,19 +154,17 @@ function ChessBoard() {
                             backgroundClasses = isDarkSquare ? 'bg-purple-300 text-white' : 'bg-purple-200';
                         }
                         if (isPossibleMove) {
-                            const dotContrast = isDarkSquare
-                                ? 'after:bg-lime-200/90 after:ring-2 after:ring-lime-50/80'
-                                : 'after:bg-emerald-300/80 after:ring-2 after:ring-emerald-500/40';
-                            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${dotContrast} after:content-[""] hover:after:opacity-0`;
+                            const backgroundColor = isDarkSquare
+                                ? 'after:bg-emerald-500/90'
+                                : 'after:bg-emerald-300/80';
+                            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${backgroundColor} after:content-[""] hover:after:opacity-0`;
                             // On hover, softly recolor the square to match the dot color and hide the dot
-                            hoverClasses = isDarkSquare
-                                ? 'hover:bg-lime-200 hover:text-slate-900'
-                                : 'hover:bg-emerald-300 hover:text-white';
+                            hoverClasses = isDarkSquare ? 'hover:bg-emerald-500' : 'hover:bg-emerald-300';
                         }
                     }
 
                     let content;
-                    if (piece) {
+                    if (isFinishedLoadingImages && piece) {
                         const { imgSrc, altText, shortAlias } = getPiece(piece);
                         // fallback to displaying short alias text if img fails to load
                         content = failedImageIndices.has(index) ? (
@@ -171,7 +174,9 @@ function ChessBoard() {
                         ) : (
                             <img
                                 className="w-full h-full"
-                                src={imgSrc}
+                                src={imgSrcMap[imgSrc] ?? imgSrc}
+                                loading="eager"
+                                decoding="async"
                                 alt={altText}
                                 onError={() =>
                                     setFailedImageIndices((prev) => {
@@ -198,7 +203,7 @@ function ChessBoard() {
             </div>
 
             <section>
-                <button className="cursor-pointer border p-2" onClick={handleResetClick}>
+                <button className="cursor-pointer border p-2 border-white text-white" onClick={handleResetClick}>
                     RESET
                 </button>
             </section>
