@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getPiece, aliasToPieceData } from '../utils/pieces';
-import type { PieceShortAlias, ChessBoardType } from '../utils/pieces';
+import type { PieceShortAlias, PieceColor, ChessBoardType } from '../utils/pieces';
 
 type RowCol = { row: number; col: number };
 
@@ -48,6 +48,7 @@ function ChessBoard() {
     const [board, setBoard] = useState<ChessBoardType>(createInitialBoard);
     const [glowingIndices, setGlowingIndices] = useState<number[]>([]);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [playerTurn, _] = useState<PieceColor>('white');
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
 
     function handleResetClick() {
@@ -58,15 +59,22 @@ function ChessBoard() {
 
     const createClickHandler = (piece: PieceShortAlias | undefined, index: number) => () => {
         const isSelectedSquare = index === selectedIndex;
-        const isNotGlowing = !glowingIndices.includes(index);
+        const isGlowing = glowingIndices.includes(index);
         const isEmptySquare = board[index] === undefined;
-        const isNotGlowingAndEmpty = isNotGlowing && isEmptySquare;
+        const isNotGlowingAndEmpty = !isGlowing && isEmptySquare;
 
-        if (isSelectedSquare || isNotGlowingAndEmpty) {
+        const pieceData = piece ? getPiece(piece) : null;
+        const isNotPlayersOwnPiece = pieceData && pieceData.color !== playerTurn;
+
+        if (isSelectedSquare || isNotGlowingAndEmpty || isNotPlayersOwnPiece) {
             setSelectedIndex(null);
             setGlowingIndices([]);
             return;
         }
+
+        // if selected piece exists and current square is a glowing square, move selected piece to glowing square
+
+        // if no selected piece, set current square to selected index and set glowing indices to possible moves for the selected piece
 
         setSelectedIndex(index);
 
