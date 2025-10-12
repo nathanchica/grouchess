@@ -171,7 +171,6 @@ export function computePossibleMovesForPiece(
             let nextCol = col + colDelta;
             while (nextRow >= 0 && nextRow < NUM_ROWS && nextCol >= 0 && nextCol < NUM_COLS) {
                 const index = rowColToIndex({ row: nextRow, col: nextCol });
-                if (index < 0) break;
                 if (board[index] !== undefined) break;
                 possibleMoveIndices.push(index);
                 nextRow += rowDelta;
@@ -193,7 +192,6 @@ export function computePossibleMovesForPiece(
             const nextCol = col + colDelta;
             if (nextRow < 0 || nextRow >= NUM_ROWS || nextCol < 0 || nextCol >= NUM_COLS) continue;
             const index = rowColToIndex({ row: nextRow, col: nextCol });
-            if (index < 0) continue;
             if (board[index] === undefined) {
                 possibleMoveIndices.push(index);
             }
@@ -204,7 +202,6 @@ export function computePossibleMovesForPiece(
             const nextCol = col + colDelta;
             if (nextRow < 0 || nextRow >= NUM_ROWS || nextCol < 0 || nextCol >= NUM_COLS) continue;
             const index = rowColToIndex({ row: nextRow, col: nextCol });
-            if (index < 0) continue;
             if (board[index] === undefined) {
                 possibleMoveIndices.push(index);
             }
