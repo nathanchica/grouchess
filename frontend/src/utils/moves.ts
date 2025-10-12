@@ -1,6 +1,6 @@
 import { indexToRowCol, rowColToIndex, NUM_ROWS, NUM_COLS } from './board';
 import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX } from './pieces';
-import type { Piece, PieceColor, ChessBoardType } from './pieces';
+import type { Piece, PieceColor, ChessBoardType, PieceShortAlias } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
 type CastlePrivilege = {
@@ -99,7 +99,14 @@ function computeCastlingPrivilege(
         canLongCastle: false,
     };
 
-    if ((isWhite && whiteKingHasMoved) || (!isWhite && blackKingHasMoved)) return result;
+    const whiteKingIsNotInStartIndex = board[WHITE_KING_START_INDEX] !== 'K';
+    const blackKingIsNotInStartIndex = board[BLACK_KING_START_INDEX] !== 'k';
+
+    const whiteKingHasMovedOrNotInStartIndex = whiteKingHasMoved || whiteKingIsNotInStartIndex;
+    const blackKingHasMovedOrNotInStartIndex = blackKingHasMoved || blackKingIsNotInStartIndex;
+
+    if ((isWhite && whiteKingHasMovedOrNotInStartIndex) || (!isWhite && blackKingHasMovedOrNotInStartIndex))
+        return result;
 
     const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
 
@@ -109,14 +116,21 @@ function computeCastlingPrivilege(
     const shortCastleIndicesAreEmpty = areIndicesAllEmpty(shortCastleIndices);
     const longCastleIndicesAreEmpty = areIndicesAllEmpty(longCastleIndices);
 
+    const shortRookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
+    const longRookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
+
+    const rookAlias: PieceShortAlias = isWhite ? 'R' : 'r';
+    const shortRookIsInStartIndex = board[shortRookStartIndex] === rookAlias;
+    const longRookIsInStartIndex = board[longRookStartIndex] === rookAlias;
+
     const shortRookHasNotMoved = isWhite ? !whiteShortRookHasMoved : !blackShortRookHasMoved;
     const longRookHasNotMoved = isWhite ? !whiteLongRookHasMoved : !blackLongRookHasMoved;
 
     // TODO: check if opponent has pieces that can move into castle indices
 
     return {
-        canShortCastle: shortRookHasNotMoved && shortCastleIndicesAreEmpty,
-        canLongCastle: longRookHasNotMoved && longCastleIndicesAreEmpty,
+        canShortCastle: shortRookHasNotMoved && shortRookIsInStartIndex && shortCastleIndicesAreEmpty,
+        canLongCastle: longRookHasNotMoved && longRookIsInStartIndex && longCastleIndicesAreEmpty,
     };
 }
 
@@ -212,7 +226,7 @@ export function computeNextChessBoardFromMove(
 
     const nextBoard = [...board];
 
-    // castles. privilege is assumed
+    // castles. privilege & legality is assumed
     if (isKing) {
         // white short castle
         if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_SHORT_CASTLE_INDEX) {
