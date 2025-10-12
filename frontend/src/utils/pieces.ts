@@ -13,6 +13,7 @@ export type PieceAlias =
     | 'black_king';
 export type PieceShortAlias = 'P' | 'R' | 'N' | 'B' | 'Q' | 'K' | 'p' | 'r' | 'n' | 'b' | 'q' | 'k';
 export type PieceColor = 'white' | 'black';
+export type PieceType = 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
 export type Piece = {
     alias: PieceAlias;
     shortAlias: PieceShortAlias;
@@ -20,6 +21,7 @@ export type Piece = {
     altText: string;
     startingIndices: number[];
     color: PieceColor;
+    type: PieceType;
 };
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
@@ -32,6 +34,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'White Pawn',
         startingIndices: [48, 49, 50, 51, 52, 53, 54, 55],
         color: 'white',
+        type: 'pawn',
     },
     white_rook: {
         alias: 'white_rook',
@@ -40,6 +43,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'White Rook',
         startingIndices: [56, 63],
         color: 'white',
+        type: 'rook',
     },
     white_knight: {
         alias: 'white_knight',
@@ -48,6 +52,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'White Knight',
         startingIndices: [57, 62],
         color: 'white',
+        type: 'knight',
     },
     white_bishop: {
         alias: 'white_bishop',
@@ -56,6 +61,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'White Bishop',
         startingIndices: [58, 61],
         color: 'white',
+        type: 'bishop',
     },
     white_queen: {
         alias: 'white_queen',
@@ -64,6 +70,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'White Queen',
         startingIndices: [59],
         color: 'white',
+        type: 'queen',
     },
     white_king: {
         alias: 'white_king',
@@ -72,6 +79,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'White King',
         startingIndices: [60],
         color: 'white',
+        type: 'king',
     },
 
     // Black pieces
@@ -82,6 +90,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'Black Pawn',
         startingIndices: [8, 9, 10, 11, 12, 13, 14, 15],
         color: 'black',
+        type: 'pawn',
     },
     black_rook: {
         alias: 'black_rook',
@@ -90,6 +99,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'Black Rook',
         startingIndices: [0, 7],
         color: 'black',
+        type: 'rook',
     },
     black_knight: {
         alias: 'black_knight',
@@ -98,6 +108,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'Black Knight',
         startingIndices: [1, 6],
         color: 'black',
+        type: 'knight',
     },
     black_bishop: {
         alias: 'black_bishop',
@@ -106,6 +117,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'Black Bishop',
         startingIndices: [2, 5],
         color: 'black',
+        type: 'bishop',
     },
     black_queen: {
         alias: 'black_queen',
@@ -114,6 +126,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'Black Queen',
         startingIndices: [3],
         color: 'black',
+        type: 'queen',
     },
     black_king: {
         alias: 'black_king',
@@ -122,6 +135,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         altText: 'Black King',
         startingIndices: [4],
         color: 'black',
+        type: 'king',
     },
 };
 
