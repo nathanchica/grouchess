@@ -25,6 +25,8 @@ export type Piece = {
 };
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
+export const WHITE_KING_START_INDEX = 60;
+export const BLACK_KING_START_INDEX = 4;
 export const aliasToPieceData: Record<PieceAlias, Piece> = {
     // White pieces
     white_pawn: {
@@ -77,7 +79,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         shortAlias: 'K',
         imgSrc: '/chess/white_king.svg',
         altText: 'White King',
-        startingIndices: [60],
+        startingIndices: [WHITE_KING_START_INDEX],
         color: 'white',
         type: 'king',
     },
@@ -133,7 +135,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         shortAlias: 'k',
         imgSrc: '/chess/black_king.svg',
         altText: 'Black King',
-        startingIndices: [4],
+        startingIndices: [BLACK_KING_START_INDEX],
         color: 'black',
         type: 'king',
     },

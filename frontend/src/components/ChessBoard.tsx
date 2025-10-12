@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { indexToRowCol, NUM_SQUARES, type GlowingSquare } from '../utils/board';
 import { getPiece, aliasToPieceData } from '../utils/pieces';
 import type { PieceShortAlias, PieceColor, ChessBoardType } from '../utils/pieces';
-import { calculatePossibleMovesForPiece } from '../utils/moves';
+import {
+    computePossibleMovesForPiece,
+    computeNextChessBoardFromMove,
+    computeCastleMetadataChangesFromMove,
+    type CastleMetadata,
+} from '../utils/moves';
 
 const CHESS_SQUARE_BASE_CLASSES = 'relative h-20 cursor-pointer flex items-center justify-center transition-colors';
 
@@ -33,8 +38,20 @@ function createInitialBoard(): ChessBoardType {
     return board;
 }
 
+function createInitialCastleMetadata(): CastleMetadata {
+    return {
+        whiteKingHasMoved: false,
+        whiteShortRookHasMoved: false,
+        whiteLongRookHasMoved: false,
+        blackKingHasMoved: false,
+        blackShortRookHasMoved: false,
+        blackLongRookHasMoved: false,
+    };
+}
+
 function ChessBoard() {
     const [board, setBoard] = useState<ChessBoardType>(createInitialBoard);
+    const [castleMetadata, setCastleMetadata] = useState<CastleMetadata>(createInitialCastleMetadata);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [playerTurn, setPlayerTurn] = useState<PieceColor>('white');
     const [previousMoveIndices, setPreviousMoveIndices] = useState<number[]>([]);
@@ -42,7 +59,7 @@ function ChessBoard() {
 
     const selectedPiece = selectedIndex !== null ? getPiece(board[selectedIndex] as PieceShortAlias) : null;
     const possibleMoveIndices = selectedPiece
-        ? calculatePossibleMovesForPiece(selectedPiece, selectedIndex as number, board)
+        ? computePossibleMovesForPiece(selectedPiece, selectedIndex as number, board, castleMetadata)
         : [];
     const glowingSquares = [
         ...previousMoveIndices.map((index) => ({ index, type: 'previous-move' })),
@@ -51,6 +68,7 @@ function ChessBoard() {
 
     function handleResetClick() {
         setBoard(createInitialBoard);
+        setCastleMetadata(createInitialCastleMetadata);
         setSelectedIndex(null);
         setPlayerTurn('white');
         setPreviousMoveIndices([]);
@@ -61,12 +79,15 @@ function ChessBoard() {
     }
 
     function movePiece(pieceAlias: PieceShortAlias, prevIndex: number, nextIndex: number) {
-        setBoard((prevBoard) => {
-            const nextBoard = [...prevBoard];
-            nextBoard[prevIndex] = undefined;
-            nextBoard[nextIndex] = pieceAlias;
-            return nextBoard;
-        });
+        const pieceData = getPiece(pieceAlias);
+
+        setBoard((prevBoard) => computeNextChessBoardFromMove(pieceData, prevIndex, nextIndex, prevBoard));
+        if (pieceData.type === 'king' || pieceData.type === 'rook') {
+            setCastleMetadata((prevData) => ({
+                ...prevData,
+                ...computeCastleMetadataChangesFromMove(pieceData, prevIndex),
+            }));
+        }
         clearSelection();
         setPreviousMoveIndices([prevIndex, nextIndex]);
         setPlayerTurn((prevTurn) => (prevTurn === 'white' ? 'black' : 'white'));
