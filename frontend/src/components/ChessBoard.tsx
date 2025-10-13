@@ -3,7 +3,7 @@ import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
 import ChessSquare from './ChessSquare';
 import ChessPiece from './ChessPiece';
 import GhostPiece from './GhostPiece';
-import { rowColToIndex, NUM_COLS, NUM_ROWS, type GlowingSquare, type RowCol } from '../utils/board';
+import { rowColToIndex, isRowColInBounds, NUM_COLS, type GlowingSquare, type RowCol } from '../utils/board';
 import { getPiece, getColorFromAlias } from '../utils/pieces';
 import type { Piece, PieceShortAlias } from '../utils/pieces';
 import { computePossibleMovesForPiece } from '../utils/moves';
@@ -25,10 +25,6 @@ function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
         row: Math.floor(y / squareSize),
         col: Math.floor(x / squareSize),
     };
-}
-
-function isRowColInBounds({ row, col }: RowCol): boolean {
-    return row >= 0 && row < NUM_ROWS && col >= 0 && col < NUM_COLS;
 }
 
 /**
@@ -176,15 +172,15 @@ function ChessBoard() {
                     setDragOverIndex(null);
                 }}
             >
-                {board.map((piece, index) => {
+                {board.map((pieceAlias, index) => {
                     const glowTypesForSquare = glowingSquares
                         .filter(({ index: glowingIndex }) => glowingIndex === index)
                         .map(({ type }) => type);
                     const isSelected = index === selectedIndex;
 
                     let content;
-                    if (isFinishedLoadingImages && piece) {
-                        const { shortAlias, color } = getPiece(piece);
+                    if (isFinishedLoadingImages && pieceAlias) {
+                        const { shortAlias, color } = getPiece(pieceAlias);
                         const canDrag = color === playerTurn;
                         const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
                             if (!canDrag || !boardRef.current) return;
@@ -214,7 +210,7 @@ function ChessBoard() {
                         };
                         content = (
                             <ChessPiece
-                                piece={getPiece(piece)}
+                                piece={getPiece(pieceAlias)}
                                 showTextDisplay={failedImageIndices.has(index)}
                                 onPointerDown={onPointerDown}
                                 onImgLoadError={createImgLoadError(index)}
@@ -230,7 +226,7 @@ function ChessBoard() {
                             isSelected={isSelected}
                             isDraggingOver={Boolean(drag && dragOverIndex === index)}
                             hideContent={Boolean(drag && drag.fromIndex === index)}
-                            onClick={createClickHandler(piece, index)}
+                            onClick={createClickHandler(pieceAlias, index)}
                         >
                             {content}
                         </ChessSquare>
