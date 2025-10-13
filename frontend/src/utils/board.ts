@@ -3,7 +3,7 @@ import type { PieceShortAlias } from './pieces';
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
 export type GlowingSquare = {
-    type: 'previous-move' | 'possible-move' | 'check';
+    type: 'previous-move' | 'possible-move' | 'possible-capture' | 'check';
     index: number;
 };
 export type RowCol = { row: number; col: number };
