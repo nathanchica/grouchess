@@ -21,6 +21,7 @@ type State = {
     previousMoveIndices: number[];
     captures: CaptureProps[];
     moveHistory: number[][];
+    timelineVersion: number;
 };
 
 type Action = { type: 'reset' } | { type: 'move'; prevIndex: number; nextIndex: number };
@@ -76,6 +77,7 @@ export function createInitialChessGame(): State {
         previousMoveIndices: [],
         captures: [],
         moveHistory: [],
+        timelineVersion: 0,
     };
 }
 
@@ -94,7 +96,7 @@ export function useChessGame(): ChessGameContextType {
 function reducer(state: State, action: Action): State {
     switch (action.type) {
         case 'reset':
-            return createInitialChessGame();
+            return { ...createInitialChessGame(), timelineVersion: state.timelineVersion + 1 };
         case 'move': {
             const { prevIndex, nextIndex } = action;
             const { board, castleMetadata, captures, playerTurn, moveHistory } = state;

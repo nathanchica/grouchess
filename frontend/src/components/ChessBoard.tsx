@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
+import { useMemo, useRef, useState, useEffect, type PointerEventHandler } from 'react';
 
 import ChessSquare from './ChessSquare';
 import ChessPiece from './ChessPiece';
@@ -41,13 +41,32 @@ function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
+    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece, timelineVersion } = useChessGame();
+
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+    const boardRef = useRef<HTMLDivElement | null>(null);
 
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const boardRef = useRef<HTMLDivElement | null>(null);
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece } = useChessGame();
+
+    function resetInteractionStates() {
+        setDragOverIndex(null);
+        setDrag(null);
+        setSelectedIndex(null);
+    }
+
+    // Clear transient UI state whenever the game timeline resets or jumps
+    useEffect(() => {
+        if (drag && boardRef.current) {
+            try {
+                boardRef.current.releasePointerCapture(drag.pointerId);
+            } catch {
+                // ignore errors
+            }
+        }
+        resetInteractionStates(); // eslint-disable-line react-hooks/set-state-in-effect
+    }, [timelineVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
     const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquares } = useMemo(() => {
@@ -94,18 +113,9 @@ function ChessBoard() {
     }
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
-        const isSelectedSquare = clickedIndex === selectedIndex;
         const isPossibleMoveSquare = possibleMoveIndicesForSelectedPiece.includes(clickedIndex);
-        const isEmptySquare = pieceAliasAtSquare === undefined;
-        const isEmptyAndNotLegalMove = !isPossibleMoveSquare && isEmptySquare;
-
         const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
         const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
-
-        if (isSelectedSquare || isEmptyAndNotLegalMove) {
-            clearSelection();
-            return;
-        }
 
         if (isPossibleMoveSquare && selectedPiece) {
             movePiece(selectedIndex as number, clickedIndex);
