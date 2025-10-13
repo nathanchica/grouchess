@@ -9,13 +9,18 @@ import {
 } from '../utils/moves';
 import { aliasToPieceData, getPiece, type Piece, type PieceColor } from '../utils/pieces';
 
+type CaptureProps = {
+    piece: Piece;
+    moveIndex: number;
+};
+
 type State = {
     board: ChessBoardType;
     castleMetadata: CastleMetadata;
     playerTurn: PieceColor;
     previousMoveIndices: number[];
-    whiteCapturedPieces: Piece[];
-    blackCapturedPieces: Piece[];
+    captures: CaptureProps[];
+    moveHistory: number[][];
 };
 
 type Action = { type: 'reset' } | { type: 'move'; prevIndex: number; nextIndex: number };
@@ -69,8 +74,8 @@ export function createInitialChessGame(): State {
         castleMetadata: createInitialCastleMetadata(),
         playerTurn: 'white',
         previousMoveIndices: [],
-        whiteCapturedPieces: [],
-        blackCapturedPieces: [],
+        captures: [],
+        moveHistory: [],
     };
 }
 
@@ -92,13 +97,15 @@ function reducer(state: State, action: Action): State {
             return createInitialChessGame();
         case 'move': {
             const { prevIndex, nextIndex } = action;
-            const { board, castleMetadata, whiteCapturedPieces, blackCapturedPieces, playerTurn } = state;
+            const { board, castleMetadata, captures, playerTurn, moveHistory } = state;
             const pieceAlias = board[prevIndex];
             invariant(pieceAlias, 'Invalid use of movePiece. prevIndex does not contain a piece.');
             const pieceData = getPiece(pieceAlias);
 
             const capturedAlias = board[nextIndex];
-            const capturedPiece = capturedAlias ? getPiece(capturedAlias) : null;
+            const captureProps = capturedAlias
+                ? { piece: getPiece(capturedAlias), moveIndex: moveHistory.length }
+                : null;
             const nextBoard = computeNextChessBoardFromMove(pieceData, prevIndex, nextIndex, board);
 
             const nextCastleMetadata =
@@ -109,10 +116,9 @@ function reducer(state: State, action: Action): State {
                       }
                     : castleMetadata;
 
-            const nextWhiteCapturedPieces =
-                capturedPiece?.color === 'white' ? [...whiteCapturedPieces, capturedPiece] : whiteCapturedPieces;
-            const nextBlackCapturedPieces =
-                capturedPiece?.color === 'black' ? [...blackCapturedPieces, capturedPiece] : blackCapturedPieces;
+            const nextCaptureProps = captureProps ? [...captures, captureProps] : captures;
+
+            const nextMoveHistory = [...moveHistory, [prevIndex, nextIndex]];
 
             return {
                 ...state,
@@ -120,8 +126,8 @@ function reducer(state: State, action: Action): State {
                 castleMetadata: nextCastleMetadata,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 previousMoveIndices: [prevIndex, nextIndex],
-                whiteCapturedPieces: nextWhiteCapturedPieces,
-                blackCapturedPieces: nextBlackCapturedPieces,
+                captures: nextCaptureProps,
+                moveHistory: nextMoveHistory,
             };
         }
         default:
