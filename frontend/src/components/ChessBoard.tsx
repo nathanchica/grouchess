@@ -3,11 +3,11 @@ import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
 import ChessSquare from './ChessSquare';
 import ChessPiece from './ChessPiece';
 import GhostPiece from './GhostPiece';
-import { rowColToIndex, NUM_COLS, NUM_ROWS, type GlowingSquare } from '../utils/board';
-import { getPiece } from '../utils/pieces';
-import type { PieceShortAlias } from '../utils/pieces';
+import { rowColToIndex, isRowColInBounds, NUM_COLS, type GlowingSquare, type RowCol } from '../utils/board';
+import { getPiece, getColorFromAlias } from '../utils/pieces';
+import type { Piece, PieceShortAlias } from '../utils/pieces';
 import { computePossibleMovesForPiece } from '../utils/moves';
-import { useChessGame } from '../hooks/useChessGame';
+import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
 
 export type DragProps = {
@@ -19,6 +19,13 @@ export type DragProps = {
     squareSize: number;
     boardRect: DOMRect;
 };
+
+function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
+    return {
+        row: Math.floor(y / squareSize),
+        col: Math.floor(x / squareSize),
+    };
+}
 
 /**
  * ChessBoard
@@ -42,19 +49,45 @@ function ChessBoard() {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const { board, castleMetadata, playerTurn, previousMoveIndices, resetGame, movePiece } = useChessGame();
 
-    const selectedPiece = selectedIndex !== null ? getPiece(board[selectedIndex] as PieceShortAlias) : null;
-    const possibleMoveIndicesForSelectedPiece = useMemo(
-        () =>
-            selectedPiece
-                ? computePossibleMovesForPiece(selectedPiece, selectedIndex as number, board, castleMetadata)
-                : [],
-        [selectedIndex, selectedPiece, board, castleMetadata]
-    );
+    // Memoize derived values to only recompute when selectedIndex and the other deps changes
+    const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquares } = useMemo(() => {
+        if (selectedIndex === null) {
+            return {
+                selectedPiece: null,
+                possibleMoveIndicesForSelectedPiece: [] as number[],
+                glowingSquares: previousMoveIndices.map((index) => ({
+                    index,
+                    type: 'previous-move',
+                })) as GlowingSquare[],
+            };
+        }
+        const selectedPiece = getPiece(board[selectedIndex] as PieceShortAlias);
+        const possibleMoveIndicesForSelectedPiece = computePossibleMovesForPiece(
+            selectedPiece,
+            selectedIndex,
+            board,
+            castleMetadata
+        );
+        const glowingSquares = [
+            ...previousMoveIndices.map((index) => ({ index, type: 'previous-move' })),
+            ...possibleMoveIndicesForSelectedPiece.map((index) => {
+                const pieceAliasAtIndex = board[index];
+                return {
+                    index,
+                    type:
+                        pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== (selectedPiece as Piece).color
+                            ? 'possible-capture'
+                            : 'possible-move',
+                };
+            }),
+        ] as GlowingSquare[];
 
-    const glowingSquares = [
-        ...previousMoveIndices.map((index) => ({ index, type: 'previous-move' })),
-        ...possibleMoveIndicesForSelectedPiece.map((index) => ({ index, type: 'possible-move' })),
-    ] as GlowingSquare[];
+        return {
+            selectedPiece,
+            possibleMoveIndicesForSelectedPiece,
+            glowingSquares,
+        };
+    }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
 
     function clearSelection() {
         setSelectedIndex(null);
@@ -67,15 +100,14 @@ function ChessBoard() {
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
         const isSelectedSquare = clickedIndex === selectedIndex;
-        const glowTypesAtSquare = glowingSquares.filter(({ index }) => index === clickedIndex).map(({ type }) => type);
-        const isPossibleMoveSquare = glowTypesAtSquare.includes('possible-move');
+        const isPossibleMoveSquare = possibleMoveIndicesForSelectedPiece.includes(clickedIndex);
         const isEmptySquare = pieceAliasAtSquare === undefined;
-        const isNotGlowingAndEmpty = !isPossibleMoveSquare && isEmptySquare;
+        const isEmptyAndNotLegalMove = !isPossibleMoveSquare && isEmptySquare;
 
         const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
-        const isNotPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color !== playerTurn;
+        const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
 
-        if (isSelectedSquare || isNotGlowingAndEmpty || isNotPlayersOwnPiece) {
+        if (isSelectedSquare || isEmptyAndNotLegalMove) {
             clearSelection();
             return;
         }
@@ -92,7 +124,9 @@ function ChessBoard() {
         }
 
         // if no selected piece, set current square to selected index
-        setSelectedIndex(clickedIndex);
+        if (isPlayersOwnPiece) {
+            setSelectedIndex(clickedIndex);
+        }
     };
 
     const createImgLoadError = (index: number) => () => {
@@ -115,13 +149,8 @@ function ChessBoard() {
                     const x = event.clientX - rect.left;
                     const y = event.clientY - rect.top;
                     setDrag((prevDragData) => (prevDragData ? { ...prevDragData, x, y } : prevDragData));
-                    const col = Math.floor(x / drag.squareSize);
-                    const row = Math.floor(y / drag.squareSize);
-                    if (row < 0 || row >= NUM_ROWS || col < 0 || col >= NUM_COLS) {
-                        setDragOverIndex(null);
-                    } else {
-                        setDragOverIndex(rowColToIndex({ row, col }));
-                    }
+                    const rowCol = getRowColFromXY(x, y, drag.squareSize);
+                    setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
                 }}
                 onPointerUp={(event) => {
                     if (!drag || event.pointerId !== drag.pointerId) return;
@@ -144,15 +173,15 @@ function ChessBoard() {
                     setDragOverIndex(null);
                 }}
             >
-                {board.map((piece, index) => {
+                {board.map((pieceAlias, index) => {
                     const glowTypesForSquare = glowingSquares
                         .filter(({ index: glowingIndex }) => glowingIndex === index)
                         .map(({ type }) => type);
                     const isSelected = index === selectedIndex;
 
                     let content;
-                    if (isFinishedLoadingImages && piece) {
-                        const { shortAlias, color } = getPiece(piece);
+                    if (isFinishedLoadingImages && pieceAlias) {
+                        const { shortAlias, color } = getPiece(pieceAlias);
                         const canDrag = color === playerTurn;
                         const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
                             if (!canDrag || !boardRef.current) return;
@@ -177,18 +206,12 @@ function ChessBoard() {
                                 squareSize,
                                 boardRect: rect,
                             });
-                            // Initialize hover index immediately
-                            const initCol = Math.floor(x / squareSize);
-                            const initRow = Math.floor(y / squareSize);
-                            if (initRow >= 0 && initRow < NUM_ROWS && initCol >= 0 && initCol < NUM_COLS) {
-                                setDragOverIndex(rowColToIndex({ row: initRow, col: initCol }));
-                            } else {
-                                setDragOverIndex(null);
-                            }
+                            const rowCol = getRowColFromXY(x, y, squareSize);
+                            setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
                         };
                         content = (
                             <ChessPiece
-                                piece={getPiece(piece)}
+                                piece={getPiece(pieceAlias)}
                                 showTextDisplay={failedImageIndices.has(index)}
                                 onPointerDown={onPointerDown}
                                 onImgLoadError={createImgLoadError(index)}
@@ -204,7 +227,7 @@ function ChessBoard() {
                             isSelected={isSelected}
                             isDraggingOver={Boolean(drag && dragOverIndex === index)}
                             hideContent={Boolean(drag && drag.fromIndex === index)}
-                            onClick={createClickHandler(piece, index)}
+                            onClick={createClickHandler(pieceAlias, index)}
                         >
                             {content}
                         </ChessSquare>

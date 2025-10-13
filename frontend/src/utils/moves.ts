@@ -1,6 +1,6 @@
-import { indexToRowCol, rowColToIndex, NUM_ROWS, NUM_COLS } from './board';
-import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX } from './pieces';
-import type { Piece, PieceColor, ChessBoardType, PieceShortAlias } from './pieces';
+import { indexToRowCol, isRowColInBounds, rowColToIndex, NUM_ROWS, type ChessBoardType } from './board';
+import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias } from './pieces';
+import type { Piece, PieceColor, PieceShortAlias } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
 type CastlePrivilege = {
@@ -147,15 +147,32 @@ export function computePossibleMovesForPiece(
     let possibleMoveIndices: number[] = [];
     if (pieceType === 'pawn') {
         const hasMoved = isWhite ? row !== WHITE_PAWN_STARTING_ROW : row !== BLACK_PAWN_STARTING_ROW;
-        const potentialRows = isWhite ? [row - 1] : [row + 1];
+        const nextRow = isWhite ? row - 1 : row + 1;
+        const potentialRows = [nextRow];
         if (!hasMoved) {
             potentialRows.push(isWhite ? row - 2 : row + 2);
         }
+        // Forward moves (no captures)
         for (const currRow of potentialRows) {
             if (currRow < 0 || currRow >= NUM_ROWS) continue;
             const index = rowColToIndex({ row: currRow, col });
             if (board[index] !== undefined) break;
             possibleMoveIndices.push(index);
+        }
+
+        // Diagonal captures (ignore en passant for now)
+        if (nextRow >= 0 && nextRow < NUM_ROWS) {
+            for (const colDelta of [-1, 1]) {
+                const captureCol = col + colDelta;
+                const rowCol = { row: nextRow, col: captureCol };
+                if (!isRowColInBounds(rowCol)) continue;
+                const index = rowColToIndex(rowCol);
+                const pieceAliasAtIndex = board[index];
+                const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+                if (isEnemyPiece) {
+                    possibleMoveIndices.push(index);
+                }
+            }
         }
     } else if (['bishop', 'rook', 'queen'].includes(pieceType)) {
         let deltas: RowColDeltas = [];
@@ -167,14 +184,17 @@ export function computePossibleMovesForPiece(
         }
 
         for (const [rowDelta, colDelta] of deltas) {
-            let nextRow = row + rowDelta;
-            let nextCol = col + colDelta;
-            while (nextRow >= 0 && nextRow < NUM_ROWS && nextCol >= 0 && nextCol < NUM_COLS) {
-                const index = rowColToIndex({ row: nextRow, col: nextCol });
-                if (board[index] !== undefined) break;
+            let rowCol = { row: row + rowDelta, col: col + colDelta };
+            while (isRowColInBounds(rowCol)) {
+                const index = rowColToIndex(rowCol);
+                const pieceAliasAtIndex = board[index];
+                if (pieceAliasAtIndex !== undefined) {
+                    const isEnemyPiece = getColorFromAlias(pieceAliasAtIndex) !== color;
+                    if (isEnemyPiece) possibleMoveIndices.push(index);
+                    break;
+                }
                 possibleMoveIndices.push(index);
-                nextRow += rowDelta;
-                nextCol += colDelta;
+                rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
             }
         }
     } else if (pieceType === 'king') {
@@ -188,21 +208,26 @@ export function computePossibleMovesForPiece(
             possibleMoveIndices.push(isWhite ? WHITE_KING_LONG_CASTLE_INDEX : BLACK_KING_LONG_CASTLE_INDEX);
         }
         for (const [rowDelta, colDelta] of deltas) {
-            const nextRow = row + rowDelta;
-            const nextCol = col + colDelta;
-            if (nextRow < 0 || nextRow >= NUM_ROWS || nextCol < 0 || nextCol >= NUM_COLS) continue;
-            const index = rowColToIndex({ row: nextRow, col: nextCol });
-            if (board[index] === undefined) {
+            const rowCol = { row: row + rowDelta, col: col + colDelta };
+            if (!isRowColInBounds(rowCol)) continue;
+            const index = rowColToIndex(rowCol);
+            const pieceAliasAtIndex = board[index];
+            const isEmpty = pieceAliasAtIndex === undefined;
+            const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+            // TODO: check if enemy piece or square is protected
+            if (isEmpty || isEnemyPiece) {
                 possibleMoveIndices.push(index);
             }
         }
     } else if (pieceType === 'knight') {
         for (const [rowDelta, colDelta] of KNIGHT_DELTAS) {
-            const nextRow = row + rowDelta;
-            const nextCol = col + colDelta;
-            if (nextRow < 0 || nextRow >= NUM_ROWS || nextCol < 0 || nextCol >= NUM_COLS) continue;
-            const index = rowColToIndex({ row: nextRow, col: nextCol });
-            if (board[index] === undefined) {
+            const rowCol = { row: row + rowDelta, col: col + colDelta };
+            if (!isRowColInBounds(rowCol)) continue;
+            const index = rowColToIndex(rowCol);
+            const pieceAliasAtIndex = board[index];
+            const isEmpty = pieceAliasAtIndex === undefined;
+            const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+            if (isEmpty || isEnemyPiece) {
                 possibleMoveIndices.push(index);
             }
         }

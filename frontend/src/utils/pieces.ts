@@ -23,7 +23,6 @@ export type Piece = {
     color: PieceColor;
     type: PieceType;
 };
-export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
 export const WHITE_KING_START_INDEX = 60;
 export const BLACK_KING_START_INDEX = 4;
@@ -158,3 +157,9 @@ export const aliasOrShortToPieceData: Record<PieceAlias | PieceShortAlias, Piece
 export const getPiece = (key: PieceAlias | PieceShortAlias): Piece => aliasOrShortToPieceData[key];
 
 export const uniquePieceImgSrcs = Array.from(new Set(Object.values(aliasToPieceData).map(({ imgSrc }) => imgSrc)));
+
+export function getColorFromAlias(alias: PieceAlias | PieceShortAlias): PieceColor {
+    if (alias.includes('black')) return 'black';
+    if (alias.includes('white')) return 'white';
+    return alias === alias.toUpperCase() && alias !== alias.toLowerCase() ? 'white' : 'black';
+}
