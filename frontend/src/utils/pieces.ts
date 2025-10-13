@@ -23,7 +23,6 @@ export type Piece = {
     color: PieceColor;
     type: PieceType;
 };
-export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
 export const WHITE_KING_START_INDEX = 60;
 export const BLACK_KING_START_INDEX = 4;

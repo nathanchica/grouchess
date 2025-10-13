@@ -1,6 +1,6 @@
-import { indexToRowCol, rowColToIndex, NUM_ROWS, NUM_COLS } from './board';
+import { indexToRowCol, rowColToIndex, NUM_ROWS, NUM_COLS, type ChessBoardType } from './board';
 import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX } from './pieces';
-import type { Piece, PieceColor, ChessBoardType, PieceShortAlias } from './pieces';
+import type { Piece, PieceColor, PieceShortAlias } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
 type CastlePrivilege = {

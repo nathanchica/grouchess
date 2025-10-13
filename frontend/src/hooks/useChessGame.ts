@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import invariant from 'tiny-invariant';
 
-import { NUM_SQUARES } from '../utils/board';
+import { NUM_SQUARES, type ChessBoardType } from '../utils/board';
 import {
     computeNextChessBoardFromMove,
     computeCastleMetadataChangesFromMove,
     type CastleMetadata,
 } from '../utils/moves';
-import { aliasToPieceData, getPiece, type ChessBoardType, type PieceColor } from '../utils/pieces';
+import { aliasToPieceData, getPiece, type PieceColor } from '../utils/pieces';
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -70,7 +71,7 @@ export function useChessGame(): Payload {
 
     function movePiece(prevIndex: number, nextIndex: number) {
         const pieceAlias = board[prevIndex];
-        if (!pieceAlias) return;
+        invariant(pieceAlias, 'Invalid use of movePiece. prevIndex does not contain a piece.');
 
         const pieceData = getPiece(pieceAlias);
 
