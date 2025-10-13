@@ -100,15 +100,14 @@ function ChessBoard() {
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
         const isSelectedSquare = clickedIndex === selectedIndex;
-        const glowTypesAtSquare = glowingSquares.filter(({ index }) => index === clickedIndex).map(({ type }) => type);
-        const isPossibleMoveSquare = glowTypesAtSquare.includes('possible-move');
+        const isPossibleMoveSquare = possibleMoveIndicesForSelectedPiece.includes(clickedIndex);
         const isEmptySquare = pieceAliasAtSquare === undefined;
-        const isNotGlowingAndEmpty = !isPossibleMoveSquare && isEmptySquare;
+        const isEmptyAndNotLegalMove = !isPossibleMoveSquare && isEmptySquare;
 
         const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
-        const isNotPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color !== playerTurn;
+        const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
 
-        if (isSelectedSquare || isNotGlowingAndEmpty || isNotPlayersOwnPiece) {
+        if (isSelectedSquare || isEmptyAndNotLegalMove) {
             clearSelection();
             return;
         }
@@ -125,7 +124,9 @@ function ChessBoard() {
         }
 
         // if no selected piece, set current square to selected index
-        setSelectedIndex(clickedIndex);
+        if (isPlayersOwnPiece) {
+            setSelectedIndex(clickedIndex);
+        }
     };
 
     const createImgLoadError = (index: number) => () => {

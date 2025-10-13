@@ -147,15 +147,32 @@ export function computePossibleMovesForPiece(
     let possibleMoveIndices: number[] = [];
     if (pieceType === 'pawn') {
         const hasMoved = isWhite ? row !== WHITE_PAWN_STARTING_ROW : row !== BLACK_PAWN_STARTING_ROW;
-        const potentialRows = isWhite ? [row - 1] : [row + 1];
+        const nextRow = isWhite ? row - 1 : row + 1;
+        const potentialRows = [nextRow];
         if (!hasMoved) {
             potentialRows.push(isWhite ? row - 2 : row + 2);
         }
+        // Forward moves (no captures)
         for (const currRow of potentialRows) {
             if (currRow < 0 || currRow >= NUM_ROWS) continue;
             const index = rowColToIndex({ row: currRow, col });
             if (board[index] !== undefined) break;
             possibleMoveIndices.push(index);
+        }
+
+        // Diagonal captures (ignore en passant for now)
+        if (nextRow >= 0 && nextRow < NUM_ROWS) {
+            for (const colDelta of [-1, 1]) {
+                const captureCol = col + colDelta;
+                const rowCol = { row: nextRow, col: captureCol };
+                if (!isRowColInBounds(rowCol)) continue;
+                const index = rowColToIndex(rowCol);
+                const pieceAliasAtIndex = board[index];
+                const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+                if (isEnemyPiece) {
+                    possibleMoveIndices.push(index);
+                }
+            }
         }
     } else if (['bishop', 'rook', 'queen'].includes(pieceType)) {
         let deltas: RowColDeltas = [];
@@ -197,6 +214,7 @@ export function computePossibleMovesForPiece(
             const pieceAliasAtIndex = board[index];
             const isEmpty = pieceAliasAtIndex === undefined;
             const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+            // TODO: check if enemy piece or square is protected
             if (isEmpty || isEnemyPiece) {
                 possibleMoveIndices.push(index);
             }
