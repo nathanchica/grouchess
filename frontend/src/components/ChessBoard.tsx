@@ -7,7 +7,7 @@ import { rowColToIndex, isRowColInBounds, NUM_COLS, type GlowingSquare, type Row
 import { getPiece, getColorFromAlias } from '../utils/pieces';
 import type { Piece, PieceShortAlias } from '../utils/pieces';
 import { computePossibleMovesForPiece } from '../utils/moves';
-import { useChessGame } from '../hooks/useChessGame';
+import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
 
 export type DragProps = {
@@ -51,7 +51,7 @@ function ChessBoard() {
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
     const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquares } = useMemo(() => {
-        if (!selectedIndex) {
+        if (selectedIndex === null) {
             return {
                 selectedPiece: null,
                 possibleMoveIndicesForSelectedPiece: [] as number[],

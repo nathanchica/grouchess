@@ -15,7 +15,7 @@ const ImageContext = createContext<ImageContextType>({
 
 export const useImages = (): ImageContextType => {
     const context = useContext(ImageContext);
-    invariant(context, 'useImages must be used with ImagesProvider');
+    invariant(context, 'useImages must be used within ImagesProvider');
     return context;
 };
 
@@ -56,7 +56,7 @@ function ImagesProvider({ imgSrcs, children }: Props) {
 
         return () => {
             cancelled = true;
-            objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+            for (const url of objectUrlsRef.current) URL.revokeObjectURL(url);
             objectUrlsRef.current = [];
         };
     }, [uniqueSrcs]);

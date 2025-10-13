@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useReducer, useContext, createContext, type ReactNode } from 'react';
 import invariant from 'tiny-invariant';
 
 import { NUM_SQUARES, type ChessBoardType } from '../utils/board';
@@ -8,6 +8,22 @@ import {
     type CastleMetadata,
 } from '../utils/moves';
 import { aliasToPieceData, getPiece, type Piece, type PieceColor } from '../utils/pieces';
+
+type State = {
+    board: ChessBoardType;
+    castleMetadata: CastleMetadata;
+    playerTurn: PieceColor;
+    previousMoveIndices: number[];
+    whiteCapturedPieces: Piece[];
+    blackCapturedPieces: Piece[];
+};
+
+type Action = { type: 'reset' } | { type: 'move'; prevIndex: number; nextIndex: number };
+
+export type ChessGameContextType = State & {
+    resetGame: () => void;
+    movePiece: (prevIndex: number, nextIndex: number) => void;
+};
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -47,29 +63,7 @@ function createInitialCastleMetadata(): CastleMetadata {
     };
 }
 
-type Payload = {
-    board: ChessBoardType;
-    castleMetadata: CastleMetadata;
-    playerTurn: PieceColor;
-    previousMoveIndices: number[];
-    whiteCapturedPieces: Piece[];
-    blackCapturedPieces: Piece[];
-    resetGame: () => void;
-    movePiece: (prevIndex: number, nextIndex: number) => void;
-};
-
-type State = {
-    board: ChessBoardType;
-    castleMetadata: CastleMetadata;
-    playerTurn: PieceColor;
-    previousMoveIndices: number[];
-    whiteCapturedPieces: Piece[];
-    blackCapturedPieces: Piece[];
-};
-
-type Action = { type: 'reset' } | { type: 'move'; prevIndex: number; nextIndex: number };
-
-function createInitialState(): State {
+export function createInitialChessGame(): State {
     return {
         board: createInitialBoard(),
         castleMetadata: createInitialCastleMetadata(),
@@ -80,10 +74,22 @@ function createInitialState(): State {
     };
 }
 
+const ChessGameContext = createContext<ChessGameContextType>({
+    ...createInitialChessGame(),
+    resetGame: () => {},
+    movePiece: () => {},
+});
+
+export function useChessGame(): ChessGameContextType {
+    const context = useContext(ChessGameContext);
+    invariant(context, 'useChessGame must be used within ChessGameProvider');
+    return context;
+}
+
 function reducer(state: State, action: Action): State {
     switch (action.type) {
         case 'reset':
-            return createInitialState();
+            return createInitialChessGame();
         case 'move': {
             const { prevIndex, nextIndex } = action;
             const { board, castleMetadata, whiteCapturedPieces, blackCapturedPieces, playerTurn } = state;
@@ -109,6 +115,7 @@ function reducer(state: State, action: Action): State {
                 capturedPiece?.color === 'black' ? [...blackCapturedPieces, capturedPiece] : blackCapturedPieces;
 
             return {
+                ...state,
                 board: nextBoard,
                 castleMetadata: nextCastleMetadata,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
@@ -122,9 +129,12 @@ function reducer(state: State, action: Action): State {
     }
 }
 
-export function useChessGame(): Payload {
-    const [state, dispatch] = useReducer(reducer, createInitialState());
-    const { board, castleMetadata, playerTurn, previousMoveIndices, whiteCapturedPieces, blackCapturedPieces } = state;
+type Props = {
+    children: ReactNode;
+};
+
+function ChessGameProvider({ children }: Props) {
+    const [state, dispatch] = useReducer(reducer, createInitialChessGame());
 
     function resetGame() {
         dispatch({ type: 'reset' });
@@ -134,14 +144,13 @@ export function useChessGame(): Payload {
         dispatch({ type: 'move', prevIndex, nextIndex });
     }
 
-    return {
-        board,
-        castleMetadata,
-        playerTurn,
-        previousMoveIndices,
-        whiteCapturedPieces,
-        blackCapturedPieces,
+    const contextValue = {
+        ...state,
         resetGame,
         movePiece,
     };
+
+    return <ChessGameContext.Provider value={contextValue}>{children}</ChessGameContext.Provider>;
 }
+
+export default ChessGameProvider;
