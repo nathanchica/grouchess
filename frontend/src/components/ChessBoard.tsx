@@ -1,101 +1,68 @@
-import { useState } from 'react';
-import { indexToRowCol, NUM_SQUARES, type GlowingSquare } from '../utils/board';
-import { getPiece, aliasToPieceData, uniquePieceImgSrcs } from '../utils/pieces';
-import type { PieceShortAlias, PieceColor, ChessBoardType } from '../utils/pieces';
-import {
-    computePossibleMovesForPiece,
-    computeNextChessBoardFromMove,
-    computeCastleMetadataChangesFromMove,
-    type CastleMetadata,
-} from '../utils/moves';
-import { usePreloadedImages } from '../utils/preload';
+import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
 
-const CHESS_SQUARE_BASE_CLASSES =
-    'relative aspect-square cursor-pointer flex items-center justify-center transition-colors';
+import ChessSquare from './ChessSquare';
+import ChessPiece from './ChessPiece';
+import GhostPiece from './GhostPiece';
+import { rowColToIndex, NUM_COLS, NUM_ROWS, type GlowingSquare } from '../utils/board';
+import { getPiece } from '../utils/pieces';
+import type { PieceShortAlias } from '../utils/pieces';
+import { computePossibleMovesForPiece } from '../utils/moves';
+import { useChessGame } from '../hooks/useChessGame';
+import { useImages } from '../providers/ImagesProvider';
+
+export type DragProps = {
+    fromIndex: number;
+    pointerId: number;
+    piece: PieceShortAlias;
+    x: number; // pointer X relative to board
+    y: number; // pointer Y relative to board
+    squareSize: number;
+    boardRect: DOMRect;
+};
 
 /**
- * r | n | b | q | k | b | n | r  (0 - 7)
- * ------------------------------
- * p | p | p | p | p | p | p | p  (8 - 15)
- * ------------------------------
- *   |   |   |   |   |   |   |    (16 - 23)
- * ------------------------------
- *   |   |   |   |   |   |   |    (24 - 31)
- * ------------------------------
- *   |   |   |   |   |   |   |    (32 - 39)
- * ------------------------------
- *   |   |   |   |   |   |   |    (40 - 47)
- * ------------------------------
- * P | P | P | P | P | P | P | P  (48 - 55)
- * ------------------------------
- * R | N | B | Q | K | B | N | R  (56 - 63)
+ * ChessBoard
+ *
+ * Pointer-based drag-and-drop (desktop + touch):
+ *  - On pointerdown over a player's piece, we capture the pointer to the board,
+ *    render a ghost piece at pointer location, and update the highlighted square.
+ *  - We compute the target index from board.getBoundingClientRect() and square size.
+ *  - On pointerup, if the target is a legal move, we call movePiece.
+ *  - `touch-action: none` on the board prevents default scrolling during drags.
+ * Click-to-move continues to work alongside dragging.
  */
-function createInitialBoard(): ChessBoardType {
-    const board: ChessBoardType = Array(NUM_SQUARES).fill(undefined);
-    Object.values(aliasToPieceData).forEach(({ shortAlias, startingIndices }) => {
-        startingIndices.forEach((index) => {
-            board[index] = shortAlias;
-        });
-    });
-    return board;
-}
-
-function createInitialCastleMetadata(): CastleMetadata {
-    return {
-        whiteKingHasMoved: false,
-        whiteShortRookHasMoved: false,
-        whiteLongRookHasMoved: false,
-        blackKingHasMoved: false,
-        blackShortRookHasMoved: false,
-        blackLongRookHasMoved: false,
-    };
-}
-
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
-    const { imgSrcMap, isReady: isFinishedLoadingImages } = usePreloadedImages(uniquePieceImgSrcs);
+    const { isReady: isFinishedLoadingImages } = useImages();
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
 
-    const [board, setBoard] = useState<ChessBoardType>(createInitialBoard);
-    const [castleMetadata, setCastleMetadata] = useState<CastleMetadata>(createInitialCastleMetadata);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const boardRef = useRef<HTMLDivElement | null>(null);
+    const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-    const [playerTurn, setPlayerTurn] = useState<PieceColor>('white');
-    const [previousMoveIndices, setPreviousMoveIndices] = useState<number[]>([]);
+    const { board, castleMetadata, playerTurn, previousMoveIndices, resetGame, movePiece } = useChessGame();
 
     const selectedPiece = selectedIndex !== null ? getPiece(board[selectedIndex] as PieceShortAlias) : null;
-    const possibleMoveIndices = selectedPiece
-        ? computePossibleMovesForPiece(selectedPiece, selectedIndex as number, board, castleMetadata)
-        : [];
+    const possibleMoveIndicesForSelectedPiece = useMemo(
+        () =>
+            selectedPiece
+                ? computePossibleMovesForPiece(selectedPiece, selectedIndex as number, board, castleMetadata)
+                : [],
+        [selectedIndex, selectedPiece, board, castleMetadata]
+    );
+
     const glowingSquares = [
         ...previousMoveIndices.map((index) => ({ index, type: 'previous-move' })),
-        ...possibleMoveIndices.map((index) => ({ index, type: 'possible-move' })),
+        ...possibleMoveIndicesForSelectedPiece.map((index) => ({ index, type: 'possible-move' })),
     ] as GlowingSquare[];
-
-    function handleResetClick() {
-        setBoard(createInitialBoard);
-        setCastleMetadata(createInitialCastleMetadata);
-        setSelectedIndex(null);
-        setPlayerTurn('white');
-        setPreviousMoveIndices([]);
-    }
 
     function clearSelection() {
         setSelectedIndex(null);
     }
 
-    function movePiece(pieceAlias: PieceShortAlias, prevIndex: number, nextIndex: number) {
-        const pieceData = getPiece(pieceAlias);
-
-        setBoard((prevBoard) => computeNextChessBoardFromMove(pieceData, prevIndex, nextIndex, prevBoard));
-        if (pieceData.type === 'king' || pieceData.type === 'rook') {
-            setCastleMetadata((prevData) => ({
-                ...prevData,
-                ...computeCastleMetadataChangesFromMove(pieceData, prevIndex),
-            }));
-        }
+    function handleResetClick() {
+        resetGame();
         clearSelection();
-        setPreviousMoveIndices([prevIndex, nextIndex]);
-        setPlayerTurn((prevTurn) => (prevTurn === 'white' ? 'black' : 'white'));
     }
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
@@ -114,7 +81,8 @@ function ChessBoard() {
         }
 
         if (isPossibleMoveSquare && selectedPiece) {
-            movePiece(selectedPiece.shortAlias, selectedIndex as number, clickedIndex);
+            movePiece(selectedIndex as number, clickedIndex);
+            clearSelection();
             return;
         }
 
@@ -127,79 +95,122 @@ function ChessBoard() {
         setSelectedIndex(clickedIndex);
     };
 
+    const createImgLoadError = (index: number) => () => {
+        setFailedImageIndices((prev) => {
+            const next = new Set(prev);
+            next.add(index);
+            return next;
+        });
+    };
+
     return (
         <main className="flex flex-col gap-y-8">
-            <div className="grid grid-cols-8 rounded-lg overflow-hidden shadow-lg shadow-white/30">
+            <div
+                ref={boardRef}
+                className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-lg shadow-white/30"
+                onPointerMove={(event) => {
+                    if (!drag || !boardRef.current) return;
+                    if (event.pointerId !== drag.pointerId) return;
+                    const rect = drag.boardRect;
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+                    setDrag((prevDragData) => (prevDragData ? { ...prevDragData, x, y } : prevDragData));
+                    const col = Math.floor(x / drag.squareSize);
+                    const row = Math.floor(y / drag.squareSize);
+                    if (row < 0 || row >= NUM_ROWS || col < 0 || col >= NUM_COLS) {
+                        setDragOverIndex(null);
+                    } else {
+                        setDragOverIndex(rowColToIndex({ row, col }));
+                    }
+                }}
+                onPointerUp={(event) => {
+                    if (!drag || event.pointerId !== drag.pointerId) return;
+
+                    if (
+                        selectedIndex !== null &&
+                        dragOverIndex !== null &&
+                        possibleMoveIndicesForSelectedPiece.includes(dragOverIndex)
+                    ) {
+                        movePiece(selectedIndex, dragOverIndex);
+                    }
+                    if (dragOverIndex !== selectedIndex) {
+                        clearSelection();
+                    }
+                    setDrag(null);
+                    setDragOverIndex(null);
+                }}
+                onPointerCancel={() => {
+                    setDrag(null);
+                    setDragOverIndex(null);
+                }}
+            >
                 {board.map((piece, index) => {
-                    const { row, col } = indexToRowCol(index);
-                    const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
                     const glowTypesForSquare = glowingSquares
                         .filter(({ index: glowingIndex }) => glowingIndex === index)
                         .map(({ type }) => type);
-                    const isPreviousMove = glowTypesForSquare.includes('previous-move');
-                    const isPossibleMove = glowTypesForSquare.includes('possible-move');
-                    const isCheck = glowTypesForSquare.includes('check');
                     const isSelected = index === selectedIndex;
-
-                    let backgroundClasses = isDarkSquare ? 'bg-slate-500 text-white' : 'bg-stone-50';
-                    let highlightClasses = '';
-                    let hoverClasses = '';
-                    if (isSelected) {
-                        backgroundClasses = isDarkSquare ? 'bg-emerald-600 text-white' : 'bg-emerald-200';
-                        highlightClasses = '';
-                    } else {
-                        if (isCheck) {
-                            backgroundClasses = isDarkSquare ? 'bg-red-700 text-white' : 'bg-red-200';
-                        } else if (isPreviousMove) {
-                            backgroundClasses = isDarkSquare ? 'bg-purple-300 text-white' : 'bg-purple-200';
-                        }
-                        if (isPossibleMove) {
-                            const backgroundColor = isDarkSquare
-                                ? 'after:bg-emerald-500/90'
-                                : 'after:bg-emerald-300/80';
-                            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${backgroundColor} after:content-[""] hover:after:opacity-0`;
-                            // On hover, softly recolor the square to match the dot color and hide the dot
-                            hoverClasses = isDarkSquare ? 'hover:bg-emerald-500' : 'hover:bg-emerald-300';
-                        }
-                    }
 
                     let content;
                     if (isFinishedLoadingImages && piece) {
-                        const { imgSrc, altText, shortAlias } = getPiece(piece);
-                        // fallback to displaying short alias text if img fails to load
-                        content = failedImageIndices.has(index) ? (
-                            <span aria-label={altText} className="text-xl font-semibold select-none">
-                                {shortAlias}
-                            </span>
-                        ) : (
-                            <img
-                                className="w-full h-full"
-                                src={imgSrcMap[imgSrc] ?? imgSrc}
-                                loading="eager"
-                                decoding="async"
-                                alt={altText}
-                                onError={() =>
-                                    setFailedImageIndices((prev) => {
-                                        const next = new Set(prev);
-                                        next.add(index);
-                                        return next;
-                                    })
-                                }
+                        const { shortAlias, color } = getPiece(piece);
+                        const canDrag = color === playerTurn;
+                        const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
+                            if (!canDrag || !boardRef.current) return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            const rect = boardRef.current.getBoundingClientRect();
+                            const squareSize = rect.width / NUM_COLS;
+                            const x = event.clientX - rect.left;
+                            const y = event.clientY - rect.top;
+                            try {
+                                boardRef.current.setPointerCapture(event.pointerId);
+                            } catch {
+                                // ignore errors
+                            }
+                            setSelectedIndex(index);
+                            setDrag({
+                                fromIndex: index,
+                                pointerId: event.pointerId,
+                                piece: shortAlias,
+                                x,
+                                y,
+                                squareSize,
+                                boardRect: rect,
+                            });
+                            // Initialize hover index immediately
+                            const initCol = Math.floor(x / squareSize);
+                            const initRow = Math.floor(y / squareSize);
+                            if (initRow >= 0 && initRow < NUM_ROWS && initCol >= 0 && initCol < NUM_COLS) {
+                                setDragOverIndex(rowColToIndex({ row: initRow, col: initCol }));
+                            } else {
+                                setDragOverIndex(null);
+                            }
+                        };
+                        content = (
+                            <ChessPiece
+                                piece={getPiece(piece)}
+                                showTextDisplay={failedImageIndices.has(index)}
+                                onPointerDown={onPointerDown}
+                                onImgLoadError={createImgLoadError(index)}
                             />
                         );
                     }
 
                     return (
-                        <button
-                            key={`position-${index}`}
-                            type="button"
-                            onMouseDown={createClickHandler(piece, index)}
-                            className={`${CHESS_SQUARE_BASE_CLASSES} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
+                        <ChessSquare
+                            key={`square-${index}`}
+                            index={index}
+                            glowTypes={glowTypesForSquare}
+                            isSelected={isSelected}
+                            isDraggingOver={Boolean(drag && dragOverIndex === index)}
+                            hideContent={Boolean(drag && drag.fromIndex === index)}
+                            onClick={createClickHandler(piece, index)}
                         >
                             {content}
-                        </button>
+                        </ChessSquare>
                     );
                 })}
+                {drag && <GhostPiece dragProps={drag} />}
             </div>
 
             <section>
