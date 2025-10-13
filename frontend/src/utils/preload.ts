@@ -3,6 +3,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+export type ImgSrcMap = Record<string, string>;
+
 export async function decodeImage(src: string): Promise<void> {
     const img = new Image();
     img.src = src;
@@ -21,7 +23,7 @@ export async function decodeImage(src: string): Promise<void> {
     });
 }
 
-export async function preloadToObjectURLs(srcs: readonly string[]): Promise<Record<string, string>> {
+export async function preloadToObjectURLs(srcs: readonly string[]): Promise<ImgSrcMap> {
     const pairs = await Promise.all(
         Array.from(new Set(srcs)).map(async (src) => {
             try {
@@ -35,11 +37,11 @@ export async function preloadToObjectURLs(srcs: readonly string[]): Promise<Reco
             }
         })
     );
-    return Object.fromEntries(pairs) as Record<string, string>;
+    return Object.fromEntries(pairs) as ImgSrcMap;
 }
 
 export function usePreloadedImages(srcs: readonly string[]) {
-    const [imgSrcMap, setImgSrcMap] = useState<Record<string, string>>({});
+    const [imgSrcMap, setImgSrcMap] = useState<ImgSrcMap>({});
     const [isReady, setIsReady] = useState(false);
     const objectUrlsRef = useRef<string[]>([]);
 
@@ -49,7 +51,7 @@ export function usePreloadedImages(srcs: readonly string[]) {
     useEffect(() => {
         let cancelled = false;
 
-        async function run() {
+        async function preload() {
             try {
                 const map = await preloadToObjectURLs(uniqueSrcs);
                 // Track created object URLs for cleanup
@@ -66,7 +68,7 @@ export function usePreloadedImages(srcs: readonly string[]) {
             }
         }
 
-        run();
+        preload();
 
         return () => {
             cancelled = true;

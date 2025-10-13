@@ -40,9 +40,11 @@ export default [
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
                 Image: 'readonly',
+                HTMLDivElement: 'readonly',
                 HTMLImageElement: 'readonly',
                 fetch: 'readonly',
                 URL: 'readonly',
+                DOMRect: 'readonly',
             },
         },
         plugins: {

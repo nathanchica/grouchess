@@ -1,12 +1,17 @@
 import ChessBoard from './components/ChessBoard';
+import ImagesProvider from './providers/ImagesProvider';
+
+import { uniquePieceImgSrcs } from './utils/pieces';
 
 function App() {
     return (
-        <div className="min-h-dvh bg-zinc-800 text-center">
-            <div className="max-w-4xl p-16 m-auto">
-                <ChessBoard />
+        <ImagesProvider imgSrcs={uniquePieceImgSrcs}>
+            <div className="min-h-dvh bg-zinc-800 text-center">
+                <div className="max-w-4xl p-16 m-auto">
+                    <ChessBoard />
+                </div>
             </div>
-        </div>
+        </ImagesProvider>
     );
 }
 
