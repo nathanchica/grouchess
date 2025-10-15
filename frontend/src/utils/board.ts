@@ -35,3 +35,13 @@ export function getKingIndices(board: ChessBoardType): Record<PieceColor, number
         black: board.findIndex((alias) => alias === 'k'),
     };
 }
+
+export type BoardIndexToGlowingSquares = Record<number, GlowingSquare[]>;
+export function groupGlowingSquaresByIndex(glowingSquares: GlowingSquare[]): BoardIndexToGlowingSquares {
+    return glowingSquares.reduce((result, glowingSquare) => {
+        const { index } = glowingSquare;
+        result[index] ??= [];
+        result[index].push(glowingSquare);
+        return result;
+    }, {} as BoardIndexToGlowingSquares);
+}

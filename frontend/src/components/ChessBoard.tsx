@@ -8,6 +8,7 @@ import {
     isRowColInBounds,
     getKingIndices,
     NUM_COLS,
+    groupGlowingSquaresByIndex,
     type GlowingSquare,
     type RowCol,
 } from '../utils/board';
@@ -80,7 +81,7 @@ function ChessBoard() {
     }, [timelineVersion]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
-    const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquares } = useMemo(() => {
+    const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquaresByIndex } = useMemo(() => {
         const previousMoves: GlowingSquare[] = previousMoveIndices.map((index) => ({
             index,
             type: 'previous-move' as const,
@@ -94,35 +95,36 @@ function ChessBoard() {
                 ? [{ index: whiteKingIndex, type: 'check' as const }]
                 : []),
         ];
-        const glowingSquares: GlowingSquare[] = [...previousMoves, ...kingChecks];
+        let glowingSquares: GlowingSquare[] = [...previousMoves, ...kingChecks];
 
         if (selectedIndex === null) {
             return {
                 selectedPiece: null,
                 possibleMoveIndicesForSelectedPiece: [] as number[],
-                glowingSquares,
+                glowingSquaresByIndex: groupGlowingSquaresByIndex(glowingSquares),
             };
         }
 
         const selectedPiece = getPiece(board[selectedIndex] as PieceShortAlias);
         const possibleMoveIndicesForSelectedPiece = computePossibleMovesForIndex(selectedIndex, board, castleMetadata);
+        glowingSquares = [
+            ...glowingSquares,
+            ...possibleMoveIndicesForSelectedPiece.map((index) => {
+                const pieceAliasAtIndex = board[index];
+                return {
+                    index,
+                    type:
+                        pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== (selectedPiece as Piece).color
+                            ? ('possible-capture' as const)
+                            : ('possible-move' as const),
+                };
+            }),
+        ];
 
         return {
             selectedPiece,
             possibleMoveIndicesForSelectedPiece,
-            glowingSquares: [
-                ...glowingSquares,
-                ...possibleMoveIndicesForSelectedPiece.map((index) => {
-                    const pieceAliasAtIndex = board[index];
-                    return {
-                        index,
-                        type:
-                            pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== (selectedPiece as Piece).color
-                                ? ('possible-capture' as const)
-                                : ('possible-move' as const),
-                    };
-                }),
-            ],
+            glowingSquaresByIndex: groupGlowingSquaresByIndex(glowingSquares),
         };
     }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
 
@@ -192,9 +194,8 @@ function ChessBoard() {
             }}
         >
             {board.map((pieceAlias, index) => {
-                const glowTypesForSquare = glowingSquares
-                    .filter(({ index: glowingIndex }) => glowingIndex === index)
-                    .map(({ type }) => type);
+                const glowingSquares = glowingSquaresByIndex[index] ?? [];
+                const glowTypesForSquare = glowingSquares.map(({ type }) => type);
                 const isSelected = index === selectedIndex;
 
                 let content;

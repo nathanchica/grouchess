@@ -171,9 +171,7 @@ export const getPiece = (key: PieceAlias | PieceShortAlias): Piece => aliasOrSho
 
 export const uniquePieceImgSrcs = Array.from(new Set(Object.values(aliasToPieceData).map(({ imgSrc }) => imgSrc)));
 
-export function getColorFromAlias(alias: PieceAlias | PieceShortAlias): PieceColor {
-    if (alias.includes('black')) return 'black';
-    if (alias.includes('white')) return 'white';
+export function getColorFromAlias(alias: PieceShortAlias): PieceColor {
     return alias === alias.toUpperCase() && alias !== alias.toLowerCase() ? 'white' : 'black';
 }
 
