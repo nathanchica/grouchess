@@ -176,3 +176,7 @@ export function getColorFromAlias(alias: PieceAlias | PieceShortAlias): PieceCol
     if (alias.includes('white')) return 'white';
     return alias === alias.toUpperCase() && alias !== alias.toLowerCase() ? 'white' : 'black';
 }
+
+export function getEnemyColor(color: PieceColor): PieceColor {
+    return color === 'white' ? 'black' : 'white';
+}

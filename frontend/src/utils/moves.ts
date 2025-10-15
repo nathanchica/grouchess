@@ -1,5 +1,6 @@
+import invariant from 'tiny-invariant';
 import { indexToRowCol, isRowColInBounds, rowColToIndex, getKingIndices, NUM_ROWS, type ChessBoardType } from './board';
-import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getPiece } from './pieces';
+import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getEnemyColor, getPiece } from './pieces';
 import type { Piece, PieceColor, PieceShortAlias } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
@@ -137,7 +138,7 @@ function computeCastlingPrivilege(
     castleMetadata: CastleMetadata
 ): CastlePrivilege {
     const isWhite = color === 'white';
-    const enemyColor = isWhite ? 'black' : 'white';
+    const enemyColor = getEnemyColor(color);
 
     const {
         whiteKingHasMoved,
@@ -192,6 +193,57 @@ function computeCastlingPrivilege(
         canShortCastle: shortRookHasNotMoved && shortRookIsInStartIndex && shortCastleIndicesAreValid,
         canLongCastle: longRookHasNotMoved && longRookIsInStartIndex && longCastleIndicesAreValid,
     };
+}
+
+export function computeNextChessBoardFromMove(prevIndex: number, nextIndex: number, board: ChessBoardType) {
+    const pieceAlias = board[prevIndex];
+    invariant(pieceAlias, 'Called computeNextChessBoardFromMove with prevIndex being empty.');
+
+    const { shortAlias, type, color } = getPiece(pieceAlias);
+    const isKing = type === 'king';
+    const isWhite = color === 'white';
+
+    const nextBoard = [...board];
+
+    // castles. privilege & legality is assumed
+    if (isKing) {
+        // white short castle
+        if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_SHORT_CASTLE_INDEX) {
+            nextBoard[WHITE_SHORT_ROOK_START_INDEX] = undefined;
+            nextBoard[WHITE_SHORT_ROOK_END_INDEX] = 'R';
+        }
+        // black short castle
+        else if (!isWhite && prevIndex === BLACK_KING_START_INDEX && nextIndex === BLACK_KING_SHORT_CASTLE_INDEX) {
+            nextBoard[BLACK_SHORT_ROOK_START_INDEX] = undefined;
+            nextBoard[BLACK_SHORT_ROOK_END_INDEX] = 'r';
+        }
+        // white long castle
+        else if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_LONG_CASTLE_INDEX) {
+            nextBoard[WHITE_LONG_ROOK_START_INDEX] = undefined;
+            nextBoard[WHITE_LONG_ROOK_END_INDEX] = 'R';
+        }
+        // black long castle
+        else if (!isWhite && prevIndex === BLACK_KING_START_INDEX && nextIndex === BLACK_KING_LONG_CASTLE_INDEX) {
+            nextBoard[BLACK_LONG_ROOK_START_INDEX] = undefined;
+            nextBoard[BLACK_LONG_ROOK_END_INDEX] = 'r';
+        }
+    }
+
+    nextBoard[prevIndex] = undefined;
+    nextBoard[nextIndex] = shortAlias;
+    return nextBoard;
+}
+
+export function isKingInCheckAfterMove(
+    prevIndex: number,
+    nextIndex: number,
+    board: ChessBoardType,
+    kingColor: PieceColor
+) {
+    const nextBoard = computeNextChessBoardFromMove(prevIndex, nextIndex, board);
+    const kingIndex = getKingIndices(nextBoard)[kingColor];
+    const enemyColor = getEnemyColor(kingColor);
+    return isSquareAttacked(nextBoard, kingIndex, enemyColor);
 }
 
 export function computePossibleMovesForIndex(
@@ -259,14 +311,17 @@ export function computePossibleMovesForIndex(
                 rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
             }
         }
-    } else if (pieceType === 'king') {
-        const deltas: RowColDeltas = [...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS];
-        const { canShortCastle, canLongCastle } = computeCastlingPrivilege(color, board, castleMetadata);
-        if (canShortCastle) {
-            possibleMoveIndices.push(isWhite ? WHITE_KING_SHORT_CASTLE_INDEX : BLACK_KING_SHORT_CASTLE_INDEX);
-        }
-        if (canLongCastle) {
-            possibleMoveIndices.push(isWhite ? WHITE_KING_LONG_CASTLE_INDEX : BLACK_KING_LONG_CASTLE_INDEX);
+    } else if (pieceType === 'king' || pieceType === 'knight') {
+        let deltas: RowColDeltas = KNIGHT_DELTAS;
+        if (pieceType === 'king') {
+            deltas = [...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS];
+            const { canShortCastle, canLongCastle } = computeCastlingPrivilege(color, board, castleMetadata);
+            if (canShortCastle) {
+                possibleMoveIndices.push(isWhite ? WHITE_KING_SHORT_CASTLE_INDEX : BLACK_KING_SHORT_CASTLE_INDEX);
+            }
+            if (canLongCastle) {
+                possibleMoveIndices.push(isWhite ? WHITE_KING_LONG_CASTLE_INDEX : BLACK_KING_LONG_CASTLE_INDEX);
+            }
         }
         for (const [rowDelta, colDelta] of deltas) {
             const rowCol = { row: row + rowDelta, col: col + colDelta };
@@ -275,65 +330,16 @@ export function computePossibleMovesForIndex(
             const pieceAliasAtIndex = board[index];
             const isEmpty = pieceAliasAtIndex === undefined;
             const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
-            // TODO: check if enemy piece or square is protected
-            if (isEmpty || isEnemyPiece) {
-                possibleMoveIndices.push(index);
-            }
-        }
-    } else if (pieceType === 'knight') {
-        for (const [rowDelta, colDelta] of KNIGHT_DELTAS) {
-            const rowCol = { row: row + rowDelta, col: col + colDelta };
-            if (!isRowColInBounds(rowCol)) continue;
-            const index = rowColToIndex(rowCol);
-            const pieceAliasAtIndex = board[index];
-            const isEmpty = pieceAliasAtIndex === undefined;
-            const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
             if (isEmpty || isEnemyPiece) {
                 possibleMoveIndices.push(index);
             }
         }
     }
+
+    const startIndex = targetIndex;
+    possibleMoveIndices = possibleMoveIndices.filter(
+        (endIndex) => !isKingInCheckAfterMove(startIndex, endIndex, board, color)
+    );
 
     return possibleMoveIndices;
-}
-
-export function computeNextChessBoardFromMove(
-    piece: Piece,
-    prevIndex: number,
-    nextIndex: number,
-    board: ChessBoardType
-) {
-    const { shortAlias, type, color } = piece;
-    const isKing = type === 'king';
-    const isWhite = color === 'white';
-
-    const nextBoard = [...board];
-
-    // castles. privilege & legality is assumed
-    if (isKing) {
-        // white short castle
-        if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_SHORT_CASTLE_INDEX) {
-            nextBoard[WHITE_SHORT_ROOK_START_INDEX] = undefined;
-            nextBoard[WHITE_SHORT_ROOK_END_INDEX] = 'R';
-        }
-        // black short castle
-        else if (!isWhite && prevIndex === BLACK_KING_START_INDEX && nextIndex === BLACK_KING_SHORT_CASTLE_INDEX) {
-            nextBoard[BLACK_SHORT_ROOK_START_INDEX] = undefined;
-            nextBoard[BLACK_SHORT_ROOK_END_INDEX] = 'r';
-        }
-        // white long castle
-        else if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_LONG_CASTLE_INDEX) {
-            nextBoard[WHITE_LONG_ROOK_START_INDEX] = undefined;
-            nextBoard[WHITE_LONG_ROOK_END_INDEX] = 'R';
-        }
-        // black long castle
-        else if (!isWhite && prevIndex === BLACK_KING_START_INDEX && nextIndex === BLACK_KING_LONG_CASTLE_INDEX) {
-            nextBoard[BLACK_LONG_ROOK_START_INDEX] = undefined;
-            nextBoard[BLACK_LONG_ROOK_END_INDEX] = 'r';
-        }
-    }
-
-    nextBoard[prevIndex] = undefined;
-    nextBoard[nextIndex] = shortAlias;
-    return nextBoard;
 }

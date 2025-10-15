@@ -108,7 +108,7 @@ function reducer(state: State, action: Action): State {
             const captureProps = capturedAlias
                 ? { piece: getPiece(capturedAlias), moveIndex: moveHistory.length }
                 : null;
-            const nextBoard = computeNextChessBoardFromMove(pieceData, prevIndex, nextIndex, board);
+            const nextBoard = computeNextChessBoardFromMove(prevIndex, nextIndex, board);
 
             const nextCastleMetadata =
                 pieceData.type === 'king' || pieceData.type === 'rook'
