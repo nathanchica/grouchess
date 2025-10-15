@@ -49,7 +49,8 @@ const WHITE_SHORT_ROOK_END_INDEX = 61;
 const WHITE_LONG_ROOK_START_INDEX = 56;
 const WHITE_LONG_ROOK_END_INDEX = 59;
 const WHITE_SHORT_CASTLE_INDICES = [61, 62];
-const WHITE_LONG_CASTLE_INDICES = [57, 58, 59];
+const WHITE_LONG_CASTLE_EMPTY_INDICES = [57, 58, 59];
+const WHITE_LONG_CASTLE_SAFE_INDICES = [58, 59];
 
 const BLACK_KING_SHORT_CASTLE_INDEX = 6;
 const BLACK_KING_LONG_CASTLE_INDEX = 2;
@@ -58,7 +59,8 @@ const BLACK_SHORT_ROOK_END_INDEX = 5;
 const BLACK_LONG_ROOK_START_INDEX = 0;
 const BLACK_LONG_ROOK_END_INDEX = 3;
 const BLACK_SHORT_CASTLE_INDICES = [5, 6];
-const BLACK_LONG_CASTLE_INDICES = [1, 2, 3];
+const BLACK_LONG_CASTLE_EMPTY_INDICES = [1, 2, 3];
+const BLACK_LONG_CASTLE_SAFE_INDICES = [2, 3];
 
 export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
     const { row, col } = indexToRowCol(squareIndex);
@@ -166,18 +168,22 @@ function computeCastlingPrivilege(
     const kingIsInCheck = isSquareAttacked(board, kingIndex, enemyColor);
     if (kingIsInCheck) return result;
 
-    const areIndicesAllEmptyAndNotAttacked = (indices: number[]) =>
-        indices.every((index) => {
-            const isEmpty = board[index] === undefined;
-            const isAttacked = isSquareAttacked(board, index, enemyColor);
-            return isEmpty && !isAttacked;
-        });
+    const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
+    const areIndicesAllSafe = (indices: number[]) =>
+        indices.every((index) => !isSquareAttacked(board, index, enemyColor));
 
     const shortCastleIndices = isWhite ? WHITE_SHORT_CASTLE_INDICES : BLACK_SHORT_CASTLE_INDICES;
-    const longCastleIndices = isWhite ? WHITE_LONG_CASTLE_INDICES : BLACK_LONG_CASTLE_INDICES;
+    const longCastleEmptyIndices = isWhite ? WHITE_LONG_CASTLE_EMPTY_INDICES : BLACK_LONG_CASTLE_EMPTY_INDICES;
+    const longCastleSafeIndices = isWhite ? WHITE_LONG_CASTLE_SAFE_INDICES : BLACK_LONG_CASTLE_SAFE_INDICES;
 
-    const shortCastleIndicesAreValid = areIndicesAllEmptyAndNotAttacked(shortCastleIndices);
-    const longCastleIndicesAreValid = areIndicesAllEmptyAndNotAttacked(longCastleIndices);
+    const shortCastleIndicesAreEmpty = areIndicesAllEmpty(shortCastleIndices);
+    const longCastleIndicesAreEmpty = areIndicesAllEmpty(longCastleEmptyIndices);
+
+    const shortCastleIndicesAreSafe = areIndicesAllSafe(shortCastleIndices);
+    const longCastleIndicesAreSafe = areIndicesAllSafe(longCastleSafeIndices);
+
+    const shortCastleIndicesAreValid = shortCastleIndicesAreEmpty && shortCastleIndicesAreSafe;
+    const longCastleIndicesAreValid = longCastleIndicesAreEmpty && longCastleIndicesAreSafe;
 
     const shortRookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
     const longRookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
