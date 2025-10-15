@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 
-import { indexToRowCol, type GlowingSquare } from '../utils/board';
+import { indexToRowCol, type GlowingSquareType } from '../utils/board';
 
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
 
 type Props = {
     index: number;
-    glowTypes: Array<GlowingSquare['type']>;
+    glowTypes: Array<GlowingSquareType>;
     isSelected: boolean;
     isDraggingOver: boolean; // mouse/pointer is currently over this square while dragging
     hideContent?: boolean;
@@ -32,7 +32,7 @@ function ChessSquare({ index, glowTypes, isSelected, isDraggingOver, hideContent
         highlightClasses = '';
     } else {
         if (isCheck) {
-            backgroundClasses = isDarkSquare ? 'bg-red-700 text-white' : 'bg-red-200';
+            backgroundClasses = isDarkSquare ? 'bg-red-400' : 'bg-red-300';
         } else if (isPreviousMove) {
             backgroundClasses = isDarkSquare ? 'bg-orange-200' : 'bg-amber-100';
         }

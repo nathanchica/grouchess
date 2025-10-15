@@ -1,5 +1,5 @@
 import { indexToRowCol, isRowColInBounds, rowColToIndex, NUM_ROWS, type ChessBoardType } from './board';
-import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias } from './pieces';
+import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getPiece } from './pieces';
 import type { Piece, PieceColor, PieceShortAlias } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
@@ -134,14 +134,16 @@ function computeCastlingPrivilege(
     };
 }
 
-export function computePossibleMovesForPiece(
-    piece: Piece,
-    currIndex: number,
+export function computePossibleMovesForIndex(
+    targetIndex: number,
     board: ChessBoardType,
     castleMetadata: CastleMetadata
 ): number[] {
-    const { row, col } = indexToRowCol(currIndex);
-    const { type: pieceType, color } = piece;
+    const pieceAlias = board[targetIndex];
+    if (!pieceAlias) return [];
+
+    const { type: pieceType, color } = getPiece(pieceAlias);
+    const { row, col } = indexToRowCol(targetIndex);
     const isWhite = color === 'white';
 
     let possibleMoveIndices: number[] = [];
@@ -200,7 +202,6 @@ export function computePossibleMovesForPiece(
     } else if (pieceType === 'king') {
         const deltas: RowColDeltas = [...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS];
         const { canShortCastle, canLongCastle } = computeCastlingPrivilege(color, board, castleMetadata);
-
         if (canShortCastle) {
             possibleMoveIndices.push(isWhite ? WHITE_KING_SHORT_CASTLE_INDEX : BLACK_KING_SHORT_CASTLE_INDEX);
         }
@@ -234,6 +235,58 @@ export function computePossibleMovesForPiece(
     }
 
     return possibleMoveIndices;
+}
+
+export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
+    const { row, col } = indexToRowCol(squareIndex);
+
+    const isEnemy = (alias: PieceShortAlias | undefined) =>
+        Boolean(alias) && getColorFromAlias(alias as PieceShortAlias) === byColor;
+    const aliasLower = (alias: PieceShortAlias | undefined) => (alias ? alias.toLowerCase() : undefined);
+    const pieceIsAttacker = (alias: PieceShortAlias, attackers: PieceShortAlias[]) =>
+        isEnemy(alias) && attackers.includes(aliasLower(alias) as PieceShortAlias);
+
+    const checkDeltas = (deltas: RowColDeltas, attackers: PieceShortAlias[], isRay: boolean = false): boolean => {
+        for (const [rowDelta, colDelta] of deltas) {
+            let rowCol = { row: row + rowDelta, col: col + colDelta };
+            if (isRay) {
+                while (isRowColInBounds(rowCol)) {
+                    const pieceAlias = board[rowColToIndex(rowCol)];
+                    if (pieceAlias !== undefined) {
+                        if (pieceIsAttacker(pieceAlias, attackers)) return true;
+                        break; // blocked by first piece hit
+                    }
+                    rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
+                }
+            } else {
+                if (!isRowColInBounds(rowCol)) continue;
+                const pieceAlias = board[rowColToIndex(rowCol)];
+                if (pieceAlias !== undefined && pieceIsAttacker(pieceAlias, attackers)) return true;
+            }
+        }
+
+        return false;
+    };
+
+    // direction FROM which a pawn of this color would attack the target square
+    // (i.e., the direction backwards from the target)
+    const pawnRowDelta = byColor === 'white' ? 1 : -1;
+    if (
+        checkDeltas(
+            [
+                [pawnRowDelta, -1],
+                [pawnRowDelta, 1],
+            ],
+            ['p']
+        )
+    )
+        return true;
+    if (checkDeltas(KNIGHT_DELTAS, ['n'])) return true;
+    if (checkDeltas([...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS], ['k'])) return true;
+    if (checkDeltas(DIAGONAL_DELTAS, ['b', 'q'], true)) return true;
+    if (checkDeltas(STRAIGHT_DELTAS, ['r', 'q'], true)) return true;
+
+    return false;
 }
 
 export function computeNextChessBoardFromMove(
