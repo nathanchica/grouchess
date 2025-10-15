@@ -3,10 +3,17 @@ import { useMemo, useRef, useState, useEffect, type PointerEventHandler } from '
 import ChessSquare from './ChessSquare';
 import ChessPiece from './ChessPiece';
 import GhostPiece from './GhostPiece';
-import { rowColToIndex, isRowColInBounds, NUM_COLS, type GlowingSquare, type RowCol } from '../utils/board';
+import {
+    rowColToIndex,
+    isRowColInBounds,
+    getKingIndices,
+    NUM_COLS,
+    type GlowingSquare,
+    type RowCol,
+} from '../utils/board';
 import { getPiece, getColorFromAlias } from '../utils/pieces';
 import type { Piece, PieceShortAlias } from '../utils/pieces';
-import { computePossibleMovesForPiece } from '../utils/moves';
+import { computePossibleMovesForIndex, isSquareAttacked } from '../utils/moves';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
 
@@ -50,10 +57,14 @@ function ChessBoard() {
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
+    function clearSelection() {
+        setSelectedIndex(null);
+    }
+
     function resetInteractionStates() {
         setDragOverIndex(null);
         setDrag(null);
-        setSelectedIndex(null);
+        clearSelection();
     }
 
     // Clear transient UI state whenever the game timeline resets or jumps
@@ -70,47 +81,50 @@ function ChessBoard() {
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
     const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquares } = useMemo(() => {
+        const previousMoves: GlowingSquare[] = previousMoveIndices.map((index) => ({
+            index,
+            type: 'previous-move' as const,
+        }));
+        const { white: whiteKingIndex, black: blackKingIndex } = getKingIndices(board);
+        const kingChecks: GlowingSquare[] = [
+            ...(isSquareAttacked(board, blackKingIndex, 'white')
+                ? [{ index: blackKingIndex, type: 'check' as const }]
+                : []),
+            ...(isSquareAttacked(board, whiteKingIndex, 'black')
+                ? [{ index: whiteKingIndex, type: 'check' as const }]
+                : []),
+        ];
+        const glowingSquares: GlowingSquare[] = [...previousMoves, ...kingChecks];
+
         if (selectedIndex === null) {
             return {
                 selectedPiece: null,
                 possibleMoveIndicesForSelectedPiece: [] as number[],
-                glowingSquares: previousMoveIndices.map((index) => ({
-                    index,
-                    type: 'previous-move',
-                })) as GlowingSquare[],
+                glowingSquares,
             };
         }
+
         const selectedPiece = getPiece(board[selectedIndex] as PieceShortAlias);
-        const possibleMoveIndicesForSelectedPiece = computePossibleMovesForPiece(
-            selectedPiece,
-            selectedIndex,
-            board,
-            castleMetadata
-        );
-        const glowingSquares = [
-            ...previousMoveIndices.map((index) => ({ index, type: 'previous-move' })),
-            ...possibleMoveIndicesForSelectedPiece.map((index) => {
-                const pieceAliasAtIndex = board[index];
-                return {
-                    index,
-                    type:
-                        pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== (selectedPiece as Piece).color
-                            ? 'possible-capture'
-                            : 'possible-move',
-                };
-            }),
-        ] as GlowingSquare[];
+        const possibleMoveIndicesForSelectedPiece = computePossibleMovesForIndex(selectedIndex, board, castleMetadata);
 
         return {
             selectedPiece,
             possibleMoveIndicesForSelectedPiece,
-            glowingSquares,
+            glowingSquares: [
+                ...glowingSquares,
+                ...possibleMoveIndicesForSelectedPiece.map((index) => {
+                    const pieceAliasAtIndex = board[index];
+                    return {
+                        index,
+                        type:
+                            pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== (selectedPiece as Piece).color
+                                ? ('possible-capture' as const)
+                                : ('possible-move' as const),
+                    };
+                }),
+            ],
         };
     }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
-
-    function clearSelection() {
-        setSelectedIndex(null);
-    }
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
         const isPossibleMoveSquare = possibleMoveIndicesForSelectedPiece.includes(clickedIndex);

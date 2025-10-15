@@ -1,9 +1,10 @@
-import type { PieceShortAlias } from './pieces';
+import type { PieceShortAlias, PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
+export type GlowingSquareType = 'previous-move' | 'possible-move' | 'possible-capture' | 'check';
 export type GlowingSquare = {
-    type: 'previous-move' | 'possible-move' | 'possible-capture' | 'check';
+    type: GlowingSquareType;
     index: number;
 };
 export type RowCol = { row: number; col: number };
@@ -26,4 +27,11 @@ export function rowColToIndex({ row, col }: RowCol): number {
 
 export function isRowColInBounds({ row, col }: RowCol): boolean {
     return row >= 0 && row < NUM_ROWS && col >= 0 && col < NUM_COLS;
+}
+
+export function getKingIndices(board: ChessBoardType): Record<PieceColor, number> {
+    return {
+        white: board.findIndex((alias) => alias === 'K'),
+        black: board.findIndex((alias) => alias === 'k'),
+    };
 }
