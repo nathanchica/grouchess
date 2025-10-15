@@ -1,4 +1,4 @@
-import { indexToRowCol, isRowColInBounds, rowColToIndex, NUM_ROWS, type ChessBoardType } from './board';
+import { indexToRowCol, isRowColInBounds, rowColToIndex, getKingIndices, NUM_ROWS, type ChessBoardType } from './board';
 import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getPiece } from './pieces';
 import type { Piece, PieceColor, PieceShortAlias } from './pieces';
 
@@ -59,6 +59,58 @@ const BLACK_LONG_ROOK_END_INDEX = 3;
 const BLACK_SHORT_CASTLE_INDICES = [5, 6];
 const BLACK_LONG_CASTLE_INDICES = [1, 2, 3];
 
+export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
+    const { row, col } = indexToRowCol(squareIndex);
+
+    const isEnemy = (alias: PieceShortAlias | undefined) =>
+        Boolean(alias) && getColorFromAlias(alias as PieceShortAlias) === byColor;
+    const aliasLower = (alias: PieceShortAlias | undefined) => (alias ? alias.toLowerCase() : undefined);
+    const pieceIsAttacker = (alias: PieceShortAlias, attackers: PieceShortAlias[]) =>
+        isEnemy(alias) && attackers.includes(aliasLower(alias) as PieceShortAlias);
+
+    const checkDeltas = (deltas: RowColDeltas, attackers: PieceShortAlias[], isRay: boolean = false): boolean => {
+        for (const [rowDelta, colDelta] of deltas) {
+            let rowCol = { row: row + rowDelta, col: col + colDelta };
+            if (isRay) {
+                while (isRowColInBounds(rowCol)) {
+                    const pieceAlias = board[rowColToIndex(rowCol)];
+                    if (pieceAlias !== undefined) {
+                        if (pieceIsAttacker(pieceAlias, attackers)) return true;
+                        break; // blocked by first piece hit
+                    }
+                    rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
+                }
+            } else {
+                if (!isRowColInBounds(rowCol)) continue;
+                const pieceAlias = board[rowColToIndex(rowCol)];
+                if (pieceAlias !== undefined && pieceIsAttacker(pieceAlias, attackers)) return true;
+            }
+        }
+
+        return false;
+    };
+
+    // direction FROM which a pawn of this color would attack the target square
+    // (i.e., the direction backwards from the target)
+    const pawnRowDelta = byColor === 'white' ? 1 : -1;
+    if (
+        checkDeltas(
+            [
+                [pawnRowDelta, -1],
+                [pawnRowDelta, 1],
+            ],
+            ['p']
+        )
+    )
+        return true;
+    if (checkDeltas(KNIGHT_DELTAS, ['n'])) return true;
+    if (checkDeltas([...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS], ['k'])) return true;
+    if (checkDeltas(DIAGONAL_DELTAS, ['b', 'q'], true)) return true;
+    if (checkDeltas(STRAIGHT_DELTAS, ['r', 'q'], true)) return true;
+
+    return false;
+}
+
 export function computeCastleMetadataChangesFromMove(piece: Piece, prevIndex: number): Partial<CastleMetadata> {
     const { type, color } = piece;
     const isWhite = color === 'white';
@@ -85,6 +137,8 @@ function computeCastlingPrivilege(
     castleMetadata: CastleMetadata
 ): CastlePrivilege {
     const isWhite = color === 'white';
+    const enemyColor = isWhite ? 'black' : 'white';
+
     const {
         whiteKingHasMoved,
         whiteShortRookHasMoved,
@@ -99,22 +153,30 @@ function computeCastlingPrivilege(
         canLongCastle: false,
     };
 
-    const whiteKingIsNotInStartIndex = board[WHITE_KING_START_INDEX] !== 'K';
-    const blackKingIsNotInStartIndex = board[BLACK_KING_START_INDEX] !== 'k';
+    const { white: whiteKingIndex, black: blackKingIndex } = getKingIndices(board);
+    const kingIndex = isWhite ? whiteKingIndex : blackKingIndex;
+    const kingStartIndex = isWhite ? WHITE_KING_START_INDEX : BLACK_KING_START_INDEX;
+    const kingHasMoved = isWhite ? whiteKingHasMoved : blackKingHasMoved;
 
-    const whiteKingHasMovedOrNotInStartIndex = whiteKingHasMoved || whiteKingIsNotInStartIndex;
-    const blackKingHasMovedOrNotInStartIndex = blackKingHasMoved || blackKingIsNotInStartIndex;
+    const kingNotInStartIndex = kingIndex !== kingStartIndex;
+    const kingHasMovedOrNotInStartIndex = kingHasMoved || kingNotInStartIndex;
+    if (kingHasMovedOrNotInStartIndex) return result;
 
-    if ((isWhite && whiteKingHasMovedOrNotInStartIndex) || (!isWhite && blackKingHasMovedOrNotInStartIndex))
-        return result;
+    const kingIsInCheck = isSquareAttacked(board, kingIndex, enemyColor);
+    if (kingIsInCheck) return result;
 
-    const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
+    const areIndicesAllEmptyAndNotAttacked = (indices: number[]) =>
+        indices.every((index) => {
+            const isEmpty = board[index] === undefined;
+            const isAttacked = isSquareAttacked(board, index, enemyColor);
+            return isEmpty && !isAttacked;
+        });
 
     const shortCastleIndices = isWhite ? WHITE_SHORT_CASTLE_INDICES : BLACK_SHORT_CASTLE_INDICES;
     const longCastleIndices = isWhite ? WHITE_LONG_CASTLE_INDICES : BLACK_LONG_CASTLE_INDICES;
 
-    const shortCastleIndicesAreEmpty = areIndicesAllEmpty(shortCastleIndices);
-    const longCastleIndicesAreEmpty = areIndicesAllEmpty(longCastleIndices);
+    const shortCastleIndicesAreValid = areIndicesAllEmptyAndNotAttacked(shortCastleIndices);
+    const longCastleIndicesAreValid = areIndicesAllEmptyAndNotAttacked(longCastleIndices);
 
     const shortRookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
     const longRookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
@@ -126,11 +188,9 @@ function computeCastlingPrivilege(
     const shortRookHasNotMoved = isWhite ? !whiteShortRookHasMoved : !blackShortRookHasMoved;
     const longRookHasNotMoved = isWhite ? !whiteLongRookHasMoved : !blackLongRookHasMoved;
 
-    // TODO: check if opponent has pieces that can move into castle indices
-
     return {
-        canShortCastle: shortRookHasNotMoved && shortRookIsInStartIndex && shortCastleIndicesAreEmpty,
-        canLongCastle: longRookHasNotMoved && longRookIsInStartIndex && longCastleIndicesAreEmpty,
+        canShortCastle: shortRookHasNotMoved && shortRookIsInStartIndex && shortCastleIndicesAreValid,
+        canLongCastle: longRookHasNotMoved && longRookIsInStartIndex && longCastleIndicesAreValid,
     };
 }
 
@@ -235,58 +295,6 @@ export function computePossibleMovesForIndex(
     }
 
     return possibleMoveIndices;
-}
-
-export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
-    const { row, col } = indexToRowCol(squareIndex);
-
-    const isEnemy = (alias: PieceShortAlias | undefined) =>
-        Boolean(alias) && getColorFromAlias(alias as PieceShortAlias) === byColor;
-    const aliasLower = (alias: PieceShortAlias | undefined) => (alias ? alias.toLowerCase() : undefined);
-    const pieceIsAttacker = (alias: PieceShortAlias, attackers: PieceShortAlias[]) =>
-        isEnemy(alias) && attackers.includes(aliasLower(alias) as PieceShortAlias);
-
-    const checkDeltas = (deltas: RowColDeltas, attackers: PieceShortAlias[], isRay: boolean = false): boolean => {
-        for (const [rowDelta, colDelta] of deltas) {
-            let rowCol = { row: row + rowDelta, col: col + colDelta };
-            if (isRay) {
-                while (isRowColInBounds(rowCol)) {
-                    const pieceAlias = board[rowColToIndex(rowCol)];
-                    if (pieceAlias !== undefined) {
-                        if (pieceIsAttacker(pieceAlias, attackers)) return true;
-                        break; // blocked by first piece hit
-                    }
-                    rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
-                }
-            } else {
-                if (!isRowColInBounds(rowCol)) continue;
-                const pieceAlias = board[rowColToIndex(rowCol)];
-                if (pieceAlias !== undefined && pieceIsAttacker(pieceAlias, attackers)) return true;
-            }
-        }
-
-        return false;
-    };
-
-    // direction FROM which a pawn of this color would attack the target square
-    // (i.e., the direction backwards from the target)
-    const pawnRowDelta = byColor === 'white' ? 1 : -1;
-    if (
-        checkDeltas(
-            [
-                [pawnRowDelta, -1],
-                [pawnRowDelta, 1],
-            ],
-            ['p']
-        )
-    )
-        return true;
-    if (checkDeltas(KNIGHT_DELTAS, ['n'])) return true;
-    if (checkDeltas([...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS], ['k'])) return true;
-    if (checkDeltas(DIAGONAL_DELTAS, ['b', 'q'], true)) return true;
-    if (checkDeltas(STRAIGHT_DELTAS, ['r', 'q'], true)) return true;
-
-    return false;
 }
 
 export function computeNextChessBoardFromMove(
