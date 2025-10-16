@@ -6,8 +6,9 @@ import {
     computeNextChessBoardFromMove,
     computeCastleMetadataChangesFromMove,
     type CastleMetadata,
+    type Move,
 } from '../utils/moves';
-import { aliasToPieceData, getPiece, type Piece, type PieceColor } from '../utils/pieces';
+import { aliasToPieceData, type Piece, type PieceColor } from '../utils/pieces';
 
 type CaptureProps = {
     piece: Piece;
@@ -20,15 +21,15 @@ type State = {
     playerTurn: PieceColor;
     previousMoveIndices: number[];
     captures: CaptureProps[];
-    moveHistory: number[][];
+    moveHistory: Move[];
     timelineVersion: number;
 };
 
-type Action = { type: 'reset' } | { type: 'move'; prevIndex: number; nextIndex: number };
+type Action = { type: 'reset' } | { type: 'move-piece'; move: Move };
 
 export type ChessGameContextType = State & {
     resetGame: () => void;
-    movePiece: (prevIndex: number, nextIndex: number) => void;
+    movePiece: (move: Move) => void;
 };
 
 /**
@@ -97,37 +98,38 @@ function reducer(state: State, action: Action): State {
     switch (action.type) {
         case 'reset':
             return { ...createInitialChessGame(), timelineVersion: state.timelineVersion + 1 };
-        case 'move': {
-            const { prevIndex, nextIndex } = action;
+        case 'move-piece': {
+            const { move } = action;
             const { board, castleMetadata, captures, playerTurn, moveHistory } = state;
-            const pieceAlias = board[prevIndex];
-            invariant(pieceAlias, 'Invalid use of movePiece. prevIndex does not contain a piece.');
-            const pieceData = getPiece(pieceAlias);
+            const { startIndex, endIndex, type, capturedPiece, piece } = move;
+            const { type: pieceType } = piece;
 
-            const capturedAlias = board[nextIndex];
-            const captureProps = capturedAlias
-                ? { piece: getPiece(capturedAlias), moveIndex: moveHistory.length }
-                : null;
-            const nextBoard = computeNextChessBoardFromMove(prevIndex, nextIndex, board);
+            let captureProps = null;
+            if (type === 'capture' || type === 'en-passant') {
+                invariant(capturedPiece, 'Move type:capture must have a capturedPiece');
+                captureProps = { piece: capturedPiece, moveIndex: moveHistory.length };
+            }
+
+            const nextBoard = computeNextChessBoardFromMove(board, move);
 
             const nextCastleMetadata =
-                pieceData.type === 'king' || pieceData.type === 'rook'
+                pieceType === 'king' || pieceType === 'rook'
                     ? {
                           ...castleMetadata,
-                          ...computeCastleMetadataChangesFromMove(pieceData, prevIndex),
+                          ...computeCastleMetadataChangesFromMove(move),
                       }
                     : castleMetadata;
 
             const nextCaptureProps = captureProps ? [...captures, captureProps] : captures;
 
-            const nextMoveHistory = [...moveHistory, [prevIndex, nextIndex]];
+            const nextMoveHistory = [...moveHistory, move];
 
             return {
                 ...state,
                 board: nextBoard,
                 castleMetadata: nextCastleMetadata,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
-                previousMoveIndices: [prevIndex, nextIndex],
+                previousMoveIndices: [startIndex, endIndex],
                 captures: nextCaptureProps,
                 moveHistory: nextMoveHistory,
             };
@@ -148,8 +150,8 @@ function ChessGameProvider({ children }: Props) {
         dispatch({ type: 'reset' });
     }
 
-    function movePiece(prevIndex: number, nextIndex: number) {
-        dispatch({ type: 'move', prevIndex, nextIndex });
+    function movePiece(move: Move) {
+        dispatch({ type: 'move-piece', move });
     }
 
     const contextValue = {

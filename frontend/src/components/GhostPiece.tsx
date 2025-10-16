@@ -1,5 +1,4 @@
 import type { DragProps } from './ChessBoard';
-import { getPiece } from '../utils/pieces';
 import { useImages } from '../providers/ImagesProvider';
 
 type Props = {
@@ -12,8 +11,8 @@ type Props = {
 function GhostPiece({ dragProps }: Props) {
     const { imgSrcMap } = useImages();
     const { x, y, squareSize, piece } = dragProps;
-    const pieceData = getPiece(piece);
-    const imgSrc = imgSrcMap[pieceData.imgSrc] ?? pieceData.imgSrc;
+    const { imgSrc: pieceImgSrc, altText } = piece;
+    const imgSrc = imgSrcMap[pieceImgSrc] ?? pieceImgSrc;
 
     return (
         <div className="pointer-events-none absolute inset-0 z-10">
@@ -26,7 +25,7 @@ function GhostPiece({ dragProps }: Props) {
                     height: `${squareSize}px`,
                 }}
             >
-                <img src={imgSrc} alt={pieceData.altText} className="w-full h-full drop-shadow-lg" draggable={false} />
+                <img src={imgSrc} alt={altText} className="w-full h-full drop-shadow-lg" draggable={false} />
             </div>
         </div>
     );
