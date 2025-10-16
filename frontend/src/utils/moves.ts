@@ -17,6 +17,16 @@ export type CastleMetadata = {
     blackLongRookHasMoved: boolean;
 };
 
+export type MoveType = 'standard' | 'capture' | 'short-castle' | 'long-castle' | 'en-passant';
+export type Move = {
+    startIndex: number;
+    endIndex: number;
+    type: MoveType;
+    piece: Piece;
+    capturedPiece?: Piece;
+    captureIndex?: number;
+};
+
 const DIAGONAL_DELTAS: RowColDeltas = [
     [1, 1], // down-right
     [1, -1], // down-left
@@ -70,6 +80,37 @@ const ATTACKERS: Record<string, Set<PieceType>> = {
     longStraights: new Set(['rook', 'queen']),
 };
 
+export function createMove(board: ChessBoardType, startIndex: number, endIndex: number, type: MoveType): Move {
+    const pieceAlias = board[startIndex];
+    invariant(pieceAlias, 'Called createMove with no piece in startIndex');
+    const piece = getPiece(pieceAlias);
+    const { color } = piece;
+
+    let enPassantData: Partial<Move> = {};
+    if (type === 'en-passant') {
+        const { row, col } = indexToRowCol(endIndex);
+        const captureIndex = rowColToIndex({ row: color === 'white' ? row + 1 : row - 1, col });
+        enPassantData = {
+            captureIndex,
+            capturedPiece: getPiece(board[captureIndex] as PieceShortAlias),
+        };
+    }
+
+    return {
+        startIndex,
+        endIndex,
+        type,
+        piece,
+        ...(type === 'capture'
+            ? {
+                  captureIndex: endIndex,
+                  capturedPiece: getPiece(board[endIndex] as PieceShortAlias),
+              }
+            : {}),
+        ...enPassantData,
+    };
+}
+
 export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
     const { row, col } = indexToRowCol(squareIndex);
 
@@ -117,15 +158,32 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byC
     return false;
 }
 
-export function computeCastleMetadataChangesFromMove(piece: Piece, prevIndex: number): Partial<CastleMetadata> {
+export function computeEnPassantTarget(board: ChessBoardType, previousMoveIndices: number[]): number | null {
+    if (previousMoveIndices.length !== 2) return null;
+
+    const [startIndex, endIndex] = previousMoveIndices;
+    const pieceAlias = board[endIndex];
+    if (pieceAlias === undefined) return null;
+
+    const { type, color } = getPiece(pieceAlias);
+    if (type !== 'pawn') return null;
+
+    const { row: endRow, col } = indexToRowCol(endIndex);
+    const { row: startRow } = indexToRowCol(startIndex);
+    if (Math.abs(endRow - startRow) === 2) return rowColToIndex({ row: endRow + (color === 'white' ? 1 : -1), col });
+    return null;
+}
+
+export function computeCastleMetadataChangesFromMove(move: Move): Partial<CastleMetadata> {
+    const { startIndex, piece } = move;
     const { type, color } = piece;
     const isWhite = color === 'white';
     const isKing = type === 'king';
     const isRook = type === 'rook';
-    const isWhiteShortRook = isWhite && isRook && prevIndex === WHITE_SHORT_ROOK_START_INDEX;
-    const isWhiteLongRook = isWhite && isRook && prevIndex === WHITE_LONG_ROOK_START_INDEX;
-    const isBlackShortRook = !isWhite && isRook && prevIndex === BLACK_SHORT_ROOK_START_INDEX;
-    const isBlackLongRook = !isWhite && isRook && prevIndex === BLACK_LONG_ROOK_START_INDEX;
+    const isWhiteShortRook = isWhite && isRook && startIndex === WHITE_SHORT_ROOK_START_INDEX;
+    const isWhiteLongRook = isWhite && isRook && startIndex === WHITE_LONG_ROOK_START_INDEX;
+    const isBlackShortRook = !isWhite && isRook && startIndex === BLACK_SHORT_ROOK_START_INDEX;
+    const isBlackLongRook = !isWhite && isRook && startIndex === BLACK_LONG_ROOK_START_INDEX;
 
     return {
         ...(isKing && isWhite ? { whiteKingHasMoved: true } : {}),
@@ -204,70 +262,58 @@ function computeCastlingPrivilege(
     };
 }
 
-export function computeNextChessBoardFromMove(prevIndex: number, nextIndex: number, board: ChessBoardType) {
-    const pieceAlias = board[prevIndex];
-    invariant(pieceAlias, 'Called computeNextChessBoardFromMove with prevIndex being empty.');
-
-    const { shortAlias, type, color } = getPiece(pieceAlias);
-    const isKing = type === 'king';
+export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move): ChessBoardType {
+    const { startIndex, endIndex, type, captureIndex, piece } = move;
+    const nextBoard = [...board];
+    const { shortAlias, color } = piece;
     const isWhite = color === 'white';
 
-    const nextBoard = [...board];
-
     // castles. privilege & legality is assumed
-    if (isKing) {
-        // white short castle
-        if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_SHORT_CASTLE_INDEX) {
-            nextBoard[WHITE_SHORT_ROOK_START_INDEX] = undefined;
-            nextBoard[WHITE_SHORT_ROOK_END_INDEX] = 'R';
-        }
-        // black short castle
-        else if (!isWhite && prevIndex === BLACK_KING_START_INDEX && nextIndex === BLACK_KING_SHORT_CASTLE_INDEX) {
-            nextBoard[BLACK_SHORT_ROOK_START_INDEX] = undefined;
-            nextBoard[BLACK_SHORT_ROOK_END_INDEX] = 'r';
-        }
-        // white long castle
-        else if (isWhite && prevIndex === WHITE_KING_START_INDEX && nextIndex === WHITE_KING_LONG_CASTLE_INDEX) {
-            nextBoard[WHITE_LONG_ROOK_START_INDEX] = undefined;
-            nextBoard[WHITE_LONG_ROOK_END_INDEX] = 'R';
-        }
-        // black long castle
-        else if (!isWhite && prevIndex === BLACK_KING_START_INDEX && nextIndex === BLACK_KING_LONG_CASTLE_INDEX) {
-            nextBoard[BLACK_LONG_ROOK_START_INDEX] = undefined;
-            nextBoard[BLACK_LONG_ROOK_END_INDEX] = 'r';
-        }
+    const rookAlias: PieceShortAlias = isWhite ? 'R' : 'r';
+    if (type === 'short-castle') {
+        const rookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
+        nextBoard[rookStartIndex] = undefined;
+        const rookEndIndex = isWhite ? WHITE_SHORT_ROOK_END_INDEX : BLACK_SHORT_ROOK_END_INDEX;
+        nextBoard[rookEndIndex] = rookAlias;
+    } else if (type === 'long-castle') {
+        const rookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
+        nextBoard[rookStartIndex] = undefined;
+        const rookEndIndex = isWhite ? WHITE_LONG_ROOK_END_INDEX : BLACK_LONG_ROOK_END_INDEX;
+        nextBoard[rookEndIndex] = rookAlias;
+    } else if (type === 'en-passant') {
+        invariant(captureIndex, 'Missing captureIndex for en-passant');
+        nextBoard[captureIndex] = undefined;
     }
 
-    nextBoard[prevIndex] = undefined;
-    nextBoard[nextIndex] = shortAlias;
+    nextBoard[startIndex] = undefined;
+    nextBoard[endIndex] = shortAlias;
     return nextBoard;
 }
 
-export function isKingInCheckAfterMove(
-    prevIndex: number,
-    nextIndex: number,
-    board: ChessBoardType,
-    kingColor: PieceColor
-) {
-    const nextBoard = computeNextChessBoardFromMove(prevIndex, nextIndex, board);
-    const kingIndex = getKingIndices(nextBoard)[kingColor];
-    const enemyColor = getEnemyColor(kingColor);
+export function isKingInCheckAfterMove(board: ChessBoardType, move: Move) {
+    const nextBoard = computeNextChessBoardFromMove(board, move);
+    const {
+        piece: { color },
+    } = move;
+    const kingIndex = getKingIndices(nextBoard)[color];
+    const enemyColor = getEnemyColor(color);
     return isSquareAttacked(nextBoard, kingIndex, enemyColor);
 }
 
 export function computePossibleMovesForIndex(
-    targetIndex: number,
+    startIndex: number,
     board: ChessBoardType,
-    castleMetadata: CastleMetadata
-): number[] {
-    const pieceAlias = board[targetIndex];
+    castleMetadata: CastleMetadata,
+    previousMoveIndices: number[]
+): Move[] {
+    const pieceAlias = board[startIndex];
     if (!pieceAlias) return [];
 
     const { type: pieceType, color } = getPiece(pieceAlias);
-    const { row, col } = indexToRowCol(targetIndex);
+    const { row, col } = indexToRowCol(startIndex);
     const isWhite = color === 'white';
 
-    let possibleMoveIndices: number[] = [];
+    let possibleMoves: Move[] = [];
     if (pieceType === 'pawn') {
         const hasMoved = isWhite ? row !== WHITE_PAWN_STARTING_ROW : row !== BLACK_PAWN_STARTING_ROW;
         const nextRow = isWhite ? row - 1 : row + 1;
@@ -280,20 +326,22 @@ export function computePossibleMovesForIndex(
             if (currRow < 0 || currRow >= NUM_ROWS) continue;
             const index = rowColToIndex({ row: currRow, col });
             if (board[index] !== undefined) break;
-            possibleMoveIndices.push(index);
+            possibleMoves.push(createMove(board, startIndex, index, 'standard'));
         }
 
-        // Diagonal captures (ignore en passant for now)
+        // Diagonal captures
         if (nextRow >= 0 && nextRow < NUM_ROWS) {
+            const enPassantTarget = computeEnPassantTarget(board, previousMoveIndices);
             for (const colDelta of [-1, 1]) {
                 const captureCol = col + colDelta;
                 const rowCol = { row: nextRow, col: captureCol };
                 if (!isRowColInBounds(rowCol)) continue;
-                const index = rowColToIndex(rowCol);
-                const pieceAliasAtIndex = board[index];
+                const endIndex = rowColToIndex(rowCol);
+                const pieceAliasAtIndex = board[endIndex];
                 const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
-                if (isEnemyPiece) {
-                    possibleMoveIndices.push(index);
+                const isEnPassant = endIndex === enPassantTarget;
+                if (isEnemyPiece || isEnPassant) {
+                    possibleMoves.push(createMove(board, startIndex, endIndex, isEnPassant ? 'en-passant' : 'capture'));
                 }
             }
         }
@@ -309,14 +357,14 @@ export function computePossibleMovesForIndex(
         for (const [rowDelta, colDelta] of deltas) {
             let rowCol = { row: row + rowDelta, col: col + colDelta };
             while (isRowColInBounds(rowCol)) {
-                const index = rowColToIndex(rowCol);
-                const pieceAliasAtIndex = board[index];
+                const endIndex = rowColToIndex(rowCol);
+                const pieceAliasAtIndex = board[endIndex];
                 if (pieceAliasAtIndex !== undefined) {
                     const isEnemyPiece = getColorFromAlias(pieceAliasAtIndex) !== color;
-                    if (isEnemyPiece) possibleMoveIndices.push(index);
+                    if (isEnemyPiece) possibleMoves.push(createMove(board, startIndex, endIndex, 'capture'));
                     break;
                 }
-                possibleMoveIndices.push(index);
+                possibleMoves.push(createMove(board, startIndex, endIndex, 'standard'));
                 rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
             }
         }
@@ -326,29 +374,28 @@ export function computePossibleMovesForIndex(
             deltas = [...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS];
             const { canShortCastle, canLongCastle } = computeCastlingPrivilege(color, board, castleMetadata);
             if (canShortCastle) {
-                possibleMoveIndices.push(isWhite ? WHITE_KING_SHORT_CASTLE_INDEX : BLACK_KING_SHORT_CASTLE_INDEX);
+                const endIndex = isWhite ? WHITE_KING_SHORT_CASTLE_INDEX : BLACK_KING_SHORT_CASTLE_INDEX;
+                possibleMoves.push(createMove(board, startIndex, endIndex, 'short-castle'));
             }
             if (canLongCastle) {
-                possibleMoveIndices.push(isWhite ? WHITE_KING_LONG_CASTLE_INDEX : BLACK_KING_LONG_CASTLE_INDEX);
+                const endIndex = isWhite ? WHITE_KING_LONG_CASTLE_INDEX : BLACK_KING_LONG_CASTLE_INDEX;
+                possibleMoves.push(createMove(board, startIndex, endIndex, 'long-castle'));
             }
         }
         for (const [rowDelta, colDelta] of deltas) {
             const rowCol = { row: row + rowDelta, col: col + colDelta };
             if (!isRowColInBounds(rowCol)) continue;
-            const index = rowColToIndex(rowCol);
-            const pieceAliasAtIndex = board[index];
+            const endIndex = rowColToIndex(rowCol);
+            const pieceAliasAtIndex = board[endIndex];
             const isEmpty = pieceAliasAtIndex === undefined;
             const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
             if (isEmpty || isEnemyPiece) {
-                possibleMoveIndices.push(index);
+                possibleMoves.push(createMove(board, startIndex, endIndex, isEnemyPiece ? 'capture' : 'standard'));
             }
         }
     }
 
-    const startIndex = targetIndex;
-    possibleMoveIndices = possibleMoveIndices.filter(
-        (endIndex) => !isKingInCheckAfterMove(startIndex, endIndex, board, color)
-    );
+    possibleMoves = possibleMoves.filter((move) => !isKingInCheckAfterMove(board, move));
 
-    return possibleMoveIndices;
+    return possibleMoves;
 }

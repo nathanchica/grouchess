@@ -11,16 +11,15 @@ import {
     type RowCol,
     type GlowingSquareProps,
 } from '../utils/board';
-import { getPiece } from '../utils/pieces';
-import type { PieceShortAlias } from '../utils/pieces';
-import { computePossibleMovesForIndex, isSquareAttacked } from '../utils/moves';
+import { getPiece, type Piece, type PieceShortAlias } from '../utils/pieces';
+import { computePossibleMovesForIndex, isSquareAttacked, type Move } from '../utils/moves';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
 
 export type DragProps = {
     fromIndex: number;
     pointerId: number;
-    piece: PieceShortAlias;
+    piece: Piece;
     x: number; // pointer X relative to board
     y: number; // pointer Y relative to board
     squareSize: number;
@@ -62,7 +61,7 @@ function ChessBoard() {
     }
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
-    const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
+    const { selectedPiece, indexToMoveDataForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
         let glowingSquarePropsByIndex: Record<number, GlowingSquareProps> = {};
         previousMoveIndices.forEach((index) => {
             glowingSquarePropsByIndex[index] = { isPreviousMove: true };
@@ -81,40 +80,49 @@ function ChessBoard() {
         if (selectedIndex === null) {
             return {
                 selectedPiece: null,
-                possibleMoveIndicesForSelectedPiece: [] as number[],
+                indexToMoveDataForSelectedPiece: {} as Record<number, Move>,
                 glowingSquarePropsByIndex,
             };
         }
 
         const selectedPiece = getPiece(board[selectedIndex] as PieceShortAlias);
-        const possibleMoveIndicesForSelectedPiece = computePossibleMovesForIndex(selectedIndex, board, castleMetadata);
-        possibleMoveIndicesForSelectedPiece.forEach((index) => {
-            glowingSquarePropsByIndex[index] ??= {};
-            glowingSquarePropsByIndex[index] = {
-                ...glowingSquarePropsByIndex[index],
-                // TODO: handle en passant
+        const possibleMovesForSelectedPiece = computePossibleMovesForIndex(
+            selectedIndex,
+            board,
+            castleMetadata,
+            previousMoveIndices
+        );
+        possibleMovesForSelectedPiece.forEach(({ endIndex, type }) => {
+            glowingSquarePropsByIndex[endIndex] ??= {};
+            glowingSquarePropsByIndex[endIndex] = {
+                ...glowingSquarePropsByIndex[endIndex],
                 // computePossibleMovesForIndex has determined that the piece at index, if existing, is an enemy piece
-                ...(board[index] !== undefined ? { canCapture: true } : { canMove: true }),
+                ...(type === 'capture' ? { canCapture: true } : { canMove: true }),
             };
         });
 
         glowingSquarePropsByIndex[selectedIndex] ??= {};
         glowingSquarePropsByIndex[selectedIndex].isSelected = true;
 
+        const indexToMoveDataForSelectedPiece: Record<number, Move> = {};
+        possibleMovesForSelectedPiece.forEach((move) => {
+            indexToMoveDataForSelectedPiece[move.endIndex] = move;
+        });
+
         return {
             selectedPiece,
-            possibleMoveIndicesForSelectedPiece,
+            indexToMoveDataForSelectedPiece,
             glowingSquarePropsByIndex,
         };
     }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
-        const isPossibleMoveSquare = possibleMoveIndicesForSelectedPiece.includes(clickedIndex);
+        const isPossibleMoveSquare = clickedIndex in indexToMoveDataForSelectedPiece;
         const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
         const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
 
         if (isPossibleMoveSquare && selectedPiece) {
-            movePiece(selectedIndex as number, clickedIndex);
+            movePiece(indexToMoveDataForSelectedPiece[clickedIndex]);
             clearSelection();
             return;
         }
@@ -158,9 +166,9 @@ function ChessBoard() {
                 if (
                     selectedIndex !== null &&
                     dragOverIndex !== null &&
-                    possibleMoveIndicesForSelectedPiece.includes(dragOverIndex)
+                    dragOverIndex in indexToMoveDataForSelectedPiece
                 ) {
-                    movePiece(selectedIndex, dragOverIndex);
+                    movePiece(indexToMoveDataForSelectedPiece[dragOverIndex]);
                 }
                 if (dragOverIndex !== selectedIndex) {
                     clearSelection();
@@ -176,7 +184,8 @@ function ChessBoard() {
             {board.map((pieceAlias, index) => {
                 let content;
                 if (isFinishedLoadingImages && pieceAlias) {
-                    const { shortAlias, color } = getPiece(pieceAlias);
+                    const piece = getPiece(pieceAlias);
+                    const { color } = piece;
                     const canDrag = color === playerTurn;
                     const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
                         if (!canDrag || !boardRef.current) return;
@@ -195,7 +204,7 @@ function ChessBoard() {
                         setDrag({
                             fromIndex: index,
                             pointerId: event.pointerId,
-                            piece: shortAlias,
+                            piece,
                             x,
                             y,
                             squareSize,
@@ -206,7 +215,7 @@ function ChessBoard() {
                     };
                     content = (
                         <ChessPiece
-                            piece={getPiece(pieceAlias)}
+                            piece={piece}
                             showTextDisplay={failedImageIndices.has(index)}
                             onPointerDown={onPointerDown}
                             onImgLoadError={createImgLoadError(index)}
