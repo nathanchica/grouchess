@@ -25,6 +25,8 @@ export type Piece = {
     value: 1 | 3 | 5 | 9 | 10;
 };
 
+const WHITE_PIECES = new Set<PieceShortAlias>(['P', 'R', 'N', 'B', 'K', 'Q']);
+
 export const WHITE_KING_START_INDEX = 60;
 export const BLACK_KING_START_INDEX = 4;
 export const aliasToPieceData: Record<PieceAlias, Piece> = {
@@ -171,10 +173,8 @@ export const getPiece = (key: PieceAlias | PieceShortAlias): Piece => aliasOrSho
 
 export const uniquePieceImgSrcs = Array.from(new Set(Object.values(aliasToPieceData).map(({ imgSrc }) => imgSrc)));
 
-export function getColorFromAlias(alias: PieceAlias | PieceShortAlias): PieceColor {
-    if (alias.includes('black')) return 'black';
-    if (alias.includes('white')) return 'white';
-    return alias === alias.toUpperCase() && alias !== alias.toLowerCase() ? 'white' : 'black';
+export function getColorFromAlias(alias: PieceShortAlias): PieceColor {
+    return WHITE_PIECES.has(alias) ? 'white' : 'black';
 }
 
 export function getEnemyColor(color: PieceColor): PieceColor {

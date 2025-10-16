@@ -1,27 +1,22 @@
 import type { ReactNode } from 'react';
 
-import { indexToRowCol, type GlowingSquareType } from '../utils/board';
+import { indexToRowCol, type GlowingSquareProps } from '../utils/board';
 
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
 
 type Props = {
     index: number;
-    glowTypes: Array<GlowingSquareType>;
-    isSelected: boolean;
-    isDraggingOver: boolean; // mouse/pointer is currently over this square while dragging
+    glowingSquareProps: GlowingSquareProps;
     hideContent?: boolean;
     onClick: () => void;
     children: ReactNode;
 };
 
-function ChessSquare({ index, glowTypes, isSelected, isDraggingOver, hideContent = false, onClick, children }: Props) {
+function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, children }: Props) {
     const { row, col } = indexToRowCol(index);
     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
-    const isPreviousMove = glowTypes.includes('previous-move');
-    const isPossibleCapture = glowTypes.includes('possible-capture');
-    const isPossibleMove = glowTypes.includes('possible-move');
-    const isCheck = glowTypes.includes('check');
+    const { isPreviousMove, isSelected, isDraggingOver, isCheck, canCapture, canMove } = glowingSquareProps;
 
     let backgroundClasses = isDarkSquare ? 'bg-slate-500 text-white' : 'bg-stone-50';
     let highlightClasses = '';
@@ -36,7 +31,7 @@ function ChessSquare({ index, glowTypes, isSelected, isDraggingOver, hideContent
         } else if (isPreviousMove) {
             backgroundClasses = isDarkSquare ? 'bg-orange-200' : 'bg-amber-100';
         }
-        if (isPossibleCapture) {
+        if (canCapture) {
             const borderColor = isDarkSquare ? 'border-emerald-500/90' : 'border-emerald-300/80';
             overlay = (
                 <span className="pointer-events-none absolute inset-0 transition-opacity group-hover:opacity-0">
@@ -50,7 +45,7 @@ function ChessSquare({ index, glowTypes, isSelected, isDraggingOver, hideContent
             if (isDraggingOver) {
                 backgroundClasses = isDarkSquare ? 'bg-emerald-500 text-white' : 'bg-emerald-300';
             }
-        } else if (isPossibleMove) {
+        } else if (canMove) {
             const backgroundColor = isDarkSquare ? 'after:bg-emerald-500/90' : 'after:bg-emerald-300/80';
             highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${backgroundColor} after:content-[""] hover:after:opacity-0`;
             // On hover, softly recolor the square to match the dot color and hide the dot
@@ -63,7 +58,6 @@ function ChessSquare({ index, glowTypes, isSelected, isDraggingOver, hideContent
 
     return (
         <button
-            key={`square-${index}`}
             type="button"
             onClick={onClick}
             className={`${CHESS_SQUARE_BASE_CLASSES} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}

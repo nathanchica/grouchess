@@ -1,7 +1,7 @@
 import invariant from 'tiny-invariant';
 import { indexToRowCol, isRowColInBounds, rowColToIndex, getKingIndices, NUM_ROWS, type ChessBoardType } from './board';
 import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getEnemyColor, getPiece } from './pieces';
-import type { Piece, PieceColor, PieceShortAlias } from './pieces';
+import type { Piece, PieceColor, PieceShortAlias, PieceType } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
 type CastlePrivilege = {
@@ -49,7 +49,8 @@ const WHITE_SHORT_ROOK_END_INDEX = 61;
 const WHITE_LONG_ROOK_START_INDEX = 56;
 const WHITE_LONG_ROOK_END_INDEX = 59;
 const WHITE_SHORT_CASTLE_INDICES = [61, 62];
-const WHITE_LONG_CASTLE_INDICES = [57, 58, 59];
+const WHITE_LONG_CASTLE_EMPTY_INDICES = [57, 58, 59];
+const WHITE_LONG_CASTLE_SAFE_INDICES = [58, 59];
 
 const BLACK_KING_SHORT_CASTLE_INDEX = 6;
 const BLACK_KING_LONG_CASTLE_INDEX = 2;
@@ -58,18 +59,26 @@ const BLACK_SHORT_ROOK_END_INDEX = 5;
 const BLACK_LONG_ROOK_START_INDEX = 0;
 const BLACK_LONG_ROOK_END_INDEX = 3;
 const BLACK_SHORT_CASTLE_INDICES = [5, 6];
-const BLACK_LONG_CASTLE_INDICES = [1, 2, 3];
+const BLACK_LONG_CASTLE_EMPTY_INDICES = [1, 2, 3];
+const BLACK_LONG_CASTLE_SAFE_INDICES = [2, 3];
+
+const ATTACKERS: Record<string, Set<PieceType>> = {
+    pawn: new Set(['pawn']),
+    knight: new Set(['knight']),
+    king: new Set(['king']),
+    longDiagonals: new Set(['bishop', 'queen']),
+    longStraights: new Set(['rook', 'queen']),
+};
 
 export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
     const { row, col } = indexToRowCol(squareIndex);
 
     const isEnemy = (alias: PieceShortAlias | undefined) =>
         Boolean(alias) && getColorFromAlias(alias as PieceShortAlias) === byColor;
-    const aliasLower = (alias: PieceShortAlias | undefined) => (alias ? alias.toLowerCase() : undefined);
-    const pieceIsAttacker = (alias: PieceShortAlias, attackers: PieceShortAlias[]) =>
-        isEnemy(alias) && attackers.includes(aliasLower(alias) as PieceShortAlias);
+    const pieceIsAttacker = (alias: PieceShortAlias, attackers: Set<PieceType>) =>
+        isEnemy(alias) && attackers.has(getPiece(alias).type);
 
-    const checkDeltas = (deltas: RowColDeltas, attackers: PieceShortAlias[], isRay: boolean = false): boolean => {
+    const checkDeltas = (deltas: RowColDeltas, attackers: Set<PieceType>, isRay: boolean = false): boolean => {
         for (const [rowDelta, colDelta] of deltas) {
             let rowCol = { row: row + rowDelta, col: col + colDelta };
             if (isRay) {
@@ -94,20 +103,16 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byC
     // direction FROM which a pawn of this color would attack the target square
     // (i.e., the direction backwards from the target)
     const pawnRowDelta = byColor === 'white' ? 1 : -1;
-    if (
-        checkDeltas(
-            [
-                [pawnRowDelta, -1],
-                [pawnRowDelta, 1],
-            ],
-            ['p']
-        )
-    )
-        return true;
-    if (checkDeltas(KNIGHT_DELTAS, ['n'])) return true;
-    if (checkDeltas([...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS], ['k'])) return true;
-    if (checkDeltas(DIAGONAL_DELTAS, ['b', 'q'], true)) return true;
-    if (checkDeltas(STRAIGHT_DELTAS, ['r', 'q'], true)) return true;
+    const pawnDeltas: RowColDeltas = [
+        [pawnRowDelta, -1],
+        [pawnRowDelta, 1],
+    ];
+
+    if (checkDeltas(pawnDeltas, ATTACKERS.pawn)) return true;
+    if (checkDeltas(KNIGHT_DELTAS, ATTACKERS.knight)) return true;
+    if (checkDeltas([...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS], ATTACKERS.king)) return true;
+    if (checkDeltas(DIAGONAL_DELTAS, ATTACKERS.longDiagonals, true)) return true;
+    if (checkDeltas(STRAIGHT_DELTAS, ATTACKERS.longStraights, true)) return true;
 
     return false;
 }
@@ -166,18 +171,22 @@ function computeCastlingPrivilege(
     const kingIsInCheck = isSquareAttacked(board, kingIndex, enemyColor);
     if (kingIsInCheck) return result;
 
-    const areIndicesAllEmptyAndNotAttacked = (indices: number[]) =>
-        indices.every((index) => {
-            const isEmpty = board[index] === undefined;
-            const isAttacked = isSquareAttacked(board, index, enemyColor);
-            return isEmpty && !isAttacked;
-        });
+    const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
+    const areIndicesAllSafe = (indices: number[]) =>
+        indices.every((index) => !isSquareAttacked(board, index, enemyColor));
 
     const shortCastleIndices = isWhite ? WHITE_SHORT_CASTLE_INDICES : BLACK_SHORT_CASTLE_INDICES;
-    const longCastleIndices = isWhite ? WHITE_LONG_CASTLE_INDICES : BLACK_LONG_CASTLE_INDICES;
+    const longCastleEmptyIndices = isWhite ? WHITE_LONG_CASTLE_EMPTY_INDICES : BLACK_LONG_CASTLE_EMPTY_INDICES;
+    const longCastleSafeIndices = isWhite ? WHITE_LONG_CASTLE_SAFE_INDICES : BLACK_LONG_CASTLE_SAFE_INDICES;
 
-    const shortCastleIndicesAreValid = areIndicesAllEmptyAndNotAttacked(shortCastleIndices);
-    const longCastleIndicesAreValid = areIndicesAllEmptyAndNotAttacked(longCastleIndices);
+    const shortCastleIndicesAreEmpty = areIndicesAllEmpty(shortCastleIndices);
+    const longCastleIndicesAreEmpty = areIndicesAllEmpty(longCastleEmptyIndices);
+
+    const shortCastleIndicesAreSafe = areIndicesAllSafe(shortCastleIndices);
+    const longCastleIndicesAreSafe = areIndicesAllSafe(longCastleSafeIndices);
+
+    const shortCastleIndicesAreValid = shortCastleIndicesAreEmpty && shortCastleIndicesAreSafe;
+    const longCastleIndicesAreValid = longCastleIndicesAreEmpty && longCastleIndicesAreSafe;
 
     const shortRookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
     const longRookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
