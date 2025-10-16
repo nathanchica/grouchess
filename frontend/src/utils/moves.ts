@@ -114,10 +114,8 @@ export function createMove(board: ChessBoardType, startIndex: number, endIndex: 
 export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byColor: PieceColor): boolean {
     const { row, col } = indexToRowCol(squareIndex);
 
-    const isEnemy = (alias: PieceShortAlias | undefined) =>
-        Boolean(alias) && getColorFromAlias(alias as PieceShortAlias) === byColor;
     const pieceIsAttacker = (alias: PieceShortAlias, attackers: Set<PieceType>) =>
-        isEnemy(alias) && attackers.has(getPiece(alias).type);
+        getColorFromAlias(alias) === byColor && attackers.has(getPiece(alias).type);
 
     const checkDeltas = (deltas: RowColDeltas, attackers: Set<PieceType>, isRay: boolean = false): boolean => {
         for (const [rowDelta, colDelta] of deltas) {
@@ -156,43 +154,6 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byC
     if (checkDeltas(STRAIGHT_DELTAS, ATTACKERS.longStraights, true)) return true;
 
     return false;
-}
-
-export function computeEnPassantTarget(board: ChessBoardType, previousMoveIndices: number[]): number | null {
-    if (previousMoveIndices.length !== 2) return null;
-
-    const [startIndex, endIndex] = previousMoveIndices;
-    const pieceAlias = board[endIndex];
-    if (pieceAlias === undefined) return null;
-
-    const { type, color } = getPiece(pieceAlias);
-    if (type !== 'pawn') return null;
-
-    const { row: endRow, col } = indexToRowCol(endIndex);
-    const { row: startRow } = indexToRowCol(startIndex);
-    if (Math.abs(endRow - startRow) === 2) return rowColToIndex({ row: endRow + (color === 'white' ? 1 : -1), col });
-    return null;
-}
-
-export function computeCastleMetadataChangesFromMove(move: Move): Partial<CastleMetadata> {
-    const { startIndex, piece } = move;
-    const { type, color } = piece;
-    const isWhite = color === 'white';
-    const isKing = type === 'king';
-    const isRook = type === 'rook';
-    const isWhiteShortRook = isWhite && isRook && startIndex === WHITE_SHORT_ROOK_START_INDEX;
-    const isWhiteLongRook = isWhite && isRook && startIndex === WHITE_LONG_ROOK_START_INDEX;
-    const isBlackShortRook = !isWhite && isRook && startIndex === BLACK_SHORT_ROOK_START_INDEX;
-    const isBlackLongRook = !isWhite && isRook && startIndex === BLACK_LONG_ROOK_START_INDEX;
-
-    return {
-        ...(isKing && isWhite ? { whiteKingHasMoved: true } : {}),
-        ...(isKing && !isWhite ? { blackKingHasMoved: true } : {}),
-        ...(isWhiteShortRook ? { whiteShortRookHasMoved: true } : {}),
-        ...(isWhiteLongRook ? { whiteLongRookHasMoved: true } : {}),
-        ...(isBlackShortRook ? { blackShortRookHasMoved: true } : {}),
-        ...(isBlackLongRook ? { blackLongRookHasMoved: true } : {}),
-    };
 }
 
 function computeCastlingPrivilege(
@@ -262,6 +223,27 @@ function computeCastlingPrivilege(
     };
 }
 
+export function computeCastleMetadataChangesFromMove(move: Move): Partial<CastleMetadata> {
+    const { startIndex, piece } = move;
+    const { type, color } = piece;
+    const isWhite = color === 'white';
+    const isKing = type === 'king';
+    const isRook = type === 'rook';
+    const isWhiteShortRook = isWhite && isRook && startIndex === WHITE_SHORT_ROOK_START_INDEX;
+    const isWhiteLongRook = isWhite && isRook && startIndex === WHITE_LONG_ROOK_START_INDEX;
+    const isBlackShortRook = !isWhite && isRook && startIndex === BLACK_SHORT_ROOK_START_INDEX;
+    const isBlackLongRook = !isWhite && isRook && startIndex === BLACK_LONG_ROOK_START_INDEX;
+
+    return {
+        ...(isKing && isWhite ? { whiteKingHasMoved: true } : {}),
+        ...(isKing && !isWhite ? { blackKingHasMoved: true } : {}),
+        ...(isWhiteShortRook ? { whiteShortRookHasMoved: true } : {}),
+        ...(isWhiteLongRook ? { whiteLongRookHasMoved: true } : {}),
+        ...(isBlackShortRook ? { blackShortRookHasMoved: true } : {}),
+        ...(isBlackLongRook ? { blackLongRookHasMoved: true } : {}),
+    };
+}
+
 export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move): ChessBoardType {
     const { startIndex, endIndex, type, captureIndex, piece } = move;
     const nextBoard = [...board];
@@ -290,14 +272,31 @@ export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move)
     return nextBoard;
 }
 
-export function isKingInCheckAfterMove(board: ChessBoardType, move: Move) {
+function isKingInCheckAfterMove(board: ChessBoardType, move: Move) {
     const nextBoard = computeNextChessBoardFromMove(board, move);
     const {
-        piece: { color },
+        piece: { color, type },
+        endIndex,
     } = move;
-    const kingIndex = getKingIndices(nextBoard)[color];
+    const kingIndex = type === 'king' ? endIndex : getKingIndices(nextBoard)[color];
     const enemyColor = getEnemyColor(color);
     return isSquareAttacked(nextBoard, kingIndex, enemyColor);
+}
+
+function computeEnPassantTarget(board: ChessBoardType, previousMoveIndices: number[]): number | null {
+    if (previousMoveIndices.length !== 2) return null;
+
+    const [startIndex, endIndex] = previousMoveIndices;
+    const pieceAlias = board[endIndex];
+    if (pieceAlias === undefined) return null;
+
+    const { type, color } = getPiece(pieceAlias);
+    if (type !== 'pawn') return null;
+
+    const { row: endRow, col } = indexToRowCol(endIndex);
+    const { row: startRow } = indexToRowCol(startIndex);
+    if (Math.abs(endRow - startRow) === 2) return rowColToIndex({ row: endRow + (color === 'white' ? 1 : -1), col });
+    return null;
 }
 
 export function computePossibleMovesForIndex(

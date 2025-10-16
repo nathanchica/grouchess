@@ -1,3 +1,4 @@
+import invariant from 'tiny-invariant';
 import type { PieceShortAlias, PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
@@ -33,8 +34,19 @@ export function isRowColInBounds({ row, col }: RowCol): boolean {
 }
 
 export function getKingIndices(board: ChessBoardType): Record<PieceColor, number> {
+    let white: number = -1;
+    let black: number = -1;
+    let index = 0;
+    while ((white === -1 || black === -1) && index < NUM_SQUARES) {
+        const pieceAlias = board[index];
+        if (pieceAlias === 'K') white = index;
+        if (pieceAlias === 'k') black = index;
+        index++;
+    }
+    invariant(white > -1, 'White king not found');
+    invariant(black > -1, 'Black king not found');
     return {
-        white: board.findIndex((alias) => alias === 'K'),
-        black: board.findIndex((alias) => alias === 'k'),
+        white,
+        black,
     };
 }
