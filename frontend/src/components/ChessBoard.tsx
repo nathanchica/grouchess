@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect, type PointerEventHandler } from 'react';
+import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
 
 import ChessSquare from './ChessSquare';
 import ChessPiece from './ChessPiece';
@@ -8,12 +8,11 @@ import {
     isRowColInBounds,
     getKingIndices,
     NUM_COLS,
-    groupGlowingSquaresByIndex,
-    type GlowingSquare,
     type RowCol,
+    type GlowingSquareProps,
 } from '../utils/board';
-import { getPiece, getColorFromAlias } from '../utils/pieces';
-import type { Piece, PieceShortAlias } from '../utils/pieces';
+import { getPiece } from '../utils/pieces';
+import type { PieceShortAlias } from '../utils/pieces';
 import { computePossibleMovesForIndex, isSquareAttacked } from '../utils/moves';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
@@ -49,7 +48,7 @@ function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
-    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece, timelineVersion } = useChessGame();
+    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece } = useChessGame();
 
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
     const boardRef = useRef<HTMLDivElement | null>(null);
@@ -62,69 +61,50 @@ function ChessBoard() {
         setSelectedIndex(null);
     }
 
-    function resetInteractionStates() {
-        setDragOverIndex(null);
-        setDrag(null);
-        clearSelection();
-    }
-
-    // Clear transient UI state whenever the game timeline resets or jumps
-    useEffect(() => {
-        if (drag && boardRef.current) {
-            try {
-                boardRef.current.releasePointerCapture(drag.pointerId);
-            } catch {
-                // ignore errors
-            }
-        }
-        resetInteractionStates(); // eslint-disable-line react-hooks/set-state-in-effect
-    }, [timelineVersion]); // eslint-disable-line react-hooks/exhaustive-deps
-
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
-    const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquaresByIndex } = useMemo(() => {
-        const previousMoves: GlowingSquare[] = previousMoveIndices.map((index) => ({
-            index,
-            type: 'previous-move' as const,
-        }));
+    const { selectedPiece, possibleMoveIndicesForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
+        let glowingSquarePropsByIndex: Record<number, GlowingSquareProps> = {};
+        previousMoveIndices.forEach((index) => {
+            glowingSquarePropsByIndex[index] = { isPreviousMove: true };
+        });
+
         const { white: whiteKingIndex, black: blackKingIndex } = getKingIndices(board);
-        const kingChecks: GlowingSquare[] = [
-            ...(isSquareAttacked(board, blackKingIndex, 'white')
-                ? [{ index: blackKingIndex, type: 'check' as const }]
-                : []),
-            ...(isSquareAttacked(board, whiteKingIndex, 'black')
-                ? [{ index: whiteKingIndex, type: 'check' as const }]
-                : []),
-        ];
-        let glowingSquares: GlowingSquare[] = [...previousMoves, ...kingChecks];
+        if (isSquareAttacked(board, blackKingIndex, 'white')) {
+            glowingSquarePropsByIndex[blackKingIndex] ??= {};
+            glowingSquarePropsByIndex[blackKingIndex].isCheck = true;
+        }
+        if (isSquareAttacked(board, whiteKingIndex, 'black')) {
+            glowingSquarePropsByIndex[whiteKingIndex] ??= {};
+            glowingSquarePropsByIndex[whiteKingIndex].isCheck = true;
+        }
 
         if (selectedIndex === null) {
             return {
                 selectedPiece: null,
                 possibleMoveIndicesForSelectedPiece: [] as number[],
-                glowingSquaresByIndex: groupGlowingSquaresByIndex(glowingSquares),
+                glowingSquarePropsByIndex,
             };
         }
 
         const selectedPiece = getPiece(board[selectedIndex] as PieceShortAlias);
         const possibleMoveIndicesForSelectedPiece = computePossibleMovesForIndex(selectedIndex, board, castleMetadata);
-        glowingSquares = [
-            ...glowingSquares,
-            ...possibleMoveIndicesForSelectedPiece.map((index) => {
-                const pieceAliasAtIndex = board[index];
-                return {
-                    index,
-                    type:
-                        pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== (selectedPiece as Piece).color
-                            ? ('possible-capture' as const)
-                            : ('possible-move' as const),
-                };
-            }),
-        ];
+        possibleMoveIndicesForSelectedPiece.forEach((index) => {
+            glowingSquarePropsByIndex[index] ??= {};
+            glowingSquarePropsByIndex[index] = {
+                ...glowingSquarePropsByIndex[index],
+                // TODO: handle en passant
+                // computePossibleMovesForIndex has determined that the piece at index, if existing, is an enemy piece
+                ...(board[index] !== undefined ? { canCapture: true } : { canMove: true }),
+            };
+        });
+
+        glowingSquarePropsByIndex[selectedIndex] ??= {};
+        glowingSquarePropsByIndex[selectedIndex].isSelected = true;
 
         return {
             selectedPiece,
             possibleMoveIndicesForSelectedPiece,
-            glowingSquaresByIndex: groupGlowingSquaresByIndex(glowingSquares),
+            glowingSquarePropsByIndex,
         };
     }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
 
@@ -194,10 +174,6 @@ function ChessBoard() {
             }}
         >
             {board.map((pieceAlias, index) => {
-                const glowingSquares = glowingSquaresByIndex[index] ?? [];
-                const glowTypesForSquare = glowingSquares.map(({ type }) => type);
-                const isSelected = index === selectedIndex;
-
                 let content;
                 if (isFinishedLoadingImages && pieceAlias) {
                     const { shortAlias, color } = getPiece(pieceAlias);
@@ -242,9 +218,10 @@ function ChessBoard() {
                     <ChessSquare
                         key={`square-${index}`}
                         index={index}
-                        glowTypes={glowTypesForSquare}
-                        isSelected={isSelected}
-                        isDraggingOver={Boolean(drag && dragOverIndex === index)}
+                        glowingSquareProps={{
+                            ...(glowingSquarePropsByIndex[index] ?? {}),
+                            isDraggingOver: Boolean(drag && dragOverIndex === index),
+                        }}
                         hideContent={Boolean(drag && drag.fromIndex === index)}
                         onClick={createClickHandler(pieceAlias, index)}
                     >

@@ -1,5 +1,5 @@
-import ChessBoard from './components/ChessBoard';
 import ChessGameProvider from './providers/ChessGameProvider';
+import MainSection from './components/MainSection';
 import InfoCard from './components/InfoCard';
 import PlayerCard from './components/PlayerCard';
 import ImagesProvider from './providers/ImagesProvider';
@@ -21,7 +21,7 @@ function App() {
                             </div>
                         </section>
                         <section className="col-span-6">
-                            <ChessBoard />
+                            <MainSection />
                         </section>
                         <InfoCard className="col-span-3 p-16">
                             <ResetButton />

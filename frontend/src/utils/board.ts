@@ -2,10 +2,13 @@ import type { PieceShortAlias, PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
-export type GlowingSquareType = 'previous-move' | 'possible-move' | 'possible-capture' | 'check';
-export type GlowingSquare = {
-    type: GlowingSquareType;
-    index: number;
+export type GlowingSquareProps = {
+    isPreviousMove?: boolean;
+    isCheck?: boolean;
+    isSelected?: boolean;
+    isDraggingOver?: boolean; // mouse/pointer is currently over this square while dragging
+    canCapture?: boolean;
+    canMove?: boolean;
 };
 export type RowCol = { row: number; col: number };
 
@@ -34,14 +37,4 @@ export function getKingIndices(board: ChessBoardType): Record<PieceColor, number
         white: board.findIndex((alias) => alias === 'K'),
         black: board.findIndex((alias) => alias === 'k'),
     };
-}
-
-export type BoardIndexToGlowingSquares = Record<number, GlowingSquare[]>;
-export function groupGlowingSquaresByIndex(glowingSquares: GlowingSquare[]): BoardIndexToGlowingSquares {
-    return glowingSquares.reduce((result, glowingSquare) => {
-        const { index } = glowingSquare;
-        result[index] ??= [];
-        result[index].push(glowingSquare);
-        return result;
-    }, {} as BoardIndexToGlowingSquares);
 }
