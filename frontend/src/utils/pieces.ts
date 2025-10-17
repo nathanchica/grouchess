@@ -25,6 +25,7 @@ export type Piece = {
     value: 1 | 3 | 5 | 9 | 10;
 };
 export type PawnPromotion = Exclude<PieceShortAlias, 'p' | 'P' | 'k' | 'K'>;
+type PieceSvgSet = 'cburnett' | 'staunty';
 
 export const PAWN_PROMOTION_OPTIONS: Record<PieceColor, PawnPromotion[]> = {
     white: ['Q', 'R', 'B', 'N'],
@@ -33,6 +34,27 @@ export const PAWN_PROMOTION_OPTIONS: Record<PieceColor, PawnPromotion[]> = {
 
 const WHITE_PIECES = new Set<PieceShortAlias>(['P', 'R', 'N', 'B', 'K', 'Q']);
 
+const PIECE_SVGS_BASE_DIR = 'pieces';
+const DEFAULT_SVG_SET: PieceSvgSet = 'staunty';
+const PIECE_ALIAS_TO_FILE_PREFIX: Record<PieceAlias, string> = {
+    black_bishop: 'bB',
+    black_knight: 'bN',
+    black_pawn: 'bP',
+    black_rook: 'bR',
+    black_queen: 'bQ',
+    black_king: 'bK',
+    white_bishop: 'wB',
+    white_knight: 'wN',
+    white_pawn: 'wP',
+    white_rook: 'wR',
+    white_queen: 'wQ',
+    white_king: 'wK',
+};
+
+function getImgSrc(pieceAlias: PieceAlias, svgSet: PieceSvgSet = DEFAULT_SVG_SET): string {
+    return `/${PIECE_SVGS_BASE_DIR}/${svgSet}/${PIECE_ALIAS_TO_FILE_PREFIX[pieceAlias]}.svg`;
+}
+
 export const WHITE_KING_START_INDEX = 60;
 export const BLACK_KING_START_INDEX = 4;
 export const aliasToPieceData: Record<PieceAlias, Piece> = {
@@ -40,7 +62,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     white_pawn: {
         alias: 'white_pawn',
         shortAlias: 'P',
-        imgSrc: '/chess/white_pawn.svg',
+        imgSrc: getImgSrc('white_pawn'),
         altText: 'White Pawn',
         startingIndices: [48, 49, 50, 51, 52, 53, 54, 55],
         color: 'white',
@@ -50,7 +72,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     white_rook: {
         alias: 'white_rook',
         shortAlias: 'R',
-        imgSrc: '/chess/white_rook.svg',
+        imgSrc: getImgSrc('white_rook'),
         altText: 'White Rook',
         startingIndices: [56, 63],
         color: 'white',
@@ -60,7 +82,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     white_knight: {
         alias: 'white_knight',
         shortAlias: 'N',
-        imgSrc: '/chess/white_knight.svg',
+        imgSrc: getImgSrc('white_knight'),
         altText: 'White Knight',
         startingIndices: [57, 62],
         color: 'white',
@@ -70,7 +92,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     white_bishop: {
         alias: 'white_bishop',
         shortAlias: 'B',
-        imgSrc: '/chess/white_bishop.svg',
+        imgSrc: getImgSrc('white_bishop'),
         altText: 'White Bishop',
         startingIndices: [58, 61],
         color: 'white',
@@ -80,7 +102,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     white_queen: {
         alias: 'white_queen',
         shortAlias: 'Q',
-        imgSrc: '/chess/white_queen.svg',
+        imgSrc: getImgSrc('white_queen'),
         altText: 'White Queen',
         startingIndices: [59],
         color: 'white',
@@ -90,7 +112,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     white_king: {
         alias: 'white_king',
         shortAlias: 'K',
-        imgSrc: '/chess/white_king.svg',
+        imgSrc: getImgSrc('white_king'),
         altText: 'White King',
         startingIndices: [WHITE_KING_START_INDEX],
         color: 'white',
@@ -102,7 +124,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     black_pawn: {
         alias: 'black_pawn',
         shortAlias: 'p',
-        imgSrc: '/chess/black_pawn.svg',
+        imgSrc: getImgSrc('black_pawn'),
         altText: 'Black Pawn',
         startingIndices: [8, 9, 10, 11, 12, 13, 14, 15],
         color: 'black',
@@ -112,7 +134,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     black_rook: {
         alias: 'black_rook',
         shortAlias: 'r',
-        imgSrc: '/chess/black_rook.svg',
+        imgSrc: getImgSrc('black_rook'),
         altText: 'Black Rook',
         startingIndices: [0, 7],
         color: 'black',
@@ -122,7 +144,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     black_knight: {
         alias: 'black_knight',
         shortAlias: 'n',
-        imgSrc: '/chess/black_knight.svg',
+        imgSrc: getImgSrc('black_knight'),
         altText: 'Black Knight',
         startingIndices: [1, 6],
         color: 'black',
@@ -132,7 +154,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     black_bishop: {
         alias: 'black_bishop',
         shortAlias: 'b',
-        imgSrc: '/chess/black_bishop.svg',
+        imgSrc: getImgSrc('black_bishop'),
         altText: 'Black Bishop',
         startingIndices: [2, 5],
         color: 'black',
@@ -142,7 +164,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     black_queen: {
         alias: 'black_queen',
         shortAlias: 'q',
-        imgSrc: '/chess/black_queen.svg',
+        imgSrc: getImgSrc('black_queen'),
         altText: 'Black Queen',
         startingIndices: [3],
         color: 'black',
@@ -152,7 +174,7 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
     black_king: {
         alias: 'black_king',
         shortAlias: 'k',
-        imgSrc: '/chess/black_king.svg',
+        imgSrc: getImgSrc('black_king'),
         altText: 'Black King',
         startingIndices: [BLACK_KING_START_INDEX],
         color: 'black',
