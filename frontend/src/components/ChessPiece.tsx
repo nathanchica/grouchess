@@ -1,7 +1,7 @@
 import type { PointerEventHandler } from 'react';
-import { type Piece } from '../utils/pieces';
 
 import { useImages } from '../providers/ImagesProvider';
+import { type Piece } from '../utils/pieces';
 
 type Props = {
     piece: Piece;

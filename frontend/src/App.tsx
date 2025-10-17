@@ -1,10 +1,9 @@
-import ChessGameProvider from './providers/ChessGameProvider';
-import MainSection from './components/MainSection';
 import InfoCard from './components/InfoCard';
+import MainSection from './components/MainSection';
 import PlayerCard from './components/PlayerCard';
-import ImagesProvider from './providers/ImagesProvider';
 import ResetButton from './components/ResetButton';
-
+import ChessGameProvider from './providers/ChessGameProvider';
+import ImagesProvider from './providers/ImagesProvider';
 import { uniquePieceImgSrcs } from './utils/pieces';
 
 function App() {

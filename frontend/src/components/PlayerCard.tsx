@@ -1,7 +1,8 @@
 import InfoCard from './InfoCard';
-import type { PieceColor } from '../utils/pieces';
-import { useImages } from '../providers/ImagesProvider';
+
 import { useChessGame } from '../providers/ChessGameProvider';
+import { useImages } from '../providers/ImagesProvider';
+import type { PieceColor } from '../utils/pieces';
 
 type Props = {
     color: PieceColor;

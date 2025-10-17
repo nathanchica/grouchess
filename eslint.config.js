@@ -3,6 +3,7 @@ import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import importPlugin from 'eslint-plugin-import';
 import prettierConfig from 'eslint-config-prettier';
 
 export default [
@@ -45,12 +46,14 @@ export default [
                 fetch: 'readonly',
                 URL: 'readonly',
                 DOMRect: 'readonly',
+                KeyboardEvent: 'readonly',
             },
         },
         plugins: {
             '@typescript-eslint': tseslint,
             react: reactPlugin,
             'react-hooks': reactHooksPlugin,
+            import: importPlugin,
         },
         rules: {
             ...tseslint.configs.recommended.rules,
@@ -59,6 +62,32 @@ export default [
             'react/react-in-jsx-scope': 'off',
             'react/prop-types': 'off',
             '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+            'import/order': [
+                'warn',
+                {
+                    groups: ['builtin', 'external', 'internal', 'sibling', 'parent', 'index'],
+                    'newlines-between': 'always',
+                    alphabetize: {
+                        order: 'asc',
+                        caseInsensitive: false,
+                    },
+                    pathGroups: [
+                        {
+                            pattern: 'react',
+                            group: 'external',
+                            position: 'before',
+                        },
+                        {
+                            pattern: 'react-dom/**',
+                            group: 'external',
+                            position: 'before',
+                        },
+                    ],
+                    pathGroupsExcludedImportTypes: ['react'],
+                },
+            ],
+            'import/no-duplicates': 'error',
+            'import/no-unused-modules': 'off',
             'no-console': ['warn', { allow: ['warn', 'error'] }],
         },
         settings: {
