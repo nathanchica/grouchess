@@ -49,7 +49,7 @@ function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
-    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece, pendingPromotion } = useChessGame();
+    const { board, castleRightsByColor, playerTurn, previousMoveIndices, movePiece, pendingPromotion } = useChessGame();
 
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
     const boardRef = useRef<HTMLDivElement | null>(null);
@@ -91,7 +91,7 @@ function ChessBoard() {
         const possibleMovesForSelectedPiece = computePossibleMovesForIndex(
             selectedIndex,
             board,
-            castleMetadata,
+            castleRightsByColor,
             previousMoveIndices
         );
         possibleMovesForSelectedPiece.forEach(({ endIndex, type }) => {
@@ -116,7 +116,7 @@ function ChessBoard() {
             indexToMoveDataForSelectedPiece,
             glowingSquarePropsByIndex,
         };
-    }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
+    }, [selectedIndex, board, castleRightsByColor, previousMoveIndices]);
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
         if (pendingPromotion) return;
