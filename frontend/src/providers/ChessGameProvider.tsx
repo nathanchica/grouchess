@@ -1,14 +1,15 @@
 import { useReducer, useContext, createContext, type ReactNode } from 'react';
+
 import invariant from 'tiny-invariant';
 
-import { NUM_SQUARES, type ChessBoardType } from '../utils/board';
+import { NUM_SQUARES, type ChessBoardType, isPromotionSquare } from '../utils/board';
 import {
     computeNextChessBoardFromMove,
     computeCastleMetadataChangesFromMove,
     type CastleMetadata,
     type Move,
 } from '../utils/moves';
-import { aliasToPieceData, type Piece, type PieceColor } from '../utils/pieces';
+import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
     piece: Piece;
@@ -23,13 +24,20 @@ type State = {
     captures: CaptureProps[];
     moveHistory: Move[];
     timelineVersion: number;
+    pendingPromotion: { move: Move; preBoard: ChessBoardType; prePreviousMoveIndices: number[] } | null;
 };
 
-type Action = { type: 'reset' } | { type: 'move-piece'; move: Move };
+type Action =
+    | { type: 'reset' }
+    | { type: 'move-piece'; move: Move }
+    | { type: 'promote-pawn'; pawnPromotion: PawnPromotion }
+    | { type: 'cancel-promotion' };
 
 export type ChessGameContextType = State & {
     resetGame: () => void;
     movePiece: (move: Move) => void;
+    promotePawn: (pawnPromotion: PawnPromotion) => void;
+    cancelPromotion: () => void;
 };
 
 /**
@@ -79,6 +87,7 @@ export function createInitialChessGame(): State {
         captures: [],
         moveHistory: [],
         timelineVersion: 0,
+        pendingPromotion: null,
     };
 }
 
@@ -86,6 +95,8 @@ const ChessGameContext = createContext<ChessGameContextType>({
     ...createInitialChessGame(),
     resetGame: () => {},
     movePiece: () => {},
+    promotePawn: () => {},
+    cancelPromotion: () => {},
 });
 
 export function useChessGame(): ChessGameContextType {
@@ -112,6 +123,17 @@ function reducer(state: State, action: Action): State {
 
             const nextBoard = computeNextChessBoardFromMove(board, move);
 
+            // If pawn reached last rank, pause for promotion selection.
+            if (pieceType === 'pawn' && isPromotionSquare(endIndex, piece.color)) {
+                return {
+                    ...state,
+                    board: nextBoard,
+                    // Do not update captures/moveHistory/playerTurn yet; finalize after promotion
+                    previousMoveIndices: [startIndex, endIndex],
+                    pendingPromotion: { move, preBoard: board, prePreviousMoveIndices: state.previousMoveIndices },
+                };
+            }
+
             const nextCastleMetadata =
                 pieceType === 'king' || pieceType === 'rook'
                     ? {
@@ -134,6 +156,47 @@ function reducer(state: State, action: Action): State {
                 moveHistory: nextMoveHistory,
             };
         }
+        case 'promote-pawn': {
+            const { pawnPromotion } = action;
+            const { pendingPromotion } = state;
+            invariant(pendingPromotion, 'No pending promotion to apply');
+
+            const { move } = pendingPromotion;
+            const { endIndex, piece, type, capturedPiece } = move;
+            invariant(piece.type === 'pawn', 'Pending promotion move must be a pawn move');
+            invariant(piece.color === getPiece(pawnPromotion).color, 'Promotion piece color must match pawn color');
+
+            const updatedBoard = [...state.board];
+            updatedBoard[endIndex] = pawnPromotion;
+
+            let captures = state.captures;
+            if (type === 'capture') {
+                invariant(capturedPiece, 'Move type:capture must have a capturedPiece');
+                captures = [...state.captures, { piece: capturedPiece, moveIndex: state.moveHistory.length }];
+            }
+
+            const moveWithPromotion: Move = { ...move, promotion: pawnPromotion };
+
+            return {
+                ...state,
+                board: updatedBoard,
+                playerTurn: state.playerTurn === 'white' ? 'black' : 'white',
+                captures,
+                moveHistory: [...state.moveHistory, moveWithPromotion],
+                pendingPromotion: null,
+            };
+        }
+        case 'cancel-promotion': {
+            const { pendingPromotion } = state;
+            invariant(pendingPromotion, 'No pending promotion to cancel');
+            const { preBoard, prePreviousMoveIndices } = pendingPromotion;
+            return {
+                ...state,
+                board: preBoard,
+                previousMoveIndices: prePreviousMoveIndices,
+                pendingPromotion: null,
+            };
+        }
         default:
             return state;
     }
@@ -154,10 +217,20 @@ function ChessGameProvider({ children }: Props) {
         dispatch({ type: 'move-piece', move });
     }
 
+    function promotePawn(pawnPromotion: PawnPromotion) {
+        dispatch({ type: 'promote-pawn', pawnPromotion });
+    }
+
+    function cancelPromotion() {
+        dispatch({ type: 'cancel-promotion' });
+    }
+
     const contextValue = {
         ...state,
         resetGame,
         movePiece,
+        promotePawn,
+        cancelPromotion,
     };
 
     return <ChessGameContext.Provider value={contextValue}>{children}</ChessGameContext.Provider>;

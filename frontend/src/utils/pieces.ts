@@ -24,6 +24,12 @@ export type Piece = {
     type: PieceType;
     value: 1 | 3 | 5 | 9 | 10;
 };
+export type PawnPromotion = Exclude<PieceShortAlias, 'p' | 'P' | 'k' | 'K'>;
+
+export const PAWN_PROMOTION_OPTIONS: Record<PieceColor, PawnPromotion[]> = {
+    white: ['Q', 'R', 'B', 'N'],
+    black: ['n', 'b', 'r', 'q'],
+};
 
 const WHITE_PIECES = new Set<PieceShortAlias>(['P', 'R', 'N', 'B', 'K', 'Q']);
 
