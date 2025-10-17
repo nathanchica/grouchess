@@ -67,8 +67,15 @@ Notes
 ## Core Components & Logic
 
 - Game state: `frontend/src/providers/ChessGameProvider.tsx`
-    - Holds `board`, `castleRightsByColor`, `playerTurn`, `moveHistory`, `previousMoveIndices`.
-    - Reducer applies a Move to produce the next board and updates castling rights.
+    - Holds:
+        - `board`
+        - `castleRightsByColor`
+        - `playerTurn`
+        - `moveHistory`
+        - `previousMoveIndices`
+        - `halfmoveClock`
+        - `fullmoveClock`
+    - Reducer applies a Move to produce the next board and updates castling rights & clocks.
 
 - Move engine: `frontend/src/utils/moves.ts`
     - `type Move` models a move (start/end/type, moving piece, optional capture info).
@@ -95,8 +102,10 @@ Notes
 - Move history display
 - Move undos
 - Game timers
+- Resign/draw offers
+- Change piece set images
+- Change board colors
 - Sounds
 - Piece sliding animations
-- Resign/draw offers
 - Backend service with Express + Socket.io for realtime play
 - Main menu to start a new game or join a game
