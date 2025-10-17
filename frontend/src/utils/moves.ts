@@ -1,7 +1,7 @@
 import invariant from 'tiny-invariant';
 
 import { indexToRowCol, isRowColInBounds, rowColToIndex, getKingIndices, NUM_ROWS, type ChessBoardType } from './board';
-import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getEnemyColor, getPiece } from './pieces';
+import { getColorFromAlias, getEnemyColor, getPiece } from './pieces';
 import type { Piece, PieceColor, PieceShortAlias, PieceType, PawnPromotion } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
@@ -160,56 +160,64 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byC
     return false;
 }
 
+export function isKingInCheck(board: ChessBoardType, color: PieceColor) {
+    const kingIndex = getKingIndices(board)[color];
+    const enemyColor = getEnemyColor(color);
+    return isSquareAttacked(board, kingIndex, enemyColor);
+}
+
 function computeCastlingLegality(
     color: PieceColor,
     board: ChessBoardType,
     castleRightsByColor: CastleRightsByColor
 ): CastleRights {
+    const rights = castleRightsByColor[color];
+
+    // return early if no rights to castle (king has moved or both rooks are captured/moved)
+    if (!rights.canShortCastle && !rights.canLongCastle) return rights;
+
     const isWhite = color === 'white';
     const enemyColor = getEnemyColor(color);
-
-    const rights = castleRightsByColor[color];
 
     let result: CastleRights = {
         canShortCastle: false,
         canLongCastle: false,
     };
 
-    const { white: whiteKingIndex, black: blackKingIndex } = getKingIndices(board);
-    const kingIndex = isWhite ? whiteKingIndex : blackKingIndex;
-    const kingStartIndex = isWhite ? WHITE_KING_START_INDEX : BLACK_KING_START_INDEX;
-
-    // King must be on its starting square and not currently in check
-    if (kingIndex !== kingStartIndex) return result;
-    if (isSquareAttacked(board, kingIndex, enemyColor)) return result;
+    if (isKingInCheck(board, color)) return result;
 
     const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
     const areIndicesAllSafe = (indices: number[]) =>
         indices.every((index) => !isSquareAttacked(board, index, enemyColor));
 
-    const shortCastleIndices = isWhite ? WHITE_SHORT_CASTLE_INDICES : BLACK_SHORT_CASTLE_INDICES;
-    const longCastleEmptyIndices = isWhite ? WHITE_LONG_CASTLE_EMPTY_INDICES : BLACK_LONG_CASTLE_EMPTY_INDICES;
-    const longCastleSafeIndices = isWhite ? WHITE_LONG_CASTLE_SAFE_INDICES : BLACK_LONG_CASTLE_SAFE_INDICES;
-
-    const shortCastleIndicesAreEmpty = areIndicesAllEmpty(shortCastleIndices);
-    const longCastleIndicesAreEmpty = areIndicesAllEmpty(longCastleEmptyIndices);
-
-    const shortCastleIndicesAreSafe = areIndicesAllSafe(shortCastleIndices);
-    const longCastleIndicesAreSafe = areIndicesAllSafe(longCastleSafeIndices);
-
-    const shortCastleIndicesAreValid = shortCastleIndicesAreEmpty && shortCastleIndicesAreSafe;
-    const longCastleIndicesAreValid = longCastleIndicesAreEmpty && longCastleIndicesAreSafe;
-
-    const shortRookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
-    const longRookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
-
     const rookAlias: PieceShortAlias = isWhite ? 'R' : 'r';
-    const shortRookIsInStartIndex = board[shortRookStartIndex] === rookAlias;
-    const longRookIsInStartIndex = board[longRookStartIndex] === rookAlias;
+
+    const checkLegality = (indicesToBeEmpty: number[], indicesToBeSafe: number[], rookStartIndex: number): boolean => {
+        return (
+            areIndicesAllEmpty(indicesToBeEmpty) &&
+            areIndicesAllSafe(indicesToBeSafe) &&
+            board[rookStartIndex] === rookAlias
+        );
+    };
+
+    let shortCastlingIsLegal = false;
+    if (rights.canShortCastle) {
+        const shortCastleIndices = isWhite ? WHITE_SHORT_CASTLE_INDICES : BLACK_SHORT_CASTLE_INDICES;
+        const shortRookStartIndex = isWhite ? WHITE_SHORT_ROOK_START_INDEX : BLACK_SHORT_ROOK_START_INDEX;
+        shortCastlingIsLegal = checkLegality(shortCastleIndices, shortCastleIndices, shortRookStartIndex);
+    }
+
+    let longCastlingIsLegal = false;
+    if (rights.canLongCastle) {
+        const longCastleEmptyIndices = isWhite ? WHITE_LONG_CASTLE_EMPTY_INDICES : BLACK_LONG_CASTLE_EMPTY_INDICES;
+        const longCastleSafeIndices = isWhite ? WHITE_LONG_CASTLE_SAFE_INDICES : BLACK_LONG_CASTLE_SAFE_INDICES;
+        const longRookStartIndex = isWhite ? WHITE_LONG_ROOK_START_INDEX : BLACK_LONG_ROOK_START_INDEX;
+        longCastlingIsLegal = checkLegality(longCastleEmptyIndices, longCastleSafeIndices, longRookStartIndex);
+    }
 
     return {
-        canShortCastle: rights.canShortCastle && shortRookIsInStartIndex && shortCastleIndicesAreValid,
-        canLongCastle: rights.canLongCastle && longRookIsInStartIndex && longCastleIndicesAreValid,
+        canShortCastle: shortCastlingIsLegal,
+        canLongCastle: longCastlingIsLegal,
     };
 }
 
@@ -274,13 +282,7 @@ export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move)
 
 function isKingInCheckAfterMove(board: ChessBoardType, move: Move) {
     const nextBoard = computeNextChessBoardFromMove(board, move);
-    const {
-        piece: { color, type },
-        endIndex,
-    } = move;
-    const kingIndex = type === 'king' ? endIndex : getKingIndices(nextBoard)[color];
-    const enemyColor = getEnemyColor(color);
-    return isSquareAttacked(nextBoard, kingIndex, enemyColor);
+    return isKingInCheck(nextBoard, move.piece.color);
 }
 
 function computeEnPassantTarget(board: ChessBoardType, previousMoveIndices: number[]): number | null {
