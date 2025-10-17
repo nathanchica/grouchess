@@ -25,6 +25,10 @@ type State = {
     moveHistory: Move[];
     timelineVersion: number;
     pendingPromotion: { move: Move; preBoard: ChessBoardType; prePreviousMoveIndices: number[] } | null;
+    // Half-move clock (plies since last pawn move or capture)
+    halfmoveClock: number;
+    // Full-move number (increments after each black move)
+    fullmoveClock: number;
 };
 
 type Action =
@@ -84,6 +88,8 @@ export function createInitialChessGame(): State {
         moveHistory: [],
         timelineVersion: 0,
         pendingPromotion: null,
+        halfmoveClock: 0,
+        fullmoveClock: 1,
     };
 }
 
@@ -136,18 +142,16 @@ function reducer(state: State, action: Action): State {
                 black: { ...castleRightsByColor.black, ...(rightsDiff.black ?? {}) },
             };
 
-            const nextCaptureProps = captureProps ? [...captures, captureProps] : captures;
-
-            const nextMoveHistory = [...moveHistory, move];
-
             return {
                 ...state,
                 board: nextBoard,
                 castleRightsByColor: nextCastleRights,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 previousMoveIndices: [startIndex, endIndex],
-                captures: nextCaptureProps,
-                moveHistory: nextMoveHistory,
+                captures: captureProps ? [...captures, captureProps] : captures,
+                moveHistory: [...moveHistory, move],
+                halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : state.halfmoveClock + 1,
+                fullmoveClock: playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
             };
         }
         case 'promote-pawn': {
@@ -178,6 +182,8 @@ function reducer(state: State, action: Action): State {
                 captures,
                 moveHistory: [...state.moveHistory, moveWithPromotion],
                 pendingPromotion: null,
+                halfmoveClock: 0, // promotion is always a pawn move
+                fullmoveClock: state.playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
             };
         }
         case 'cancel-promotion': {
