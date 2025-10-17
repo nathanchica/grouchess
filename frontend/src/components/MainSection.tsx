@@ -1,4 +1,5 @@
 import ChessBoard from './ChessBoard';
+
 import { useChessGame } from '../providers/ChessGameProvider';
 
 function MainSection() {

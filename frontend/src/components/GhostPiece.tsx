@@ -1,4 +1,5 @@
 import type { DragProps } from './ChessBoard';
+
 import { useImages } from '../providers/ImagesProvider';
 
 type Props = {
