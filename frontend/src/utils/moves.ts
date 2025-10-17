@@ -25,6 +25,9 @@ export type Move = {
     piece: Piece;
     capturedPiece?: Piece;
     captureIndex?: number;
+    // If this move results in a pawn promotion, the chosen piece short alias
+    // will be populated once the user selects it (e.g., 'Q' or 'q').
+    promotion?: PieceShortAlias;
 };
 
 const DIAGONAL_DELTAS: RowColDeltas = [

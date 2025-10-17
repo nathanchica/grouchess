@@ -15,6 +15,7 @@ import { getPiece, type Piece, type PieceShortAlias } from '../utils/pieces';
 import { computePossibleMovesForIndex, isSquareAttacked, type Move } from '../utils/moves';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
+import PawnPromotionPrompt from './PawnPromotionPrompt';
 
 export type DragProps = {
     fromIndex: number;
@@ -47,7 +48,7 @@ function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
-    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece } = useChessGame();
+    const { board, castleMetadata, playerTurn, previousMoveIndices, movePiece, pendingPromotion } = useChessGame();
 
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
     const boardRef = useRef<HTMLDivElement | null>(null);
@@ -117,6 +118,7 @@ function ChessBoard() {
     }, [selectedIndex, board, castleMetadata, previousMoveIndices]);
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
+        if (pendingPromotion) return;
         const isPossibleMoveSquare = clickedIndex in indexToMoveDataForSelectedPiece;
         const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
         const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
@@ -151,6 +153,7 @@ function ChessBoard() {
             ref={boardRef}
             className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-lg shadow-white/30"
             onPointerMove={(event) => {
+                if (pendingPromotion) return;
                 if (!drag || !boardRef.current) return;
                 if (event.pointerId !== drag.pointerId) return;
                 const rect = drag.boardRect;
@@ -161,6 +164,7 @@ function ChessBoard() {
                 setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
             }}
             onPointerUp={(event) => {
+                if (pendingPromotion) return;
                 if (!drag || event.pointerId !== drag.pointerId) return;
 
                 if (
@@ -188,6 +192,7 @@ function ChessBoard() {
                     const { color } = piece;
                     const canDrag = color === playerTurn;
                     const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
+                        if (pendingPromotion) return;
                         if (!canDrag || !boardRef.current) return;
                         event.preventDefault();
                         event.stopPropagation();
@@ -238,7 +243,15 @@ function ChessBoard() {
                     </ChessSquare>
                 );
             })}
-            {drag && <GhostPiece dragProps={drag} />}
+            {drag && !pendingPromotion && <GhostPiece dragProps={drag} />}
+            {pendingPromotion && boardRef.current && (
+                <PawnPromotionPrompt
+                    boardRect={boardRef.current.getBoundingClientRect()}
+                    promotionIndex={pendingPromotion.move.endIndex}
+                    color={pendingPromotion.move.piece.color}
+                    onDismiss={clearSelection}
+                />
+            )}
         </div>
     );
 }

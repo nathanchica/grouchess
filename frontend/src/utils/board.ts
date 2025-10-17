@@ -50,3 +50,8 @@ export function getKingIndices(board: ChessBoardType): Record<PieceColor, number
         black,
     };
 }
+
+export function isPromotionSquare(endIndex: number, color: PieceColor): boolean {
+    const { row } = indexToRowCol(endIndex);
+    return (color === 'white' && row === 0) || (color === 'black' && row === NUM_ROWS - 1);
+}
