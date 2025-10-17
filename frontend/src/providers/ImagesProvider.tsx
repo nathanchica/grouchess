@@ -37,6 +37,7 @@ function ImagesProvider({ imgSrcs, children }: Props) {
         let cancelled = false;
 
         async function preload() {
+            setIsReady(false);
             try {
                 const map = await preloadToObjectURLs(uniqueSrcs);
                 // Track created object URLs for cleanup

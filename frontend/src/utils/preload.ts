@@ -1,5 +1,8 @@
 // Utilities to preload a set of images and convert them to in-memory object URLs
 
+/**
+ * A mapping from original image source URLs to preloaded object URLs.
+ */
 export type ImgSrcMap = Record<string, string>;
 
 export async function decodeImage(src: string): Promise<void> {

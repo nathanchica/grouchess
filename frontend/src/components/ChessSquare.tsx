@@ -18,7 +18,7 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
     const { isPreviousMove, isSelected, isDraggingOver, isCheck, canCapture, canMove } = glowingSquareProps;
 
-    let backgroundClasses = isDarkSquare ? 'bg-slate-500 text-white' : 'bg-stone-50';
+    let backgroundClasses = isDarkSquare ? 'bg-slate-400 text-white' : 'bg-stone-100';
     let highlightClasses = '';
     let hoverClasses = '';
     let overlay: ReactNode | null = null;
