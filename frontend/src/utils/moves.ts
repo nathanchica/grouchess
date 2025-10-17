@@ -1,7 +1,8 @@
 import invariant from 'tiny-invariant';
+
 import { indexToRowCol, isRowColInBounds, rowColToIndex, getKingIndices, NUM_ROWS, type ChessBoardType } from './board';
 import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getEnemyColor, getPiece } from './pieces';
-import type { Piece, PieceColor, PieceShortAlias, PieceType } from './pieces';
+import type { Piece, PieceColor, PieceShortAlias, PieceType, PawnPromotion } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
 type CastlePrivilege = {
@@ -27,7 +28,7 @@ export type Move = {
     captureIndex?: number;
     // If this move results in a pawn promotion, the chosen piece short alias
     // will be populated once the user selects it (e.g., 'Q' or 'q').
-    promotion?: PieceShortAlias;
+    promotion?: PawnPromotion;
 };
 
 const DIAGONAL_DELTAS: RowColDeltas = [

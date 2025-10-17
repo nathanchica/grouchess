@@ -1,4 +1,5 @@
 import invariant from 'tiny-invariant';
+
 import type { PieceShortAlias, PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;

@@ -1,4 +1,5 @@
 import { useReducer, useContext, createContext, type ReactNode } from 'react';
+
 import invariant from 'tiny-invariant';
 
 import { NUM_SQUARES, type ChessBoardType, isPromotionSquare } from '../utils/board';
@@ -8,7 +9,7 @@ import {
     type CastleMetadata,
     type Move,
 } from '../utils/moves';
-import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion } from '../utils/pieces';
+import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
     piece: Piece;
@@ -163,12 +164,13 @@ function reducer(state: State, action: Action): State {
             const { move } = pendingPromotion;
             const { endIndex, piece, type, capturedPiece } = move;
             invariant(piece.type === 'pawn', 'Pending promotion move must be a pawn move');
+            invariant(piece.color === getPiece(pawnPromotion).color, 'Promotion piece color must match pawn color');
 
             const updatedBoard = [...state.board];
             updatedBoard[endIndex] = pawnPromotion;
 
             let captures = state.captures;
-            if (type === 'capture' || type === 'en-passant') {
+            if (type === 'capture') {
                 invariant(capturedPiece, 'Move type:capture must have a capturedPiece');
                 captures = [...state.captures, { piece: capturedPiece, moveIndex: state.moveHistory.length }];
             }

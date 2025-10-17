@@ -1,8 +1,12 @@
 import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
 
-import ChessSquare from './ChessSquare';
 import ChessPiece from './ChessPiece';
+import ChessSquare from './ChessSquare';
 import GhostPiece from './GhostPiece';
+import PawnPromotionPrompt from './PawnPromotionPrompt';
+
+import { useChessGame } from '../providers/ChessGameProvider';
+import { useImages } from '../providers/ImagesProvider';
 import {
     rowColToIndex,
     isRowColInBounds,
@@ -11,11 +15,8 @@ import {
     type RowCol,
     type GlowingSquareProps,
 } from '../utils/board';
-import { getPiece, type Piece, type PieceShortAlias } from '../utils/pieces';
 import { computePossibleMovesForIndex, isSquareAttacked, type Move } from '../utils/moves';
-import { useChessGame } from '../providers/ChessGameProvider';
-import { useImages } from '../providers/ImagesProvider';
-import PawnPromotionPrompt from './PawnPromotionPrompt';
+import { getPiece, type Piece, type PieceShortAlias } from '../utils/pieces';
 
 export type DragProps = {
     fromIndex: number;
@@ -153,8 +154,7 @@ function ChessBoard() {
             ref={boardRef}
             className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-lg shadow-white/30"
             onPointerMove={(event) => {
-                if (pendingPromotion) return;
-                if (!drag || !boardRef.current) return;
+                if (pendingPromotion || !drag || !boardRef.current) return;
                 if (event.pointerId !== drag.pointerId) return;
                 const rect = drag.boardRect;
                 const x = event.clientX - rect.left;
@@ -164,8 +164,7 @@ function ChessBoard() {
                 setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
             }}
             onPointerUp={(event) => {
-                if (pendingPromotion) return;
-                if (!drag || event.pointerId !== drag.pointerId) return;
+                if (pendingPromotion || !drag || event.pointerId !== drag.pointerId) return;
 
                 if (
                     selectedIndex !== null &&
@@ -192,8 +191,7 @@ function ChessBoard() {
                     const { color } = piece;
                     const canDrag = color === playerTurn;
                     const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
-                        if (pendingPromotion) return;
-                        if (!canDrag || !boardRef.current) return;
+                        if (pendingPromotion || !canDrag || !boardRef.current) return;
                         event.preventDefault();
                         event.stopPropagation();
                         const rect = boardRef.current.getBoundingClientRect();

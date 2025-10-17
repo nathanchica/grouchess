@@ -1,4 +1,5 @@
 import { type CSSProperties } from 'react';
+
 import { useImages } from '../providers/ImagesProvider';
 import { getPiece, type PawnPromotion } from '../utils/pieces';
 
@@ -30,6 +31,7 @@ function PromotionCard({ onSelect, options, squareSize, style }: Props) {
                     return (
                         <button
                             key={pieceAlias}
+                            type="button"
                             className="bg-zinc-800 hover:bg-zinc-700 focus:outline-none focus:bg-zinc-700 cursor-pointer"
                             style={{ width: optionSize, height: optionSize }}
                             onClick={() => onSelect(pieceAlias)}
