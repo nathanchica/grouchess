@@ -5,18 +5,11 @@ import { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX, getColorFromAlias, getE
 import type { Piece, PieceColor, PieceShortAlias, PieceType, PawnPromotion } from './pieces';
 
 type RowColDeltas = Array<[number, number]>;
-type CastlePrivilege = {
+export type CastleRights = {
     canShortCastle: boolean;
     canLongCastle: boolean;
 };
-export type CastleMetadata = {
-    whiteKingHasMoved: boolean;
-    whiteShortRookHasMoved: boolean;
-    whiteLongRookHasMoved: boolean;
-    blackKingHasMoved: boolean;
-    blackShortRookHasMoved: boolean;
-    blackLongRookHasMoved: boolean;
-};
+export type CastleRightsByColor = Record<PieceColor, CastleRights>;
 
 export type MoveType = 'standard' | 'capture' | 'short-castle' | 'long-castle' | 'en-passant';
 export type Move = {
@@ -75,6 +68,13 @@ const BLACK_LONG_ROOK_END_INDEX = 3;
 const BLACK_SHORT_CASTLE_INDICES = [5, 6];
 const BLACK_LONG_CASTLE_EMPTY_INDICES = [1, 2, 3];
 const BLACK_LONG_CASTLE_SAFE_INDICES = [2, 3];
+
+const ROOK_START_INDEX_TO_CASTLE_RIGHT: Record<number, keyof CastleRights> = {
+    [WHITE_SHORT_ROOK_START_INDEX]: 'canShortCastle',
+    [WHITE_LONG_ROOK_START_INDEX]: 'canLongCastle',
+    [BLACK_SHORT_ROOK_START_INDEX]: 'canShortCastle',
+    [BLACK_LONG_ROOK_START_INDEX]: 'canLongCastle',
+};
 
 const ATTACKERS: Record<string, Set<PieceType>> = {
     pawn: new Set(['pawn']),
@@ -160,24 +160,17 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byC
     return false;
 }
 
-function computeCastlingPrivilege(
+function computeCastlingLegality(
     color: PieceColor,
     board: ChessBoardType,
-    castleMetadata: CastleMetadata
-): CastlePrivilege {
+    castleRightsByColor: CastleRightsByColor
+): CastleRights {
     const isWhite = color === 'white';
     const enemyColor = getEnemyColor(color);
 
-    const {
-        whiteKingHasMoved,
-        whiteShortRookHasMoved,
-        whiteLongRookHasMoved,
-        blackKingHasMoved,
-        blackShortRookHasMoved,
-        blackLongRookHasMoved,
-    } = castleMetadata;
+    const rights = castleRightsByColor[color];
 
-    let result: CastlePrivilege = {
+    let result: CastleRights = {
         canShortCastle: false,
         canLongCastle: false,
     };
@@ -185,14 +178,10 @@ function computeCastlingPrivilege(
     const { white: whiteKingIndex, black: blackKingIndex } = getKingIndices(board);
     const kingIndex = isWhite ? whiteKingIndex : blackKingIndex;
     const kingStartIndex = isWhite ? WHITE_KING_START_INDEX : BLACK_KING_START_INDEX;
-    const kingHasMoved = isWhite ? whiteKingHasMoved : blackKingHasMoved;
 
-    const kingNotInStartIndex = kingIndex !== kingStartIndex;
-    const kingHasMovedOrNotInStartIndex = kingHasMoved || kingNotInStartIndex;
-    if (kingHasMovedOrNotInStartIndex) return result;
-
-    const kingIsInCheck = isSquareAttacked(board, kingIndex, enemyColor);
-    if (kingIsInCheck) return result;
+    // King must be on its starting square and not currently in check
+    if (kingIndex !== kingStartIndex) return result;
+    if (isSquareAttacked(board, kingIndex, enemyColor)) return result;
 
     const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
     const areIndicesAllSafe = (indices: number[]) =>
@@ -218,34 +207,41 @@ function computeCastlingPrivilege(
     const shortRookIsInStartIndex = board[shortRookStartIndex] === rookAlias;
     const longRookIsInStartIndex = board[longRookStartIndex] === rookAlias;
 
-    const shortRookHasNotMoved = isWhite ? !whiteShortRookHasMoved : !blackShortRookHasMoved;
-    const longRookHasNotMoved = isWhite ? !whiteLongRookHasMoved : !blackLongRookHasMoved;
-
     return {
-        canShortCastle: shortRookHasNotMoved && shortRookIsInStartIndex && shortCastleIndicesAreValid,
-        canLongCastle: longRookHasNotMoved && longRookIsInStartIndex && longCastleIndicesAreValid,
+        canShortCastle: rights.canShortCastle && shortRookIsInStartIndex && shortCastleIndicesAreValid,
+        canLongCastle: rights.canLongCastle && longRookIsInStartIndex && longCastleIndicesAreValid,
     };
 }
 
-export function computeCastleMetadataChangesFromMove(move: Move): Partial<CastleMetadata> {
-    const { startIndex, piece } = move;
-    const { type, color } = piece;
-    const isWhite = color === 'white';
-    const isKing = type === 'king';
-    const isRook = type === 'rook';
-    const isWhiteShortRook = isWhite && isRook && startIndex === WHITE_SHORT_ROOK_START_INDEX;
-    const isWhiteLongRook = isWhite && isRook && startIndex === WHITE_LONG_ROOK_START_INDEX;
-    const isBlackShortRook = !isWhite && isRook && startIndex === BLACK_SHORT_ROOK_START_INDEX;
-    const isBlackLongRook = !isWhite && isRook && startIndex === BLACK_LONG_ROOK_START_INDEX;
+type CastleRightsByColorChanges = Partial<Record<PieceColor, Partial<CastleRights>>>;
+export function computeCastleRightsChangesFromMove(move: Move): CastleRightsByColorChanges {
+    const { startIndex, piece, type, capturedPiece, captureIndex } = move;
+    const { type: pieceType, color } = piece;
 
-    return {
-        ...(isKing && isWhite ? { whiteKingHasMoved: true } : {}),
-        ...(isKing && !isWhite ? { blackKingHasMoved: true } : {}),
-        ...(isWhiteShortRook ? { whiteShortRookHasMoved: true } : {}),
-        ...(isWhiteLongRook ? { whiteLongRookHasMoved: true } : {}),
-        ...(isBlackShortRook ? { blackShortRookHasMoved: true } : {}),
-        ...(isBlackLongRook ? { blackLongRookHasMoved: true } : {}),
-    };
+    let changes: CastleRightsByColorChanges = {};
+
+    // Moving king removes both rights for that color
+    if (pieceType === 'king') {
+        changes[color] = { canShortCastle: false, canLongCastle: false };
+    }
+
+    // Moving rook from its starting square removes the corresponding right
+    let castleRight = ROOK_START_INDEX_TO_CASTLE_RIGHT[startIndex];
+    if (pieceType === 'rook' && castleRight) {
+        changes[color] = { ...(changes[color] ?? {}), [castleRight]: false };
+    }
+
+    // Capturing a rook on its starting square removes that side's right
+    if (type === 'capture' && capturedPiece && capturedPiece.type === 'rook') {
+        invariant(captureIndex !== undefined, 'Missing captureIndex for rook capture');
+        castleRight = ROOK_START_INDEX_TO_CASTLE_RIGHT[captureIndex];
+        const { color: affectedColor } = capturedPiece;
+        if (castleRight) {
+            changes[affectedColor] = { ...(changes[affectedColor] ?? {}), [castleRight]: false };
+        }
+    }
+
+    return changes;
 }
 
 export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move): ChessBoardType {
@@ -306,7 +302,7 @@ function computeEnPassantTarget(board: ChessBoardType, previousMoveIndices: numb
 export function computePossibleMovesForIndex(
     startIndex: number,
     board: ChessBoardType,
-    castleMetadata: CastleMetadata,
+    castleRightsByColor: CastleRightsByColor,
     previousMoveIndices: number[]
 ): Move[] {
     const pieceAlias = board[startIndex];
@@ -375,7 +371,7 @@ export function computePossibleMovesForIndex(
         let deltas: RowColDeltas = KNIGHT_DELTAS;
         if (pieceType === 'king') {
             deltas = [...DIAGONAL_DELTAS, ...STRAIGHT_DELTAS];
-            const { canShortCastle, canLongCastle } = computeCastlingPrivilege(color, board, castleMetadata);
+            const { canShortCastle, canLongCastle } = computeCastlingLegality(color, board, castleRightsByColor);
             if (canShortCastle) {
                 const endIndex = isWhite ? WHITE_KING_SHORT_CASTLE_INDEX : BLACK_KING_SHORT_CASTLE_INDEX;
                 possibleMoves.push(createMove(board, startIndex, endIndex, 'short-castle'));

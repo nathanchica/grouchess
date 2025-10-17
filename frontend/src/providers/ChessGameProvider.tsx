@@ -5,8 +5,8 @@ import invariant from 'tiny-invariant';
 import { NUM_SQUARES, type ChessBoardType, isPromotionSquare } from '../utils/board';
 import {
     computeNextChessBoardFromMove,
-    computeCastleMetadataChangesFromMove,
-    type CastleMetadata,
+    computeCastleRightsChangesFromMove,
+    type CastleRightsByColor,
     type Move,
 } from '../utils/moves';
 import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
@@ -18,7 +18,7 @@ type CaptureProps = {
 
 type State = {
     board: ChessBoardType;
-    castleMetadata: CastleMetadata;
+    castleRightsByColor: CastleRightsByColor;
     playerTurn: PieceColor;
     previousMoveIndices: number[];
     captures: CaptureProps[];
@@ -67,21 +67,17 @@ function createInitialBoard(): ChessBoardType {
     return board;
 }
 
-function createInitialCastleMetadata(): CastleMetadata {
+function createInitialCastleRights(): CastleRightsByColor {
     return {
-        whiteKingHasMoved: false,
-        whiteShortRookHasMoved: false,
-        whiteLongRookHasMoved: false,
-        blackKingHasMoved: false,
-        blackShortRookHasMoved: false,
-        blackLongRookHasMoved: false,
+        white: { canShortCastle: true, canLongCastle: true },
+        black: { canShortCastle: true, canLongCastle: true },
     };
 }
 
 export function createInitialChessGame(): State {
     return {
         board: createInitialBoard(),
-        castleMetadata: createInitialCastleMetadata(),
+        castleRightsByColor: createInitialCastleRights(),
         playerTurn: 'white',
         previousMoveIndices: [],
         captures: [],
@@ -111,7 +107,7 @@ function reducer(state: State, action: Action): State {
             return { ...createInitialChessGame(), timelineVersion: state.timelineVersion + 1 };
         case 'move-piece': {
             const { move } = action;
-            const { board, castleMetadata, captures, playerTurn, moveHistory } = state;
+            const { board, castleRightsByColor, captures, playerTurn, moveHistory } = state;
             const { startIndex, endIndex, type, capturedPiece, piece } = move;
             const { type: pieceType } = piece;
 
@@ -134,13 +130,11 @@ function reducer(state: State, action: Action): State {
                 };
             }
 
-            const nextCastleMetadata =
-                pieceType === 'king' || pieceType === 'rook'
-                    ? {
-                          ...castleMetadata,
-                          ...computeCastleMetadataChangesFromMove(move),
-                      }
-                    : castleMetadata;
+            const rightsDiff = computeCastleRightsChangesFromMove(move);
+            const nextCastleRights: CastleRightsByColor = {
+                white: { ...castleRightsByColor.white, ...(rightsDiff.white ?? {}) },
+                black: { ...castleRightsByColor.black, ...(rightsDiff.black ?? {}) },
+            };
 
             const nextCaptureProps = captureProps ? [...captures, captureProps] : captures;
 
@@ -149,7 +143,7 @@ function reducer(state: State, action: Action): State {
             return {
                 ...state,
                 board: nextBoard,
-                castleMetadata: nextCastleMetadata,
+                castleRightsByColor: nextCastleRights,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 previousMoveIndices: [startIndex, endIndex],
                 captures: nextCaptureProps,
