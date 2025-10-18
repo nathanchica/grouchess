@@ -2,10 +2,10 @@ import { useReducer, useContext, createContext, type ReactNode } from 'react';
 
 import invariant from 'tiny-invariant';
 
-import { NUM_SQUARES, type ChessBoardType, isPromotionSquare } from '../utils/board';
+import { computeEnPassantTargetIndex, isPromotionSquare, NUM_SQUARES, type ChessBoardType } from '../utils/board';
 import {
-    computeNextChessBoardFromMove,
     computeCastleRightsChangesFromMove,
+    computeNextChessBoardFromMove,
     isKingInCheck,
     hasAnyLegalMove,
     type CastleRightsByColor,
@@ -19,23 +19,25 @@ type CaptureProps = {
 };
 
 type GameStatus = {
-    status: 'in-progress' | 'checkmate' | 'stalemate';
+    status: 'in-progress' | 'checkmate' | 'stalemate' | '50-move-draw';
     winner?: PieceColor;
 };
 
 type State = {
     board: ChessBoardType;
-    castleRightsByColor: CastleRightsByColor;
     playerTurn: PieceColor;
+    castleRightsByColor: CastleRightsByColor;
+    // index that was skipped by a pawn that moved two squares in the previous move
+    enPassantTargetIndex: number | null;
+    // Half-move clock (plies since last pawn move or capture)
+    halfmoveClock: number;
+    // Full-move number (increments after each black move)
+    fullmoveClock: number;
     previousMoveIndices: number[];
     captures: CaptureProps[];
     moveHistory: Move[];
     timelineVersion: number;
     pendingPromotion: { move: Move; preBoard: ChessBoardType; prePreviousMoveIndices: number[] } | null;
-    // Half-move clock (plies since last pawn move or capture)
-    halfmoveClock: number;
-    // Full-move number (increments after each black move)
-    fullmoveClock: number;
     gameStatus: GameStatus;
 };
 
@@ -51,6 +53,12 @@ export type ChessGameContextType = State & {
     promotePawn: (pawnPromotion: PawnPromotion) => void;
     cancelPromotion: () => void;
 };
+
+/**
+ * fifty consecutive moves (i.e. 100 single moves) occuring without any capture or any pawn move
+ * https://www.janko.at/Retros/Glossary/FiftyMoves.htm
+ */
+const FIFTY_MOVE_RULE_HALFMOVES = 100;
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -89,15 +97,16 @@ function createInitialCastleRights(): CastleRightsByColor {
 export function createInitialChessGame(): State {
     return {
         board: createInitialBoard(),
-        castleRightsByColor: createInitialCastleRights(),
         playerTurn: 'white',
+        castleRightsByColor: createInitialCastleRights(),
+        enPassantTargetIndex: null,
+        halfmoveClock: 0,
+        fullmoveClock: 1,
         previousMoveIndices: [],
         captures: [],
         moveHistory: [],
         timelineVersion: 0,
         pendingPromotion: null,
-        halfmoveClock: 0,
-        fullmoveClock: 1,
         gameStatus: {
             status: 'in-progress',
         },
@@ -122,10 +131,11 @@ function computeGameStatusFromState({
     board,
     playerTurn,
     castleRightsByColor,
-    previousMoveIndices,
+    enPassantTargetIndex,
+    halfmoveClock,
 }: State): GameStatus {
     const isInCheck = isKingInCheck(board, playerTurn);
-    const hasNoLegalMoves = !hasAnyLegalMove(board, playerTurn, castleRightsByColor, previousMoveIndices);
+    const hasNoLegalMoves = !hasAnyLegalMove(board, playerTurn, castleRightsByColor, enPassantTargetIndex);
     if (isInCheck && hasNoLegalMoves) {
         return {
             status: 'checkmate',
@@ -133,6 +143,8 @@ function computeGameStatusFromState({
         };
     } else if (hasNoLegalMoves) {
         return { status: 'stalemate' };
+    } else if (halfmoveClock >= FIFTY_MOVE_RULE_HALFMOVES) {
+        return { status: '50-move-draw' };
     }
 
     return { status: 'in-progress' };
@@ -157,7 +169,8 @@ function reducer(state: State, action: Action): State {
             const nextBoard = computeNextChessBoardFromMove(board, move);
 
             // If pawn reached last rank, pause for promotion selection.
-            if (pieceType === 'pawn' && isPromotionSquare(endIndex, piece.color)) {
+            const isPawnMove = pieceType === 'pawn';
+            if (isPawnMove && isPromotionSquare(endIndex, playerTurn)) {
                 return {
                     ...state,
                     board: nextBoard,
@@ -166,6 +179,7 @@ function reducer(state: State, action: Action): State {
                     pendingPromotion: { move, preBoard: board, prePreviousMoveIndices: state.previousMoveIndices },
                 };
             }
+            const enPassantTargetIndex = isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null;
 
             const rightsDiff = computeCastleRightsChangesFromMove(move);
             const nextCastleRights: CastleRightsByColor = {
@@ -176,13 +190,14 @@ function reducer(state: State, action: Action): State {
             const nextState: State = {
                 ...state,
                 board: nextBoard,
-                castleRightsByColor: nextCastleRights,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
+                castleRightsByColor: nextCastleRights,
+                enPassantTargetIndex,
+                halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : state.halfmoveClock + 1,
+                fullmoveClock: playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
                 previousMoveIndices: [startIndex, endIndex],
                 captures: captureProps ? [...captures, captureProps] : captures,
                 moveHistory: [...moveHistory, move],
-                halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : state.halfmoveClock + 1,
-                fullmoveClock: playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
             };
 
             return {

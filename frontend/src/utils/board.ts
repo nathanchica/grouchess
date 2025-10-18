@@ -56,3 +56,16 @@ export function isPromotionSquare(endIndex: number, color: PieceColor): boolean 
     const { row } = indexToRowCol(endIndex);
     return (color === 'white' && row === 0) || (color === 'black' && row === NUM_ROWS - 1);
 }
+
+/**
+ * Computes en passant target square. Must only be used for pawn moves.
+ * @param startIndex Starting index of pawn move
+ * @param endIndex End index of pawn move
+ * @returns square index over which a pawn has just passed while moving two squares (null if pawn didn't move 2 squares)
+ */
+export function computeEnPassantTargetIndex(startIndex: number, endIndex: number): number | null {
+    const { row: endRow, col } = indexToRowCol(endIndex);
+    const { row: startRow } = indexToRowCol(startIndex);
+    if (Math.abs(endRow - startRow) === 2) return rowColToIndex({ row: (startRow + endRow) / 2, col });
+    return null;
+}

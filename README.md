@@ -98,7 +98,7 @@ Notes
 
 ## Roadmap
 
-- Draw and checkmate detection (stalemate, checkmate, 50-move, threefold, insufficient material)
+- Draw and ~~checkmate~~ detection (~~stalemate~~, ~~checkmate~~, ~~50-move~~, threefold, insufficient material)
 - Move history display
 - Move undos
 - Game timers
