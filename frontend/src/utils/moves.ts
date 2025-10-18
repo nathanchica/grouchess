@@ -284,27 +284,11 @@ function isKingInCheckAfterMove(board: ChessBoardType, move: Move): boolean {
     return isKingInCheck(nextBoard, move.piece.color);
 }
 
-function computeEnPassantTarget(board: ChessBoardType, previousMoveIndices: number[]): number | null {
-    if (previousMoveIndices.length !== 2) return null;
-
-    const [startIndex, endIndex] = previousMoveIndices;
-    const pieceAlias = board[endIndex];
-    if (pieceAlias === undefined) return null;
-
-    const { type, color } = getPiece(pieceAlias);
-    if (type !== 'pawn') return null;
-
-    const { row: endRow, col } = indexToRowCol(endIndex);
-    const { row: startRow } = indexToRowCol(startIndex);
-    if (Math.abs(endRow - startRow) === 2) return rowColToIndex({ row: endRow + (color === 'white' ? 1 : -1), col });
-    return null;
-}
-
 export function computePossibleMovesForIndex(
     startIndex: number,
     board: ChessBoardType,
     castleRightsByColor: CastleRightsByColor,
-    previousMoveIndices: number[]
+    enPassantTargetIndex: number | null
 ): Move[] {
     const pieceAlias = board[startIndex];
     if (!pieceAlias) return [];
@@ -331,7 +315,6 @@ export function computePossibleMovesForIndex(
 
         // Diagonal captures
         if (nextRow >= 0 && nextRow < NUM_ROWS) {
-            const enPassantTarget = computeEnPassantTarget(board, previousMoveIndices);
             for (const colDelta of [-1, 1]) {
                 const captureCol = col + colDelta;
                 const rowCol = { row: nextRow, col: captureCol };
@@ -339,7 +322,7 @@ export function computePossibleMovesForIndex(
                 const endIndex = rowColToIndex(rowCol);
                 const pieceAliasAtIndex = board[endIndex];
                 const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
-                const isEnPassant = endIndex === enPassantTarget;
+                const isEnPassant = endIndex === enPassantTargetIndex;
                 if (isEnemyPiece || isEnPassant) {
                     possibleMoves.push(createMove(board, startIndex, endIndex, isEnPassant ? 'en-passant' : 'capture'));
                 }
@@ -404,11 +387,11 @@ export function hasAnyLegalMove(
     board: ChessBoardType,
     color: PieceColor,
     castleRightsByColor: CastleRightsByColor,
-    previousMoveIndices: number[]
+    enPassantTargetIndex: number | null
 ): boolean {
     return board.some((pieceAlias, index) => {
         if (pieceAlias && getColorFromAlias(pieceAlias) === color) {
-            return computePossibleMovesForIndex(index, board, castleRightsByColor, previousMoveIndices).length > 0;
+            return computePossibleMovesForIndex(index, board, castleRightsByColor, enPassantTargetIndex).length > 0;
         }
         return false;
     });
