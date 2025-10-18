@@ -11,6 +11,7 @@ import {
     type CastleRightsByColor,
     type Move,
 } from '../utils/moves';
+import { createAlgebraicNotation, type MoveNotation } from '../utils/notations';
 import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
@@ -18,9 +19,10 @@ type CaptureProps = {
     moveIndex: number;
 };
 
-type GameStatus = {
+export type GameStatus = {
     status: 'in-progress' | 'checkmate' | 'stalemate' | '50-move-draw';
     winner?: PieceColor;
+    check?: PieceColor;
 };
 
 type State = {
@@ -35,7 +37,7 @@ type State = {
     fullmoveClock: number;
     previousMoveIndices: number[];
     captures: CaptureProps[];
-    moveHistory: Move[];
+    moveHistory: MoveNotation[];
     timelineVersion: number;
     pendingPromotion: { move: Move; preBoard: ChessBoardType; prePreviousMoveIndices: number[] } | null;
     gameStatus: GameStatus;
@@ -140,11 +142,17 @@ function computeGameStatusFromState({
         return {
             status: 'checkmate',
             winner: playerTurn === 'white' ? 'black' : 'white',
+            check: playerTurn,
         };
     } else if (hasNoLegalMoves) {
         return { status: 'stalemate' };
     } else if (halfmoveClock >= FIFTY_MOVE_RULE_HALFMOVES) {
         return { status: '50-move-draw' };
+    } else if (isInCheck) {
+        return {
+            status: 'in-progress',
+            check: playerTurn,
+        };
     }
 
     return { status: 'in-progress' };
@@ -197,17 +205,21 @@ function reducer(state: State, action: Action): State {
                 fullmoveClock: playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
                 previousMoveIndices: [startIndex, endIndex],
                 captures: captureProps ? [...captures, captureProps] : captures,
-                moveHistory: [...moveHistory, move],
+            };
+            const gameStatus = computeGameStatusFromState(nextState);
+            const moveNotation: MoveNotation = {
+                algebraicNotation: createAlgebraicNotation(move, gameStatus),
             };
 
             return {
                 ...nextState,
-                gameStatus: computeGameStatusFromState(nextState),
+                gameStatus,
+                moveHistory: [...moveHistory, moveNotation],
             };
         }
         case 'promote-pawn': {
             const { pawnPromotion } = action;
-            const { pendingPromotion } = state;
+            const { pendingPromotion, moveHistory } = state;
             invariant(pendingPromotion, 'No pending promotion to apply');
 
             const { move } = pendingPromotion;
@@ -224,22 +236,25 @@ function reducer(state: State, action: Action): State {
                 captures = [...state.captures, { piece: capturedPiece, moveIndex: state.moveHistory.length }];
             }
 
-            const moveWithPromotion: Move = { ...move, promotion: pawnPromotion };
-
             const nextState: State = {
                 ...state,
                 board: updatedBoard,
                 playerTurn: state.playerTurn === 'white' ? 'black' : 'white',
                 captures,
-                moveHistory: [...state.moveHistory, moveWithPromotion],
                 pendingPromotion: null,
                 halfmoveClock: 0, // promotion is always a pawn move
                 fullmoveClock: state.playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
             };
+            const gameStatus = computeGameStatusFromState(nextState);
+            const moveWithPromotion: Move = { ...move, promotion: pawnPromotion };
+            const moveNotation: MoveNotation = {
+                algebraicNotation: createAlgebraicNotation(moveWithPromotion, gameStatus),
+            };
 
             return {
                 ...nextState,
-                gameStatus: computeGameStatusFromState(nextState),
+                gameStatus,
+                moveHistory: [...moveHistory, moveNotation],
             };
         }
         case 'cancel-promotion': {
