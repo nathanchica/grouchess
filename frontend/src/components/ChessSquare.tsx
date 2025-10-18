@@ -2,6 +2,27 @@ import type { ReactNode } from 'react';
 
 import { indexToRowCol, type GlowingSquareProps } from '../utils/board';
 
+const INDEX_TO_COL_LEGEND: Partial<Record<number, string>> = {
+    56: 'a',
+    57: 'b',
+    58: 'c',
+    59: 'd',
+    60: 'e',
+    61: 'f',
+    62: 'g',
+    63: 'h',
+};
+const INDEX_TO_ROW_LEGEND: Partial<Record<number, string>> = {
+    0: '8',
+    8: '7',
+    16: '6',
+    24: '5',
+    32: '4',
+    40: '3',
+    48: '2',
+    56: '1',
+};
+
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
 
@@ -56,6 +77,27 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
         }
     }
 
+    const legendFontColor = isDarkSquare ? 'text-zinc-100' : 'text-zinc-500';
+    const legendBaseClasses = `absolute text-xs font-bold pointer-events-none ${legendFontColor}`;
+    const rowLegend = INDEX_TO_ROW_LEGEND[index];
+    let rowLegendContent: ReactNode = null;
+    if (rowLegend) {
+        rowLegendContent = (
+            <span aria-hidden="true" className={`${legendBaseClasses} top-1 left-1`}>
+                {rowLegend}
+            </span>
+        );
+    }
+    const colLegend = INDEX_TO_COL_LEGEND[index];
+    let colLegendContent: ReactNode = null;
+    if (colLegend) {
+        colLegendContent = (
+            <span aria-hidden="true" className={`${legendBaseClasses} bottom-1 right-1.5`}>
+                {colLegend}
+            </span>
+        );
+    }
+
     return (
         <button
             type="button"
@@ -64,6 +106,8 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
         >
             {overlay}
             {!hideContent ? children : null}
+            {rowLegendContent}
+            {colLegendContent}
         </button>
     );
 }
