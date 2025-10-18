@@ -50,7 +50,7 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
         if (isCheck) {
             backgroundClasses = isDarkSquare ? 'bg-red-400' : 'bg-red-300';
         } else if (isPreviousMove) {
-            backgroundClasses = isDarkSquare ? 'bg-orange-200' : 'bg-amber-100';
+            backgroundClasses = isDarkSquare ? 'bg-amber-100' : 'bg-orange-100';
         }
         if (canCapture) {
             const borderColor = isDarkSquare ? 'border-emerald-300/90' : 'border-emerald-300/80';
@@ -68,7 +68,9 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
             }
         } else if (canMove) {
             const backgroundColor = isDarkSquare ? 'after:bg-emerald-300/90' : 'after:bg-emerald-300/80';
-            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-6 after:w-6 after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${backgroundColor} after:content-[""] hover:after:opacity-0`;
+            // Use a responsive, clamped size so the dot scales with the square
+            // and stays within sensible bounds. Bump size on xl+ screens.
+            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-[clamp(0.75rem,30%,1.25rem)] after:w-[clamp(0.75rem,30%,1.25rem)] 2xl:after:h-[clamp(1rem,35%,1.5rem)] 2xl:after:w-[clamp(1rem,35%,1.5rem)] after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${backgroundColor} after:content-[""] hover:after:opacity-0`;
             // On hover, softly recolor the square to match the dot color and hide the dot
             hoverClasses = 'hover:bg-emerald-300';
             if (isDraggingOver) {

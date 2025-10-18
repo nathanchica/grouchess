@@ -1,7 +1,6 @@
-import InfoCard from './components/InfoCard';
+import GameInfoPanel from './components/GameInfoPanel';
 import MainSection from './components/MainSection';
 import PlayerCard from './components/PlayerCard';
-import ResetButton from './components/ResetButton';
 import ChessGameProvider from './providers/ChessGameProvider';
 import ImagesProvider from './providers/ImagesProvider';
 import { uniquePieceImgSrcs } from './utils/pieces';
@@ -22,9 +21,9 @@ function App() {
                         <section className="col-span-6">
                             <MainSection />
                         </section>
-                        <InfoCard className="col-span-3 p-16">
-                            <ResetButton />
-                        </InfoCard>
+                        <section className="col-span-3">
+                            <GameInfoPanel />
+                        </section>
                     </div>
                 </main>
             </ChessGameProvider>

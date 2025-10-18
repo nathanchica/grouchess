@@ -4,15 +4,16 @@ import { useImages } from '../providers/ImagesProvider';
 
 type Props = {
     dragProps: DragProps;
+    pieceImgSrc: string;
+    imgAltText: string;
 };
 
 /**
  * Ghost piece overlay following the pointer while dragging
  */
-function GhostPiece({ dragProps }: Props) {
+function GhostPiece({ dragProps, pieceImgSrc, imgAltText }: Props) {
     const { imgSrcMap } = useImages();
-    const { x, y, squareSize, piece } = dragProps;
-    const { imgSrc: pieceImgSrc, altText } = piece;
+    const { x, y, squareSize } = dragProps;
     const imgSrc = imgSrcMap[pieceImgSrc] ?? pieceImgSrc;
 
     return (
@@ -26,7 +27,7 @@ function GhostPiece({ dragProps }: Props) {
                     height: `${squareSize}px`,
                 }}
             >
-                <img src={imgSrc} alt={altText} className="w-full h-full drop-shadow-lg" draggable={false} />
+                <img src={imgSrc} alt={imgAltText} className="w-full h-full drop-shadow-lg" draggable={false} />
             </div>
         </div>
     );

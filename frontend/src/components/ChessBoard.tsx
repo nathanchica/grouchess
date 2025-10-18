@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEventHandler } from 'react';
+import { useMemo, useRef, useState, type PointerEventHandler, type PointerEvent } from 'react';
 
 import ChessPiece from './ChessPiece';
 import ChessSquare from './ChessSquare';
@@ -15,23 +15,30 @@ import {
     type RowCol,
     type GlowingSquareProps,
 } from '../utils/board';
-import { computePossibleMovesForIndex, isSquareAttacked, type Move } from '../utils/moves';
-import { getPiece, type Piece, type PieceShortAlias } from '../utils/pieces';
+import { computePossibleMovesForIndex, type Move } from '../utils/moves';
+import { getPiece, type PieceShortAlias } from '../utils/pieces';
 
 export type DragProps = {
-    fromIndex: number;
     pointerId: number;
-    piece: Piece;
     x: number; // pointer X relative to board
     y: number; // pointer Y relative to board
     squareSize: number;
-    boardRect: DOMRect;
 };
 
 function getRowColFromXY(x: number, y: number, squareSize: number): RowCol {
     return {
         row: Math.floor(y / squareSize),
         col: Math.floor(x / squareSize),
+    };
+}
+
+function xyFromPointerEvent(
+    event: PointerEvent<HTMLDivElement> | PointerEvent<HTMLImageElement>,
+    rect: DOMRect
+): { x: number; y: number } {
+    return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
     };
 }
 
@@ -71,7 +78,9 @@ function ChessBoard() {
         setSelectedIndex(null);
     }
 
-    const isGameOver = gameStatus.status !== 'in-progress';
+    const { status, check: checkedColor } = gameStatus;
+
+    const isGameOver = status !== 'in-progress';
     const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver;
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
@@ -81,14 +90,10 @@ function ChessBoard() {
             glowingSquarePropsByIndex[index] = { isPreviousMove: true };
         });
 
-        const { white: whiteKingIndex, black: blackKingIndex } = getKingIndices(board);
-        if (isSquareAttacked(board, blackKingIndex, 'white')) {
-            glowingSquarePropsByIndex[blackKingIndex] ??= {};
-            glowingSquarePropsByIndex[blackKingIndex].isCheck = true;
-        }
-        if (isSquareAttacked(board, whiteKingIndex, 'black')) {
-            glowingSquarePropsByIndex[whiteKingIndex] ??= {};
-            glowingSquarePropsByIndex[whiteKingIndex].isCheck = true;
+        if (checkedColor !== undefined) {
+            const kingIndex = getKingIndices(board)[checkedColor];
+            glowingSquarePropsByIndex[kingIndex] ??= {};
+            glowingSquarePropsByIndex[kingIndex].isCheck = true;
         }
 
         if (selectedIndex === null) {
@@ -128,7 +133,7 @@ function ChessBoard() {
             indexToMoveDataForSelectedPiece,
             glowingSquarePropsByIndex,
         };
-    }, [selectedIndex, board, castleRightsByColor, previousMoveIndices, enPassantTargetIndex]);
+    }, [selectedIndex, board, castleRightsByColor, previousMoveIndices, enPassantTargetIndex, checkedColor]);
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
         if (boardInteractionIsDisabled) return;
@@ -169,9 +174,7 @@ function ChessBoard() {
             onPointerMove={(event) => {
                 if (boardInteractionIsDisabled || !drag || !boardRef.current) return;
                 if (event.pointerId !== drag.pointerId) return;
-                const rect = drag.boardRect;
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
+                const { x, y } = xyFromPointerEvent(event, boardRef.current.getBoundingClientRect());
                 setDrag((prevDragData) => (prevDragData ? { ...prevDragData, x, y } : prevDragData));
                 const rowCol = getRowColFromXY(x, y, drag.squareSize);
                 setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
@@ -207,10 +210,9 @@ function ChessBoard() {
                         if (boardInteractionIsDisabled || !canDrag || !boardRef.current) return;
                         event.preventDefault();
                         event.stopPropagation();
-                        const rect = boardRef.current.getBoundingClientRect();
-                        const squareSize = rect.width / NUM_COLS;
-                        const x = event.clientX - rect.left;
-                        const y = event.clientY - rect.top;
+                        const boardRect = boardRef.current.getBoundingClientRect();
+                        const { x, y } = xyFromPointerEvent(event, boardRect);
+                        const squareSize = boardRect.width / NUM_COLS;
                         try {
                             boardRef.current.setPointerCapture(event.pointerId);
                         } catch {
@@ -218,13 +220,10 @@ function ChessBoard() {
                         }
                         setSelectedIndex(index);
                         setDrag({
-                            fromIndex: index,
                             pointerId: event.pointerId,
-                            piece,
                             x,
                             y,
                             squareSize,
-                            boardRect: rect,
                         });
                         const rowCol = getRowColFromXY(x, y, squareSize);
                         setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
@@ -247,14 +246,16 @@ function ChessBoard() {
                             ...(glowingSquarePropsByIndex[index] ?? {}),
                             isDraggingOver: Boolean(drag && dragOverIndex === index),
                         }}
-                        hideContent={Boolean(drag && drag.fromIndex === index)}
+                        hideContent={Boolean(drag && selectedIndex === index)}
                         onClick={createClickHandler(pieceAlias, index)}
                     >
                         {content}
                     </ChessSquare>
                 );
             })}
-            {drag && !pendingPromotion && <GhostPiece dragProps={drag} />}
+            {drag && !pendingPromotion && selectedPiece && (
+                <GhostPiece dragProps={drag} pieceImgSrc={selectedPiece.imgSrc} imgAltText={selectedPiece.altText} />
+            )}
             {pendingPromotion && boardRef.current && (
                 <PawnPromotionPrompt
                     boardRect={boardRef.current.getBoundingClientRect()}
