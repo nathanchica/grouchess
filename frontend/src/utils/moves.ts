@@ -160,7 +160,7 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, byC
     return false;
 }
 
-export function isKingInCheck(board: ChessBoardType, color: PieceColor) {
+export function isKingInCheck(board: ChessBoardType, color: PieceColor): boolean {
     const kingIndex = getKingIndices(board)[color];
     const enemyColor = getEnemyColor(color);
     return isSquareAttacked(board, kingIndex, enemyColor);
@@ -171,20 +171,19 @@ function computeCastlingLegality(
     board: ChessBoardType,
     castleRightsByColor: CastleRightsByColor
 ): CastleRights {
-    const rights = castleRightsByColor[color];
-
-    // return early if no rights to castle (king has moved or both rooks are captured/moved)
-    if (!rights.canShortCastle && !rights.canLongCastle) return rights;
-
-    const isWhite = color === 'white';
-    const enemyColor = getEnemyColor(color);
-
     let result: CastleRights = {
         canShortCastle: false,
         canLongCastle: false,
     };
 
+    const rights = castleRightsByColor[color];
+
+    // return early if no rights to castle (king has moved or both rooks are captured/moved) or king is in check
+    if (!rights.canShortCastle && !rights.canLongCastle) return result;
     if (isKingInCheck(board, color)) return result;
+
+    const isWhite = color === 'white';
+    const enemyColor = getEnemyColor(color);
 
     const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
     const areIndicesAllSafe = (indices: number[]) =>
@@ -280,7 +279,7 @@ export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move)
     return nextBoard;
 }
 
-function isKingInCheckAfterMove(board: ChessBoardType, move: Move) {
+function isKingInCheckAfterMove(board: ChessBoardType, move: Move): boolean {
     const nextBoard = computeNextChessBoardFromMove(board, move);
     return isKingInCheck(nextBoard, move.piece.color);
 }
@@ -399,4 +398,18 @@ export function computePossibleMovesForIndex(
     possibleMoves = possibleMoves.filter((move) => !isKingInCheckAfterMove(board, move));
 
     return possibleMoves;
+}
+
+export function hasAnyLegalMove(
+    board: ChessBoardType,
+    color: PieceColor,
+    castleRightsByColor: CastleRightsByColor,
+    previousMoveIndices: number[]
+): boolean {
+    return board.some((pieceAlias, index) => {
+        if (pieceAlias && getColorFromAlias(pieceAlias) === color) {
+            return computePossibleMovesForIndex(index, board, castleRightsByColor, previousMoveIndices).length > 0;
+        }
+        return false;
+    });
 }
