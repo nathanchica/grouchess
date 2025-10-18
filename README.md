@@ -5,8 +5,7 @@ The goal is to replicate core Lichess gameplay UX and then explore a realtime ba
 with other players.
 
 Status: UI-only. There is no backend yet; all gameplay runs client-side.
-The move engine supports standard moves, castling, pawn promotions, and en passant. Checkmate/draw detection is not
-implemented yet. See [Roadmap](#roadmap).
+The move engine supports standard moves, castling, pawn promotions, and en passant. See [Roadmap](#roadmap).
 
 ## Tech Stack
 
@@ -69,19 +68,22 @@ Notes
 - Game state: `frontend/src/providers/ChessGameProvider.tsx`
     - Holds:
         - `board`
-        - `castleRightsByColor`
         - `playerTurn`
-        - `moveHistory`
-        - `previousMoveIndices`
+        - `castleRightsByColor`
+        - `enPassantTargetIndex`
         - `halfmoveClock`
         - `fullmoveClock`
+        - `moveHistory`
+        - `previousMoveIndices`
+        - `timelineVersion`
+        - `pendingPromotion`
+        - `gameStatus`
     - Reducer applies a Move to produce the next board and updates castling rights & clocks.
 
 - Move engine: `frontend/src/utils/moves.ts`
     - `type Move` models a move (start/end/type, moving piece, optional capture info).
     - `computePossibleMovesForIndex(...)` generates legal moves for a square and filters out self-check.
     - `isSquareAttacked(...)` detects attacks via pre-hoisted attacker sets.
-    - `computeEnPassantTarget(...)` derives en passant target from the previous move.
     - `computeNextChessBoardFromMove(board, move)` returns a chess board with a given move applied to it
       (castling/en passant included).
     - `computeCastleRightsChangesFromMove(move)` produces castling rights diffs.
@@ -92,6 +94,7 @@ Notes
 
 - Visuals: `frontend/src/components/ChessSquare.tsx`
     - Renders per-square state (selected, previous move, check, canMove/canCapture).
+    - Renders coordinate legends (files a–h and ranks 1–8)
 
 - Assets & preload: `frontend/src/providers/ImagesProvider.tsx`, `frontend/src/utils/preload.ts`
     - Preloads and decodes SVGs to avoid flicker; falls back to text if an image fails.
@@ -107,5 +110,5 @@ Notes
 - Change board colors
 - Sounds
 - Piece sliding animations
-- Backend service with Express + Socket.io for realtime play
+- Backend service with Express + Socket.io for realtime play with other players
 - Main menu to start a new game or join a game

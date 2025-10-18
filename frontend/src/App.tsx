@@ -11,7 +11,7 @@ function App() {
         <ImagesProvider imgSrcs={uniquePieceImgSrcs}>
             <ChessGameProvider>
                 <main className="min-h-dvh bg-zinc-800">
-                    <div className="grid grid-cols-12 gap-16 py-8 px-24">
+                    <div className="grid grid-cols-12 xl:gap-16 gap-4 py-8 xl:px-24 px-4">
                         <section className="col-span-3">
                             <div className="flex flex-col gap-8 h-full">
                                 <PlayerCard color="black" displayName="Black" />
