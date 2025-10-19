@@ -24,6 +24,16 @@ export type Move = {
     promotion?: PawnPromotion;
 };
 
+/**
+ * Stores legal moves for a side in multiple lookup formats for efficient access.
+ */
+export type LegalMovesStore = {
+    allMoves: Move[];
+    byStartIndex: Record<number, Move[]>;
+    byEndIndex: Record<number, Move[]>;
+    typeAndEndIndexToStartIndex: Record<`${PieceType}:${number}`, number[]>;
+};
+
 const DIAGONAL_DELTAS: RowColDeltas = [
     [1, 1], // down-right
     [1, -1], // down-left
@@ -383,16 +393,49 @@ export function computePossibleMovesForIndex(
     return possibleMoves;
 }
 
-export function hasAnyLegalMove(
+/**
+ * Computes all possible moves for a player given the current board state.
+ * @param board The current state of the chess board.
+ * @param color The color of the player to move.
+ * @param castleRightsByColor The castling rights for both colors.
+ * @param enPassantTargetIndex The index of the en passant target square, if any.
+ * @returns An object containing all legal moves and various lookup maps.
+ */
+export function computeAllLegalMoves(
     board: ChessBoardType,
     color: PieceColor,
     castleRightsByColor: CastleRightsByColor,
     enPassantTargetIndex: number | null
-): boolean {
-    return board.some((pieceAlias, index) => {
+): LegalMovesStore {
+    const allMoves: Move[] = [];
+    const byStartIndex: Record<number, Move[]> = {};
+    const byEndIndex: Record<number, Move[]> = {};
+    const typeAndEndIndexToStartIndex: Record<`${PieceType}:${number}`, number[]> = {};
+
+    board.forEach((pieceAlias, index) => {
         if (pieceAlias && getColorFromAlias(pieceAlias) === color) {
-            return computePossibleMovesForIndex(index, board, castleRightsByColor, enPassantTargetIndex).length > 0;
+            const movesForIndex = computePossibleMovesForIndex(index, board, castleRightsByColor, enPassantTargetIndex);
+            if (movesForIndex.length > 0) {
+                allMoves.push(...movesForIndex);
+                byStartIndex[index] = movesForIndex;
+                movesForIndex.forEach((move) => {
+                    const { endIndex, piece } = move;
+
+                    byEndIndex[endIndex] ??= [];
+                    byEndIndex[endIndex].push(move);
+
+                    const key = `${piece.type}:${endIndex}` as `${PieceType}:${number}`;
+                    typeAndEndIndexToStartIndex[key] ??= [];
+                    typeAndEndIndexToStartIndex[key].push(move.startIndex);
+                });
+            }
         }
-        return false;
     });
+
+    return {
+        allMoves,
+        byStartIndex,
+        byEndIndex,
+        typeAndEndIndexToStartIndex,
+    };
 }

@@ -4,11 +4,12 @@ import invariant from 'tiny-invariant';
 
 import { computeEnPassantTargetIndex, isPromotionSquare, NUM_SQUARES, type ChessBoardType } from '../utils/board';
 import {
+    computeAllLegalMoves,
     computeCastleRightsChangesFromMove,
     computeNextChessBoardFromMove,
     isKingInCheck,
-    hasAnyLegalMove,
     type CastleRightsByColor,
+    type LegalMovesStore,
     type Move,
 } from '../utils/moves';
 import { createAlgebraicNotation, type MoveNotation } from '../utils/notations';
@@ -20,7 +21,15 @@ type CaptureProps = {
 };
 
 export type GameStatus = {
-    status: 'in-progress' | 'checkmate' | 'stalemate' | '50-move-draw';
+    status:
+        | 'in-progress'
+        | 'checkmate'
+        | 'stalemate'
+        | '50-move-draw'
+        | 'draw-by-agreement'
+        | 'resigned'
+        | 'time-out'
+        | 'threefold-repetition';
     winner?: PieceColor;
     check?: PieceColor;
 };
@@ -41,6 +50,8 @@ type State = {
     timelineVersion: number;
     pendingPromotion: { move: Move; preBoard: ChessBoardType; prePreviousMoveIndices: number[] } | null;
     gameStatus: GameStatus;
+    // Store of legal moves for the current player
+    legalMovesStore: LegalMovesStore;
 };
 
 type Action =
@@ -97,7 +108,7 @@ function createInitialCastleRights(): CastleRightsByColor {
 }
 
 export function createInitialChessGame(): State {
-    return {
+    const initialState: Omit<State, 'legalMovesStore'> = {
         board: createInitialBoard(),
         playerTurn: 'white',
         castleRightsByColor: createInitialCastleRights(),
@@ -112,6 +123,15 @@ export function createInitialChessGame(): State {
         gameStatus: {
             status: 'in-progress',
         },
+    };
+    return {
+        ...initialState,
+        legalMovesStore: computeAllLegalMoves(
+            initialState.board,
+            initialState.playerTurn,
+            initialState.castleRightsByColor,
+            initialState.enPassantTargetIndex
+        ),
     };
 }
 
@@ -129,15 +149,9 @@ export function useChessGame(): ChessGameContextType {
     return context;
 }
 
-function computeGameStatusFromState({
-    board,
-    playerTurn,
-    castleRightsByColor,
-    enPassantTargetIndex,
-    halfmoveClock,
-}: State): GameStatus {
+function computeGameStatusFromState({ board, playerTurn, halfmoveClock, legalMovesStore }: State): GameStatus {
     const isInCheck = isKingInCheck(board, playerTurn);
-    const hasNoLegalMoves = !hasAnyLegalMove(board, playerTurn, castleRightsByColor, enPassantTargetIndex);
+    const hasNoLegalMoves = legalMovesStore.allMoves.length === 0;
     if (isInCheck && hasNoLegalMoves) {
         return {
             status: 'checkmate',
@@ -164,7 +178,17 @@ function reducer(state: State, action: Action): State {
             return { ...createInitialChessGame(), timelineVersion: state.timelineVersion + 1 };
         case 'move-piece': {
             const { move } = action;
-            const { board, castleRightsByColor, captures, playerTurn, moveHistory } = state;
+            const {
+                board,
+                castleRightsByColor,
+                playerTurn,
+                halfmoveClock,
+                fullmoveClock,
+                previousMoveIndices,
+                captures,
+                moveHistory,
+                legalMovesStore,
+            } = state;
             const { startIndex, endIndex, type, capturedPiece, piece } = move;
             const { type: pieceType } = piece;
 
@@ -184,7 +208,7 @@ function reducer(state: State, action: Action): State {
                     board: nextBoard,
                     // Do not update captures/moveHistory/playerTurn yet; finalize after promotion
                     previousMoveIndices: [startIndex, endIndex],
-                    pendingPromotion: { move, preBoard: board, prePreviousMoveIndices: state.previousMoveIndices },
+                    pendingPromotion: { move, preBoard: board, prePreviousMoveIndices: previousMoveIndices },
                 };
             }
             const enPassantTargetIndex = isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null;
@@ -201,15 +225,27 @@ function reducer(state: State, action: Action): State {
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 castleRightsByColor: nextCastleRights,
                 enPassantTargetIndex,
-                halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : state.halfmoveClock + 1,
-                fullmoveClock: playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
+                halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : halfmoveClock + 1,
+                fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
                 previousMoveIndices: [startIndex, endIndex],
                 captures: captureProps ? [...captures, captureProps] : captures,
             };
+            nextState.legalMovesStore = computeAllLegalMoves(
+                nextState.board,
+                nextState.playerTurn,
+                nextState.castleRightsByColor,
+                nextState.enPassantTargetIndex
+            );
             const gameStatus = computeGameStatusFromState(nextState);
+
+            /**
+             * Create move notation for the move just made using:
+             * - post-move game state (effect of the move on the board, check/checkmate, etc.)
+             * - pre-move legal moves store (for disambiguation of the move)
+             */
             const moveNotation: MoveNotation = {
-                algebraicNotation: createAlgebraicNotation(move, gameStatus),
-                figurineAlgebraicNotation: createAlgebraicNotation(move, gameStatus, true),
+                algebraicNotation: createAlgebraicNotation(move, gameStatus, legalMovesStore),
+                figurineAlgebraicNotation: createAlgebraicNotation(move, gameStatus, legalMovesStore, true),
             };
 
             return {
@@ -220,7 +256,8 @@ function reducer(state: State, action: Action): State {
         }
         case 'promote-pawn': {
             const { pawnPromotion } = action;
-            const { pendingPromotion, moveHistory } = state;
+            const { board, playerTurn, fullmoveClock, captures, pendingPromotion, moveHistory, legalMovesStore } =
+                state;
             invariant(pendingPromotion, 'No pending promotion to apply');
 
             const { move } = pendingPromotion;
@@ -228,28 +265,46 @@ function reducer(state: State, action: Action): State {
             invariant(piece.type === 'pawn', 'Pending promotion move must be a pawn move');
             invariant(piece.color === getPiece(pawnPromotion).color, 'Promotion piece color must match pawn color');
 
-            const updatedBoard = [...state.board];
+            const updatedBoard = [...board];
             updatedBoard[endIndex] = pawnPromotion;
 
-            let captures = state.captures;
+            let nextCaptures = captures;
             if (type === 'capture') {
                 invariant(capturedPiece, 'Move type:capture must have a capturedPiece');
-                captures = [...state.captures, { piece: capturedPiece, moveIndex: state.moveHistory.length }];
+                nextCaptures = [...captures, { piece: capturedPiece, moveIndex: moveHistory.length }];
             }
 
             const nextState: State = {
                 ...state,
                 board: updatedBoard,
-                playerTurn: state.playerTurn === 'white' ? 'black' : 'white',
-                captures,
+                playerTurn: playerTurn === 'white' ? 'black' : 'white',
+                captures: nextCaptures,
                 pendingPromotion: null,
                 halfmoveClock: 0, // promotion is always a pawn move
-                fullmoveClock: state.playerTurn === 'black' ? state.fullmoveClock + 1 : state.fullmoveClock,
+                fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
             };
+            nextState.legalMovesStore = computeAllLegalMoves(
+                nextState.board,
+                nextState.playerTurn,
+                nextState.castleRightsByColor,
+                nextState.enPassantTargetIndex
+            );
             const gameStatus = computeGameStatusFromState(nextState);
             const moveWithPromotion: Move = { ...move, promotion: pawnPromotion };
+
+            /**
+             * Create move notation for the move just made using:
+             * - post-move game state (effect of the move on the board, check/checkmate, etc.)
+             * - pre-move legal moves store (for disambiguation of the move)
+             */
             const moveNotation: MoveNotation = {
-                algebraicNotation: createAlgebraicNotation(moveWithPromotion, gameStatus),
+                algebraicNotation: createAlgebraicNotation(moveWithPromotion, gameStatus, legalMovesStore),
+                figurineAlgebraicNotation: createAlgebraicNotation(
+                    moveWithPromotion,
+                    gameStatus,
+                    legalMovesStore,
+                    true
+                ),
             };
 
             return {

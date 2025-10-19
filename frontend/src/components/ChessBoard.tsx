@@ -15,7 +15,7 @@ import {
     type RowCol,
     type GlowingSquareProps,
 } from '../utils/board';
-import { computePossibleMovesForIndex, type Move } from '../utils/moves';
+import { type Move } from '../utils/moves';
 import { getPiece, type PieceShortAlias } from '../utils/pieces';
 
 export type DragProps = {
@@ -56,16 +56,8 @@ function xyFromPointerEvent(
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
-    const {
-        board,
-        castleRightsByColor,
-        playerTurn,
-        enPassantTargetIndex,
-        previousMoveIndices,
-        movePiece,
-        pendingPromotion,
-        gameStatus,
-    } = useChessGame();
+    const { board, playerTurn, previousMoveIndices, movePiece, pendingPromotion, gameStatus, legalMovesStore } =
+        useChessGame();
 
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
     const boardRef = useRef<HTMLDivElement | null>(null);
@@ -104,18 +96,11 @@ function ChessBoard() {
             };
         }
 
-        const selectedPiece = getPiece(board[selectedIndex] as PieceShortAlias);
-        const possibleMovesForSelectedPiece = computePossibleMovesForIndex(
-            selectedIndex,
-            board,
-            castleRightsByColor,
-            enPassantTargetIndex
-        );
+        const possibleMovesForSelectedPiece = legalMovesStore.byStartIndex[selectedIndex] ?? [];
         possibleMovesForSelectedPiece.forEach(({ endIndex, type }) => {
             glowingSquarePropsByIndex[endIndex] ??= {};
             glowingSquarePropsByIndex[endIndex] = {
                 ...glowingSquarePropsByIndex[endIndex],
-                // computePossibleMovesForIndex has determined that the piece at index, if existing, is an enemy piece
                 ...(type === 'capture' ? { canCapture: true } : { canMove: true }),
             };
         });
@@ -129,11 +114,11 @@ function ChessBoard() {
         });
 
         return {
-            selectedPiece,
+            selectedPiece: getPiece(board[selectedIndex] as PieceShortAlias),
             indexToMoveDataForSelectedPiece,
             glowingSquarePropsByIndex,
         };
-    }, [selectedIndex, board, castleRightsByColor, previousMoveIndices, enPassantTargetIndex, checkedColor]);
+    }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore]);
 
     const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
         if (boardInteractionIsDisabled) return;
