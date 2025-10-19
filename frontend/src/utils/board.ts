@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant';
 
-import type { PieceShortAlias, PieceColor } from './pieces';
+import { isValidPieceShortAlias, type PieceShortAlias, type PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
@@ -68,4 +68,52 @@ export function computeEnPassantTargetIndex(startIndex: number, endIndex: number
     const { row: startRow } = indexToRowCol(startIndex);
     if (Math.abs(endRow - startRow) === 2) return rowColToIndex({ row: (startRow + endRow) / 2, col });
     return null;
+}
+
+/**
+ * Creates a ChessBoardType from the placement part of a FEN string
+ */
+export function createBoardFromFEN(placementString: string): ChessBoardType {
+    invariant(typeof placementString === 'string' && placementString.trim().length > 0, 'Placement must be non-empty');
+    const ranks = placementString.trim().split('/');
+    invariant(ranks.length === NUM_ROWS, 'Invalid FEN: expected 8 ranks');
+
+    const board: ChessBoardType = Array(NUM_SQUARES).fill(undefined);
+    for (let row = 0; row < NUM_ROWS; row++) {
+        const rank = ranks[row];
+        let col = 0;
+        for (let index = 0; index < rank.length; index++) {
+            const char = rank[index];
+            const digit = char.charCodeAt(0) - 48; // '0' => 0
+            if (digit >= 1 && digit <= NUM_COLS) {
+                col += digit;
+                invariant(col <= NUM_COLS, 'Invalid FEN: too many squares in a rank');
+            } else if (isValidPieceShortAlias(char)) {
+                invariant(col < NUM_COLS, 'Invalid FEN: too many squares in a rank');
+                const boardIndex = rowColToIndex({ row, col });
+                board[boardIndex] = char as PieceShortAlias;
+                col += 1;
+            } else {
+                invariant(false, `Invalid FEN: unexpected character '${char}'`);
+            }
+        }
+        invariant(col === NUM_COLS, 'Invalid FEN: incomplete rank');
+    }
+
+    return board;
+}
+
+/**
+ * Converts algebraic square notation (e.g., "e3") to a board index.
+ * Returns -1 for "-" which is used in FEN to denote no en passant target.
+ */
+export function algebraicNotationToIndex(algebraicNotation: string): number {
+    const formattedNotation = algebraicNotation.trim();
+    if (formattedNotation === '-') return -1;
+    invariant(/^[a-h][1-8]$/.test(formattedNotation), `Invalid square notation: ${algebraicNotation}`);
+    const fileCharCode = formattedNotation.charCodeAt(0); // 'a'..'h'
+    const rank = Number(formattedNotation[1]); // '1'..'8'
+    const col = fileCharCode - 'a'.charCodeAt(0);
+    const row = NUM_ROWS - rank;
+    return rowColToIndex({ row, col });
 }

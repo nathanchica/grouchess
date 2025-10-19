@@ -1,7 +1,8 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 
 import PromotionCard from './PromotionCard';
 
+import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { indexToRowCol, NUM_COLS } from '../utils/board';
 import { PAWN_PROMOTION_OPTIONS, type PieceColor, type PawnPromotion } from '../utils/pieces';
@@ -28,27 +29,12 @@ function PawnPromotionPrompt({ boardRect, promotionIndex, color, onDismiss }: Pr
         onDismiss();
     }, [cancelPromotion, onDismiss]);
 
+    useDismissOnEscape(handleDismiss);
+
     const handleOptionSelect = (option: PawnPromotion) => {
         promotePawn(option);
         onDismiss();
     };
-
-    const handleKeyDownEvent = useCallback(
-        (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                handleDismiss();
-            }
-        },
-        [handleDismiss]
-    );
-
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyDownEvent);
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDownEvent);
-        };
-    }, [handleKeyDownEvent]);
 
     return (
         <div className="absolute inset-0 z-20" onClick={handleDismiss} role="dialog" aria-modal="true" tabIndex={-1}>

@@ -1,8 +1,8 @@
 import invariant from 'tiny-invariant';
 
-import { indexToRowCol, NUM_ROWS } from './board';
-import { type LegalMovesStore, type Move } from './moves';
-import { type PieceShortAlias } from './pieces';
+import { indexToRowCol, rowColToIndex, NUM_COLS, NUM_ROWS, type ChessBoardType } from './board';
+import { type CastleRightsByColor, type LegalMovesStore, type Move } from './moves';
+import { isValidPieceShortAlias, type PieceColor, type PieceShortAlias } from './pieces';
 
 import { type GameStatus } from '../providers/ChessGameProvider';
 
@@ -99,4 +99,137 @@ export function createAlgebraicNotation(
     const promotionPart = promotion ? `=${promotion.toUpperCase()}` : '';
 
     return `${prefix}${isCapture ? 'x' : ''}${indexToAlgebraicNotation(endIndex)}${promotionPart}${suffix}`;
+}
+
+/**
+ * Creates a FEN string representing the current game state.
+ * Fields: piece placement, active color, castling availability, en passant target, halfmove clock, fullmove number.
+ */
+export function createFEN(
+    board: ChessBoardType,
+    playerTurn: PieceColor,
+    castleRightsByColor: CastleRightsByColor,
+    enPassantTargetIndex: number | null,
+    halfmoveClock: number,
+    fullmoveClock: number
+): string {
+    // Piece placement (from 8th rank to 1st)
+    let placementRows: string[] = [];
+    for (let row = 0; row < NUM_ROWS; row++) {
+        let rowStr = '';
+        let emptyCount = 0;
+        for (let col = 0; col < NUM_COLS; col++) {
+            const index = rowColToIndex({ row, col });
+            const pieceAlias = board[index];
+            if (pieceAlias) {
+                if (emptyCount > 0) {
+                    rowStr += String(emptyCount);
+                    emptyCount = 0;
+                }
+                rowStr += pieceAlias;
+            } else {
+                emptyCount++;
+            }
+        }
+        if (emptyCount > 0) rowStr += String(emptyCount);
+        placementRows.push(rowStr);
+    }
+    const piecePlacement = placementRows.join('/');
+
+    // Active color
+    const activeColor = playerTurn.charAt(0); // 'w' or 'b'
+
+    // Castling availability (rights, not immediate legality)
+    let castling = '';
+    if (castleRightsByColor.white.canShortCastle) castling += 'K';
+    if (castleRightsByColor.white.canLongCastle) castling += 'Q';
+    if (castleRightsByColor.black.canShortCastle) castling += 'k';
+    if (castleRightsByColor.black.canLongCastle) castling += 'q';
+    if (castling.length === 0) castling = '-';
+
+    // En passant target square
+    const enPassant = enPassantTargetIndex !== null ? indexToAlgebraicNotation(enPassantTargetIndex) : '-';
+
+    return `${piecePlacement} ${activeColor} ${castling} ${enPassant} ${halfmoveClock} ${fullmoveClock}`;
+}
+
+export function isValidAlgebraicNotation(notation: string): boolean {
+    return /^[a-h][36]$/.test(notation);
+}
+
+const VALID_CASTLING_FLAGS = new Set(['K', 'Q', 'k', 'q']);
+
+function isValidPiecePlacement(piecePlacement: string): boolean {
+    const ranks = piecePlacement.split('/');
+    if (ranks.length !== NUM_ROWS) return false;
+
+    let whiteKingCount = 0;
+    let blackKingCount = 0;
+
+    for (const rank of ranks) {
+        let fileCount = 0;
+
+        for (const char of rank) {
+            if (char >= '1' && char <= '8') {
+                fileCount += Number(char);
+            } else if (isValidPieceShortAlias(char)) {
+                fileCount += 1;
+                if (char === 'K') whiteKingCount += 1;
+                if (char === 'k') blackKingCount += 1;
+            } else {
+                return false;
+            }
+
+            if (fileCount > NUM_COLS) return false;
+        }
+
+        if (fileCount !== NUM_COLS) return false;
+    }
+
+    return whiteKingCount === 1 && blackKingCount === 1;
+}
+
+function isValidCastlingAvailability(castling: string): boolean {
+    if (castling === '-') return true;
+    const seen = new Set<string>();
+    for (const char of castling) {
+        if (!VALID_CASTLING_FLAGS.has(char) || seen.has(char)) return false;
+        seen.add(char);
+    }
+    return castling.length > 0;
+}
+
+function isValidEnPassantTarget(enPassant: string, activeColor: string): boolean {
+    if (enPassant === '-') return true;
+    if (!isValidAlgebraicNotation(enPassant)) return false;
+    const rank = enPassant.charAt(1);
+    return (activeColor === 'w' && rank === '6') || (activeColor === 'b' && rank === '3');
+}
+
+function isPositiveInteger(value: string): boolean {
+    if (!/^\d+$/.test(value)) return false;
+    const num = Number(value);
+    return Number.isInteger(num) && num > 0 && String(num) === value;
+}
+
+function isNonNegativeInteger(value: string): boolean {
+    if (!/^\d+$/.test(value)) return false;
+    const num = Number(value);
+    return Number.isInteger(num) && num >= 0 && String(num) === value;
+}
+
+export function isValidFEN(fenString: string): boolean {
+    const fields = fenString.trim().split(/\s+/);
+    if (fields.length !== 6) return false;
+
+    const [piecePlacement, activeColor, castling, enPassant, halfmoveClock, fullmoveClock] = fields;
+
+    if (!isValidPiecePlacement(piecePlacement)) return false;
+    if (!/^[wb]$/.test(activeColor)) return false;
+    if (!isValidCastlingAvailability(castling)) return false;
+    if (!isValidEnPassantTarget(enPassant, activeColor)) return false;
+    if (!isNonNegativeInteger(halfmoveClock)) return false;
+    if (!isPositiveInteger(fullmoveClock)) return false;
+
+    return true;
 }

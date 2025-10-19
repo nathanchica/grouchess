@@ -2,7 +2,14 @@ import { useReducer, useContext, createContext, type ReactNode } from 'react';
 
 import invariant from 'tiny-invariant';
 
-import { computeEnPassantTargetIndex, isPromotionSquare, NUM_SQUARES, type ChessBoardType } from '../utils/board';
+import {
+    computeEnPassantTargetIndex,
+    isPromotionSquare,
+    NUM_SQUARES,
+    type ChessBoardType,
+    createBoardFromFEN,
+    algebraicNotationToIndex,
+} from '../utils/board';
 import {
     computeAllLegalMoves,
     computeCastleRightsChangesFromMove,
@@ -12,7 +19,7 @@ import {
     type LegalMovesStore,
     type Move,
 } from '../utils/moves';
-import { createAlgebraicNotation, type MoveNotation } from '../utils/notations';
+import { createAlgebraicNotation, isValidFEN, type MoveNotation } from '../utils/notations';
 import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
@@ -58,13 +65,15 @@ type Action =
     | { type: 'reset' }
     | { type: 'move-piece'; move: Move }
     | { type: 'promote-pawn'; pawnPromotion: PawnPromotion }
-    | { type: 'cancel-promotion' };
+    | { type: 'cancel-promotion' }
+    | { type: 'load-fen'; fenString: string };
 
 export type ChessGameContextType = State & {
     resetGame: () => void;
     movePiece: (move: Move) => void;
     promotePawn: (pawnPromotion: PawnPromotion) => void;
     cancelPromotion: () => void;
+    loadFEN: (fenString: string) => void;
 };
 
 /**
@@ -72,6 +81,29 @@ export type ChessGameContextType = State & {
  * https://www.janko.at/Retros/Glossary/FiftyMoves.htm
  */
 const FIFTY_MOVE_RULE_HALFMOVES = 100;
+
+function computeGameStatusFromState({ board, playerTurn, halfmoveClock, legalMovesStore }: State): GameStatus {
+    const isInCheck = isKingInCheck(board, playerTurn);
+    const hasNoLegalMoves = legalMovesStore.allMoves.length === 0;
+    if (isInCheck && hasNoLegalMoves) {
+        return {
+            status: 'checkmate',
+            winner: playerTurn === 'white' ? 'black' : 'white',
+            check: playerTurn,
+        };
+    } else if (hasNoLegalMoves) {
+        return { status: 'stalemate' };
+    } else if (halfmoveClock >= FIFTY_MOVE_RULE_HALFMOVES) {
+        return { status: '50-move-draw' };
+    } else if (isInCheck) {
+        return {
+            status: 'in-progress',
+            check: playerTurn,
+        };
+    }
+
+    return { status: 'in-progress' };
+}
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -107,7 +139,7 @@ function createInitialCastleRights(): CastleRightsByColor {
     };
 }
 
-export function createInitialChessGame(): State {
+function createInitialChessGame(): State {
     const initialState: Omit<State, 'legalMovesStore'> = {
         board: createInitialBoard(),
         playerTurn: 'white',
@@ -135,41 +167,69 @@ export function createInitialChessGame(): State {
     };
 }
 
+function createChessGameFromFEN(fenString: string): State {
+    if (!isValidFEN(fenString)) {
+        throw new Error('Invalid FEN string');
+    }
+
+    const parts = fenString.trim().split(/\s+/);
+    invariant(parts.length === 6, 'FEN must have exactly 6 fields');
+    const [placementPart, activeColorPart, castlingPart, enPassantPart, halfmovePart, fullmovePart] = parts;
+
+    const board = createBoardFromFEN(placementPart);
+    const playerTurn: PieceColor = activeColorPart === 'w' ? 'white' : 'black';
+    const castleRightsByColor =
+        castlingPart === '-'
+            ? {
+                  white: { canShortCastle: false, canLongCastle: false },
+                  black: { canShortCastle: false, canLongCastle: false },
+              }
+            : {
+                  white: {
+                      canShortCastle: castlingPart.includes('K'),
+                      canLongCastle: castlingPart.includes('Q'),
+                  },
+                  black: {
+                      canShortCastle: castlingPart.includes('k'),
+                      canLongCastle: castlingPart.includes('q'),
+                  },
+              };
+    const enPassantTargetIndex = enPassantPart === '-' ? null : algebraicNotationToIndex(enPassantPart);
+
+    const state: State = {
+        board,
+        playerTurn,
+        castleRightsByColor,
+        enPassantTargetIndex,
+        halfmoveClock: parseInt(halfmovePart, 10),
+        fullmoveClock: parseInt(fullmovePart, 10),
+        previousMoveIndices: [],
+        captures: [],
+        moveHistory: [],
+        timelineVersion: 0,
+        pendingPromotion: null,
+        gameStatus: { status: 'in-progress' },
+        legalMovesStore: computeAllLegalMoves(board, playerTurn, castleRightsByColor, enPassantTargetIndex),
+    };
+
+    const gameStatus = computeGameStatusFromState(state);
+
+    return { ...state, gameStatus };
+}
+
 const ChessGameContext = createContext<ChessGameContextType>({
     ...createInitialChessGame(),
     resetGame: () => {},
     movePiece: () => {},
     promotePawn: () => {},
     cancelPromotion: () => {},
+    loadFEN: () => {},
 });
 
 export function useChessGame(): ChessGameContextType {
     const context = useContext(ChessGameContext);
     invariant(context, 'useChessGame must be used within ChessGameProvider');
     return context;
-}
-
-function computeGameStatusFromState({ board, playerTurn, halfmoveClock, legalMovesStore }: State): GameStatus {
-    const isInCheck = isKingInCheck(board, playerTurn);
-    const hasNoLegalMoves = legalMovesStore.allMoves.length === 0;
-    if (isInCheck && hasNoLegalMoves) {
-        return {
-            status: 'checkmate',
-            winner: playerTurn === 'white' ? 'black' : 'white',
-            check: playerTurn,
-        };
-    } else if (hasNoLegalMoves) {
-        return { status: 'stalemate' };
-    } else if (halfmoveClock >= FIFTY_MOVE_RULE_HALFMOVES) {
-        return { status: '50-move-draw' };
-    } else if (isInCheck) {
-        return {
-            status: 'in-progress',
-            check: playerTurn,
-        };
-    }
-
-    return { status: 'in-progress' };
 }
 
 function reducer(state: State, action: Action): State {
@@ -211,7 +271,6 @@ function reducer(state: State, action: Action): State {
                     pendingPromotion: { move, preBoard: board, prePreviousMoveIndices: previousMoveIndices },
                 };
             }
-            const enPassantTargetIndex = isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null;
 
             const rightsDiff = computeCastleRightsChangesFromMove(move);
             const nextCastleRights: CastleRightsByColor = {
@@ -224,7 +283,7 @@ function reducer(state: State, action: Action): State {
                 board: nextBoard,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 castleRightsByColor: nextCastleRights,
-                enPassantTargetIndex,
+                enPassantTargetIndex: isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null,
                 halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : halfmoveClock + 1,
                 fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
                 previousMoveIndices: [startIndex, endIndex],
@@ -324,6 +383,9 @@ function reducer(state: State, action: Action): State {
                 pendingPromotion: null,
             };
         }
+        case 'load-fen': {
+            return { ...createChessGameFromFEN(action.fenString), timelineVersion: state.timelineVersion + 1 };
+        }
         default:
             return state;
     }
@@ -352,12 +414,17 @@ function ChessGameProvider({ children }: Props) {
         dispatch({ type: 'cancel-promotion' });
     }
 
+    function loadFEN(fenString: string) {
+        dispatch({ type: 'load-fen', fenString });
+    }
+
     const contextValue = {
         ...state,
         resetGame,
         movePiece,
         promotePawn,
         cancelPromotion,
+        loadFEN,
     };
 
     return <ChessGameContext.Provider value={contextValue}>{children}</ChessGameContext.Provider>;

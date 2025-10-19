@@ -78,7 +78,10 @@ Notes
         - `timelineVersion`
         - `pendingPromotion`
         - `gameStatus`
+        - `legalMovesStore`
     - Reducer applies a Move to produce the next board and updates castling rights & clocks.
+    - Generates legal moves each turn and caches them in `legalMovesStore`.
+    - Able to initialize from FEN strings.
 
 - Move engine: `frontend/src/utils/moves.ts`
     - `type Move` models a move (start/end/type, moving piece, optional capture info).
@@ -111,3 +114,8 @@ Notes
 - Piece sliding animations
 - Backend service with Express + Socket.io for realtime play with other players
 - Main menu to start a new game or join a game
+
+## Credits
+
+- Piece SVGs from [Lichess](https://github.com/lichess-org/lila/tree/master/public/piece)
+- Icons from [FontAwesome](https://fontawesome.com)
