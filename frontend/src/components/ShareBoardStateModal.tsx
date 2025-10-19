@@ -4,6 +4,7 @@ import InfoCard from './InfoCard';
 
 import CopyIcon from '../assets/icons/copy.svg?react';
 import DismissIcon from '../assets/icons/xmark.svg?react';
+import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { createFEN } from '../utils/notations';
 
@@ -14,6 +15,7 @@ type Props = {
 function ShareBoardStateModal({ onDismiss }: Props) {
     const { board, playerTurn, castleRightsByColor, enPassantTargetIndex, halfmoveClock, fullmoveClock } =
         useChessGame();
+    useDismissOnEscape(onDismiss);
 
     const [copied, setCopied] = useState(false);
     const timerRef = useRef<number | null>(null);
@@ -39,26 +41,6 @@ function ShareBoardStateModal({ onDismiss }: Props) {
             // no-op if clipboard is unavailable
         }
     }, [fenString]);
-
-    const handleKeyDownEvent = useCallback(
-        (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                onDismiss();
-            }
-        },
-        [onDismiss]
-    );
-
-    /**
-     * Handle Escape key to dismiss modal
-     */
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyDownEvent);
-
-        return () => {
-            document.removeEventListener('keydown', handleKeyDownEvent);
-        };
-    }, [handleKeyDownEvent]);
 
     /**
      * Clear timeout on unmount

@@ -1,6 +1,5 @@
 import invariant from 'tiny-invariant';
 
-import { isValidAlgebraicNotation } from './notations';
 import { isValidPieceShortAlias, type PieceShortAlias, type PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
@@ -111,7 +110,7 @@ export function createBoardFromFEN(placementString: string): ChessBoardType {
 export function algebraicNotationToIndex(algebraicNotation: string): number {
     const formattedNotation = algebraicNotation.trim();
     if (formattedNotation === '-') return -1;
-    invariant(isValidAlgebraicNotation(formattedNotation), `Invalid square notation: ${algebraicNotation}`);
+    invariant(/^[a-h][1-8]$/.test(formattedNotation), `Invalid square notation: ${algebraicNotation}`);
     const fileCharCode = formattedNotation.charCodeAt(0); // 'a'..'h'
     const rank = Number(formattedNotation[1]); // '1'..'8'
     const col = fileCharCode - 'a'.charCodeAt(0);

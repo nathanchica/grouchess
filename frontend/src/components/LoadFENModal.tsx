@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, ty
 import InfoCard from './InfoCard';
 
 import DismissIcon from '../assets/icons/xmark.svg?react';
+import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
 import { useChessGame } from '../providers/ChessGameProvider';
 import { isValidFEN } from '../utils/notations';
 
@@ -12,6 +13,7 @@ type Props = {
 
 function LoadFENModal({ onDismiss }: Props) {
     const { loadFEN } = useChessGame();
+    useDismissOnEscape(onDismiss);
 
     const [fenInput, setFenInput] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,20 +48,6 @@ function LoadFENModal({ onDismiss }: Props) {
         event.preventDefault();
         handleLoad();
     };
-
-    const handleKeyDownEvent = useCallback(
-        (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                onDismiss();
-            }
-        },
-        [onDismiss]
-    );
-
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyDownEvent);
-        return () => document.removeEventListener('keydown', handleKeyDownEvent);
-    }, [handleKeyDownEvent]);
 
     useEffect(() => {
         inputRef.current?.focus();

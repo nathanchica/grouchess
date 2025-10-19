@@ -201,7 +201,7 @@ function isValidCastlingAvailability(castling: string): boolean {
 
 function isValidEnPassantTarget(enPassant: string, activeColor: string): boolean {
     if (enPassant === '-') return true;
-    if (!isValidAlgebraicNotation(enPassant)) return false;
+    if (!/^[a-h][36]$/.test(enPassant)) return false;
     const rank = enPassant.charAt(1);
     return (activeColor === 'w' && rank === '6') || (activeColor === 'b' && rank === '3');
 }
@@ -210,6 +210,12 @@ function isPositiveInteger(value: string): boolean {
     if (!/^\d+$/.test(value)) return false;
     const num = Number(value);
     return Number.isInteger(num) && num > 0 && String(num) === value;
+}
+
+function isNonNegativeInteger(value: string): boolean {
+    if (!/^\d+$/.test(value)) return false;
+    const num = Number(value);
+    return Number.isInteger(num) && num >= 0 && String(num) === value;
 }
 
 export function isValidFEN(fenString: string): boolean {
@@ -222,7 +228,7 @@ export function isValidFEN(fenString: string): boolean {
     if (!/^[wb]$/.test(activeColor)) return false;
     if (!isValidCastlingAvailability(castling)) return false;
     if (!isValidEnPassantTarget(enPassant, activeColor)) return false;
-    if (!isPositiveInteger(halfmoveClock)) return false;
+    if (!isNonNegativeInteger(halfmoveClock)) return false;
     if (!isPositiveInteger(fullmoveClock)) return false;
 
     return true;
