@@ -50,14 +50,19 @@ Notes
 │     │  ├─ GhostPiece.tsx                                    # Drag ghost overlay
 │     │  ├─ PawnPromotionPrompt.tsx                           # Modal with pawn promotion options
 │     │  ├─ PromotionCard.tsx                                 # Pawn promotion modal content
+│     │  ├─ SoundEffects.tsx                                  # Sound effects component that subscribes to game state
+│     │  ├─ SoundControls.tsx                                 # Mute/volume UI controls
+│     │  ├─ GameInfoPanel.tsx                                 # Side panel with move history and game actions
 │     │  ├─ InfoCard.tsx, PlayerCard.tsx, ResetButton.tsx     # Non-chessboard components
 │     ├─ providers/                                           # React context providers
 │     │  ├─ ChessGameProvider.tsx                             # Game state/reducer and context API
+│     │  ├─ SoundProvider.tsx                                 # Sound effects context API
 │     │  └─ ImagesProvider.tsx                                # Preload/decode piece images
 │     └─ utils/                                               # Core chess logic + helpers
 │        ├─ board.ts                                          # Board coords, bounds, king lookups, glow helpers
 │        ├─ pieces.ts                                         # Piece metadata, colors, constants
 │        ├─ moves.ts                                          # Move engine (Move type, gen, legality, en passant, castling)
+│        ├─ notations.ts                                      # algebraic notation generation/parsing
 │        └─ preload.ts                                        # Image preloading utilities
 ├─ backend/                                                   # Placeholder workspace (Express + Socket.io planned)
 └─ package.json                                               # Workspace scripts
@@ -99,8 +104,13 @@ Notes
     - Renders per-square state (selected, previous move, check, canMove/canCapture).
     - Renders coordinate legends (files a–h and ranks 1–8)
 
-- Assets & preload: `frontend/src/providers/ImagesProvider.tsx`, `frontend/src/utils/preload.ts`
+- Piece set images & preload: `frontend/src/providers/ImagesProvider.tsx`, `frontend/src/utils/preload.ts`
     - Preloads and decodes SVGs to avoid flicker; falls back to text if an image fails.
+
+- Sounds:
+    - `frontend/src/providers/SoundProvider.tsx` manages sound state and HTMLAudioElement pooling.
+    - `frontend/src/components/SoundEffects.tsx` subscribes to game state changes and plays sounds.
+    - `frontend/src/components/SoundControls.tsx` has sound settings UI (mute/volume).
 
 ## Roadmap
 
@@ -110,7 +120,6 @@ Notes
 - Resign/draw offers
 - Change piece set images
 - Change board colors
-- Sounds
 - Piece sliding animations
 - Backend service with Express + Socket.io for realtime play with other players
 - Main menu to start a new game or join a game
@@ -118,4 +127,5 @@ Notes
 ## Credits
 
 - Piece SVGs from [Lichess](https://github.com/lichess-org/lila/tree/master/public/piece)
+- Sound effects from [Lichess](https://github.com/lichess-org/lila/tree/master/public/sound/lisp)
 - Icons from [FontAwesome](https://fontawesome.com)
