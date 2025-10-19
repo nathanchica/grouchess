@@ -16,13 +16,21 @@ function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
 
 const MOVE_HISTORY_BASE_CLASSES = 'text-zinc-200 tabular-nums whitespace-nowrap';
 const ACTIVE_MOVE_CLASSES = 'font-bold text-zinc-100';
-const MOVE_CELL_CLASSES = 'hover:bg-white/10 cursor-pointer px-2 rounded-md';
+const MOVE_CELL_CLASSES = 'hover:bg-white/10 cursor-pointer px-2 py-0.5 rounded-md';
 
 function MoveHistoryTable() {
-    const { moveHistory } = useChessGame();
+    const { moveHistory, gameStatus } = useChessGame();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
     const movePairs = createMovePairs(moveHistory);
+    const isGameOver = gameStatus.status !== 'in-progress';
+    const isDraw = isGameOver && !gameStatus.winner;
+    const winnerLabel = isDraw ? 'Draw' : gameStatus.winner === 'white' ? 'White wins' : 'Black wins';
+    const resultScore = gameStatus.winner === 'white' ? '1-0' : gameStatus.winner === 'black' ? '0-1' : '1/2-1/2';
+    const statusLabel = (() => {
+        const label = gameStatus.status.replace(/-/g, ' ');
+        return label.charAt(0).toUpperCase() + label.slice(1);
+    })();
 
     // Auto-scroll to bottom when a new move is added
     useEffect(() => {
@@ -33,7 +41,7 @@ function MoveHistoryTable() {
 
     return (
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            <table className="table-fixed w-full xl:text-base text-sm">
+            <table className="table-fixed w-full xl:text-base 2xl:text-lg text-sm">
                 <colgroup>
                     <col className="xl:w-[4ch] w-[2ch]" />
                     <col className="xl:w-[12ch] w-[7ch]" />
@@ -76,6 +84,18 @@ function MoveHistoryTable() {
                     })}
                 </tbody>
             </table>
+
+            {isGameOver ? (
+                <div
+                    aria-live="polite"
+                    role="status"
+                    className="mt-4 rounded-md border border-white/10 bg-zinc-900 p-3 text-sm text-zinc-200"
+                >
+                    <p className="text-xs uppercase tracking-wide text-zinc-400">Game over • {statusLabel}</p>
+                    <p className="mt-1 text-base font-semibold text-zinc-100">{winnerLabel}</p>
+                    <p className="text-sm text-zinc-200">{resultScore}</p>
+                </div>
+            ) : null}
         </div>
     );
 }
