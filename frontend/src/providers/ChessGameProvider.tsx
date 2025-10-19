@@ -15,12 +15,11 @@ import {
     computeCastleRightsChangesFromMove,
     computeNextChessBoardFromMove,
     isKingInCheck,
-    createCastleRightsFromFEN,
     type CastleRightsByColor,
     type LegalMovesStore,
     type Move,
 } from '../utils/moves';
-import { createAlgebraicNotation, type MoveNotation } from '../utils/notations';
+import { createAlgebraicNotation, isValidFEN, type MoveNotation } from '../utils/notations';
 import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
@@ -140,7 +139,7 @@ function createInitialCastleRights(): CastleRightsByColor {
     };
 }
 
-export function createInitialChessGame(): State {
+function createInitialChessGame(): State {
     const initialState: Omit<State, 'legalMovesStore'> = {
         board: createInitialBoard(),
         playerTurn: 'white',
@@ -168,45 +167,49 @@ export function createInitialChessGame(): State {
     };
 }
 
-export function createChessGameFromFEN(fenString: string): State {
+function createChessGameFromFEN(fenString: string): State {
+    if (!isValidFEN(fenString)) {
+        throw new Error('Invalid FEN string');
+    }
+
     const parts = fenString.trim().split(/\s+/);
-    invariant(parts.length >= 4, 'FEN must have at least 4 fields');
+    invariant(parts.length === 6, 'FEN must have exactly 6 fields');
     const [placementPart, activeColorPart, castlingPart, enPassantPart, halfmovePart, fullmovePart] = parts;
 
     const board = createBoardFromFEN(placementPart);
-
-    let playerTurn: PieceColor;
-    if (activeColorPart === 'w') playerTurn = 'white';
-    else if (activeColorPart === 'b') playerTurn = 'black';
-    else invariant(false, 'Invalid FEN: active color must be w or b');
-
-    const castleRightsByColor = createCastleRightsFromFEN(castlingPart ?? '-');
-
-    const enPassantIndex = enPassantPart ? algebraicNotationToIndex(enPassantPart) : -1;
-    const enPassantTargetIndex = enPassantIndex === -1 ? null : enPassantIndex;
-
-    const halfmoveClock = halfmovePart !== undefined ? parseInt(halfmovePart, 10) : 0;
-    invariant(Number.isFinite(halfmoveClock) && halfmoveClock >= 0, 'Invalid FEN: halfmove clock');
-
-    const fullmoveClock = fullmovePart !== undefined ? parseInt(fullmovePart, 10) : 1;
-    invariant(Number.isFinite(fullmoveClock) && fullmoveClock >= 1, 'Invalid FEN: fullmove number');
-
-    const legalMovesStore = computeAllLegalMoves(board, playerTurn, castleRightsByColor, enPassantTargetIndex);
+    const playerTurn: PieceColor = activeColorPart === 'w' ? 'white' : 'black';
+    const castleRightsByColor =
+        castlingPart === '-'
+            ? {
+                  white: { canShortCastle: false, canLongCastle: false },
+                  black: { canShortCastle: false, canLongCastle: false },
+              }
+            : {
+                  white: {
+                      canShortCastle: castlingPart.includes('K'),
+                      canLongCastle: castlingPart.includes('Q'),
+                  },
+                  black: {
+                      canShortCastle: castlingPart.includes('k'),
+                      canLongCastle: castlingPart.includes('q'),
+                  },
+              };
+    const enPassantTargetIndex = enPassantPart === '-' ? null : algebraicNotationToIndex(enPassantPart);
 
     const state: State = {
         board,
         playerTurn,
         castleRightsByColor,
         enPassantTargetIndex,
-        halfmoveClock,
-        fullmoveClock,
+        halfmoveClock: parseInt(halfmovePart, 10),
+        fullmoveClock: parseInt(fullmovePart, 10),
         previousMoveIndices: [],
         captures: [],
         moveHistory: [],
         timelineVersion: 0,
         pendingPromotion: null,
         gameStatus: { status: 'in-progress' },
-        legalMovesStore,
+        legalMovesStore: computeAllLegalMoves(board, playerTurn, castleRightsByColor, enPassantTargetIndex),
     };
 
     const gameStatus = computeGameStatusFromState(state);

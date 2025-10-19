@@ -201,7 +201,7 @@ function isValidCastlingAvailability(castling: string): boolean {
 
 function isValidEnPassantTarget(enPassant: string, activeColor: string): boolean {
     if (enPassant === '-') return true;
-    if (!/^[a-h][36]$/.test(enPassant)) return false;
+    if (!isValidAlgebraicNotation(enPassant)) return false;
     const rank = enPassant.charAt(1);
     return (activeColor === 'w' && rank === '6') || (activeColor === 'b' && rank === '3');
 }

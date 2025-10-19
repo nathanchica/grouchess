@@ -439,27 +439,3 @@ export function computeAllLegalMoves(
         typeAndEndIndexToStartIndex,
     };
 }
-
-/**
- * Parses the castling field from FEN (e.g., "KQkq", "KQ", "kq", or "-") into CastleRightsByColor.
- */
-export function createCastleRightsFromFEN(castlingString: string): CastleRightsByColor {
-    const formattedString = castlingString.trim();
-    invariant(formattedString.length > 0, 'Castling field must be non-empty');
-    if (formattedString === '-')
-        return {
-            white: { canShortCastle: false, canLongCastle: false },
-            black: { canShortCastle: false, canLongCastle: false },
-        };
-    invariant(/^[KQkq]+$/.test(formattedString), 'Invalid castling field; expected only KQkq or -');
-    return {
-        white: {
-            canShortCastle: formattedString.includes('K'),
-            canLongCastle: formattedString.includes('Q'),
-        },
-        black: {
-            canShortCastle: formattedString.includes('k'),
-            canLongCastle: formattedString.includes('q'),
-        },
-    };
-}

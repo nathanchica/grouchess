@@ -78,7 +78,10 @@ Notes
         - `timelineVersion`
         - `pendingPromotion`
         - `gameStatus`
+        - `legalMovesStore`
     - Reducer applies a Move to produce the next board and updates castling rights & clocks.
+    - Generates legal moves each turn and caches them in `legalMovesStore`.
+    - Able to initialize from FEN strings.
 
 - Move engine: `frontend/src/utils/moves.ts`
     - `type Move` models a move (start/end/type, moving piece, optional capture info).
