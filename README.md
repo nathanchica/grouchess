@@ -111,3 +111,8 @@ Notes
 - Piece sliding animations
 - Backend service with Express + Socket.io for realtime play with other players
 - Main menu to start a new game or join a game
+
+## Credits
+
+- Piece SVGs from [Lichess](https://github.com/lichess-org/lila/tree/master/public/piece)
+- Icons from [FontAwesome](https://fontawesome.com)

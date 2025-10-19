@@ -37,6 +37,7 @@ export default [
                 console: 'readonly',
                 process: 'readonly',
                 document: 'readonly',
+                navigator: 'readonly',
                 window: 'readonly',
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
