@@ -44,6 +44,7 @@ export default [
                 Image: 'readonly',
                 HTMLDivElement: 'readonly',
                 HTMLImageElement: 'readonly',
+                HTMLInputElement: 'readonly',
                 fetch: 'readonly',
                 URL: 'readonly',
                 DOMRect: 'readonly',

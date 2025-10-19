@@ -71,7 +71,8 @@ function ShareBoardStateModal({ onDismiss }: Props) {
 
     return (
         <div
-            aria-labelledby="modal-title"
+            id="share-board-modal"
+            aria-labelledby="share-board-modal-title"
             className="fixed inset-0 z-30 grid place-items-center"
             role="dialog"
             aria-modal="true"
@@ -82,7 +83,7 @@ function ShareBoardStateModal({ onDismiss }: Props) {
                 <InfoCard className="w-[min(90vw,32rem)]">
                     <div className="px-6 pt-4 pb-8">
                         <section className="flex justify-between items-baseline mb-6">
-                            <h2 id="modal-title" className="text-lg text-slate-50 font-semibold">
+                            <h2 id="share-board-modal-title" className="text-lg text-slate-50 font-semibold">
                                 Share
                             </h2>
                             <button
