@@ -1,16 +1,26 @@
 import { indexToRowCol, NUM_ROWS } from './board';
 import { type Move } from './moves';
+import { type PieceShortAlias } from './pieces';
 
 import { type GameStatus } from '../providers/ChessGameProvider';
 
 export type MoveNotation = {
-    // For display or common use
+    // For display or common use. Standard (short-form) algebraic notation.
     algebraicNotation: string;
-    // For Universal Chess Interface (UCI)
+    // For international display or common use. Uses unicode symbols for pieces (e.g. ♞c6 instead of Nc6)
+    figurineAlgebraicNotation?: string;
+    // For Universal Chess Interface (UCI). Variant of long-form algebraic notation.
     longAlgebraicNotation?: string;
 };
 
 const LOWERCASE_A_CHARCODE = 97;
+const SHORT_ALIAS_TO_FIGURINE_UNICODE: Partial<Record<PieceShortAlias, string>> = {
+    K: '\u265A',
+    Q: '\u265B',
+    R: '\u265C',
+    B: '\u265D',
+    N: '\u265E',
+};
 
 function getFileFromColumn(col: number) {
     return String.fromCharCode(LOWERCASE_A_CHARCODE + col);
@@ -22,8 +32,9 @@ function indexToAlgebraicNotation(index: number): string {
 }
 
 export function createAlgebraicNotation(
-    { startIndex, endIndex, piece, captureIndex, type }: Move,
-    gameStatus: GameStatus
+    { startIndex, endIndex, piece, captureIndex, type, promotion }: Move,
+    gameStatus: GameStatus,
+    useFigurine: boolean = true
 ): string {
     if (type === 'short-castle') {
         return 'O-O';
@@ -37,7 +48,9 @@ export function createAlgebraicNotation(
 
     let prefix = '';
     if (!isPawn) {
-        prefix = shortAlias.toUpperCase();
+        const normalizedAlias = shortAlias.toUpperCase() as PieceShortAlias;
+        const figurine = SHORT_ALIAS_TO_FIGURINE_UNICODE[normalizedAlias];
+        prefix = useFigurine && figurine ? figurine : normalizedAlias;
     } else if (isPawn && isCapture) {
         const { col } = indexToRowCol(startIndex);
         prefix = getFileFromColumn(col);
@@ -45,6 +58,9 @@ export function createAlgebraicNotation(
 
     let suffix = '';
     if (gameStatus.check) suffix = gameStatus.status === 'checkmate' ? '#' : '+';
+    if (type === 'en-passant') suffix += ' e.p.';
 
-    return `${prefix}${isCapture ? 'x' : ''}${indexToAlgebraicNotation(endIndex)}${suffix}`;
+    const promotionPart = promotion ? `=${promotion.toUpperCase()}` : '';
+
+    return `${prefix}${isCapture ? 'x' : ''}${indexToAlgebraicNotation(endIndex)}${promotionPart}${suffix}`;
 }

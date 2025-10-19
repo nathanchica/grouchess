@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import InfoCard from './InfoCard';
 import ResetButton from './ResetButton';
 
@@ -15,22 +17,67 @@ function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
     return result;
 }
 
+const MOVE_HISTORY_BASE_CLASSES = 'text-zinc-200 tabular-nums whitespace-nowrap';
+const ACTIVE_MOVE_CLASSES = 'font-bold text-zinc-100';
+const MOVE_CELL_CLASSES = 'hover:bg-white/10 cursor-pointer px-2 rounded-md';
+
 function GameInfoPanel() {
     const { moveHistory } = useChessGame();
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
     const movePairs = createMovePairs(moveHistory);
 
+    // Auto-scroll to bottom when a new move is added
+    useEffect(() => {
+        const element = scrollContainerRef.current;
+        if (!element) return;
+        element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
+    }, [moveHistory.length]);
+
     return (
         <InfoCard className="h-full">
-            <div className="p-8 flex flex-col gap-1 h-full">
-                {movePairs.map(([whiteMove, blackMove], index) => (
-                    <div key={`move-history-${index}`} className="grid grid-cols-12 gap-8">
-                        <span className="text-zinc-100 col-span-2 text-center">{index + 1}.</span>
-                        <span className="text-zinc-100 col-span-5">{whiteMove.algebraicNotation}</span>
-                        {blackMove && <span className="text-zinc-100 col-span-5">{blackMove.algebraicNotation}</span>}
-                    </div>
-                ))}
-                <div className="grow" />
+            <div className="xl:p-8 p-3 flex flex-col gap-4 h-full">
+                <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+                    <table className="table-fixed w-full xl:text-base text-sm">
+                        <colgroup>
+                            <col className="xl:w-[4ch] w-[2ch]" />
+                            <col className="xl:w-[12ch] w-[7ch]" />
+                            <col className="xl:w-[12ch] w-[7ch]" />
+                        </colgroup>
+                        <tbody>
+                            {movePairs.map(([whiteMove, blackMove], index) => {
+                                const isLastRow = index === movePairs.length - 1;
+                                const lastMoveIsBlack = moveHistory.length > 0 && moveHistory.length % 2 === 0;
+                                const whiteClasses = `${MOVE_HISTORY_BASE_CLASSES} ${
+                                    isLastRow && !lastMoveIsBlack ? ACTIVE_MOVE_CLASSES : ''
+                                }`;
+                                const blackClasses = `${MOVE_HISTORY_BASE_CLASSES} ${
+                                    isLastRow && lastMoveIsBlack ? ACTIVE_MOVE_CLASSES : ''
+                                }`;
+
+                                return (
+                                    <tr key={`move-history-${index}`}>
+                                        <td>
+                                            <span className={`${MOVE_HISTORY_BASE_CLASSES} text-zinc-400 text-center`}>
+                                                {index + 1}.
+                                            </span>
+                                        </td>
+                                        <td className={MOVE_CELL_CLASSES}>
+                                            <span className={whiteClasses}>{whiteMove.algebraicNotation}</span>
+                                        </td>
+                                        <td {...(blackMove ? { className: MOVE_CELL_CLASSES } : {})}>
+                                            {blackMove ? (
+                                                <span className={blackClasses}>{blackMove.algebraicNotation}</span>
+                                            ) : (
+                                                <span className={`${MOVE_HISTORY_BASE_CLASSES} invisible`}>—</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
                 <ResetButton />
             </div>
         </InfoCard>
