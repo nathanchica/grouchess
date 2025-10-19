@@ -31,10 +31,17 @@ function indexToAlgebraicNotation(index: number): string {
     return `${getFileFromColumn(col)}${NUM_ROWS - row}`;
 }
 
+/**
+ * Creates the algebraic notation for a given move.
+ * @param move The move to create notation for.
+ * @param gameStatus The current game status.
+ * @param useFigurine Whether to use figurine notation. Defaults to false. (e.g. ♞c6 instead of Nc6)
+ * @returns The algebraic notation for the move.
+ */
 export function createAlgebraicNotation(
     { startIndex, endIndex, piece, captureIndex, type, promotion }: Move,
     gameStatus: GameStatus,
-    useFigurine: boolean = true
+    useFigurine: boolean = false
 ): string {
     if (type === 'short-castle') {
         return 'O-O';

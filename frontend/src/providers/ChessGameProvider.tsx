@@ -209,6 +209,7 @@ function reducer(state: State, action: Action): State {
             const gameStatus = computeGameStatusFromState(nextState);
             const moveNotation: MoveNotation = {
                 algebraicNotation: createAlgebraicNotation(move, gameStatus),
+                figurineAlgebraicNotation: createAlgebraicNotation(move, gameStatus, true),
             };
 
             return {
