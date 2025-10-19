@@ -63,11 +63,15 @@ function GameInfoPanel() {
                                             </span>
                                         </td>
                                         <td className={MOVE_CELL_CLASSES}>
-                                            <span className={whiteClasses}>{whiteMove.algebraicNotation}</span>
+                                            <span className={whiteClasses} aria-label={whiteMove.algebraicNotation}>
+                                                {whiteMove.figurineAlgebraicNotation}
+                                            </span>
                                         </td>
                                         <td {...(blackMove ? { className: MOVE_CELL_CLASSES } : {})}>
                                             {blackMove ? (
-                                                <span className={blackClasses}>{blackMove.algebraicNotation}</span>
+                                                <span className={blackClasses} aria-label={blackMove.algebraicNotation}>
+                                                    {blackMove.figurineAlgebraicNotation}
+                                                </span>
                                             ) : (
                                                 <span className={`${MOVE_HISTORY_BASE_CLASSES} invisible`}>—</span>
                                             )}
