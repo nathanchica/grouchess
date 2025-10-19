@@ -32,6 +32,11 @@ export const PAWN_PROMOTION_OPTIONS: Record<PieceColor, PawnPromotion[]> = {
     black: ['n', 'b', 'r', 'q'],
 };
 
+export const VALID_PIECE_SHORT_ALIAS_PATTERN = /^[pnbrqkPNBRQK]$/;
+export function isValidPieceShortAlias(alias: string): alias is PieceShortAlias {
+    return VALID_PIECE_SHORT_ALIAS_PATTERN.test(alias);
+}
+
 const WHITE_PIECES = new Set<PieceShortAlias>(['P', 'R', 'N', 'B', 'K', 'Q']);
 
 const PIECE_SVGS_BASE_DIR = 'pieces';

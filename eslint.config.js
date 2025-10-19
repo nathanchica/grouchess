@@ -43,6 +43,7 @@ export default [
                 clearTimeout: 'readonly',
                 Image: 'readonly',
                 HTMLDivElement: 'readonly',
+                HTMLFormElement: 'readonly',
                 HTMLImageElement: 'readonly',
                 HTMLInputElement: 'readonly',
                 fetch: 'readonly',

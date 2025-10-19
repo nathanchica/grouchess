@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import InfoCard from './InfoCard';
 
 import DismissIcon from '../assets/icons/xmark.svg?react';
-import { useChessGame , createChessGameFromFEN } from '../providers/ChessGameProvider';
+import { useChessGame } from '../providers/ChessGameProvider';
+import { isValidFEN } from '../utils/notations';
 
 type Props = {
     onDismiss: () => void;
@@ -22,15 +23,9 @@ function LoadFENModal({ onDismiss }: Props) {
             setErrorMessage(null);
             return false;
         }
-        try {
-            // Try parsing. Any thrown error means invalid FEN.
-            createChessGameFromFEN(fen);
-            setErrorMessage(null);
-            return true;
-        } catch {
-            setErrorMessage('Invalid FEN');
-            return false;
-        }
+        const isValid = isValidFEN(fen);
+        setErrorMessage(isValid ? null : 'Invalid FEN');
+        return isValid;
     }, []);
 
     const onChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -45,6 +40,11 @@ function LoadFENModal({ onDismiss }: Props) {
         if (!canLoad) return;
         loadFEN(fenInput.trim());
         onDismiss();
+    };
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        handleLoad();
     };
 
     const handleKeyDownEvent = useCallback(
@@ -77,10 +77,10 @@ function LoadFENModal({ onDismiss }: Props) {
             <div className="fixed inset-0 bg-black/40 z-10" onClick={onDismiss} aria-hidden="true" />
             <div className="relative z-20">
                 <InfoCard className="w-[min(90vw,32rem)]">
-                    <div className="px-6 pt-4 pb-6">
+                    <form className="px-6 pt-4 pb-6" onSubmit={handleSubmit}>
                         <section className="flex justify-between items-baseline mb-6">
                             <h2 id="load-fen-modal-title" className="text-lg text-slate-50 font-semibold">
-                                Load FEN
+                                Load Board
                             </h2>
                             <button
                                 type="button"
@@ -93,12 +93,13 @@ function LoadFENModal({ onDismiss }: Props) {
                         </section>
 
                         <label htmlFor="fen-input" className="block text-slate-50 mb-1">
-                            FEN String
+                            FEN
                         </label>
                         <input
                             id="fen-input"
                             ref={inputRef}
                             type="text"
+                            autoComplete="off"
                             value={fenInput}
                             onChange={onChange}
                             placeholder="e.g. rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -121,15 +122,14 @@ function LoadFENModal({ onDismiss }: Props) {
                                 Cancel
                             </button>
                             <button
-                                type="button"
-                                onClick={handleLoad}
+                                type="submit"
                                 disabled={!canLoad}
-                                className="px-4 py-2 rounded bg-emerald-600 text-white cursor-pointer hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 rounded bg-sky-700 text-white cursor-pointer hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Load
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </InfoCard>
             </div>
         </div>

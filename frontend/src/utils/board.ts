@@ -1,6 +1,7 @@
 import invariant from 'tiny-invariant';
 
-import type { PieceShortAlias, PieceColor } from './pieces';
+import { isValidAlgebraicNotation } from './notations';
+import { isValidPieceShortAlias, type PieceShortAlias, type PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
@@ -76,22 +77,7 @@ export function computeEnPassantTargetIndex(startIndex: number, endIndex: number
 export function createBoardFromFEN(placementString: string): ChessBoardType {
     invariant(typeof placementString === 'string' && placementString.trim().length > 0, 'Placement must be non-empty');
     const ranks = placementString.trim().split('/');
-    invariant(ranks.length === 8, 'Invalid FEN: expected 8 ranks');
-
-    const VALID: Record<string, true> = {
-        P: true,
-        N: true,
-        B: true,
-        R: true,
-        Q: true,
-        K: true,
-        p: true,
-        n: true,
-        b: true,
-        r: true,
-        q: true,
-        k: true,
-    };
+    invariant(ranks.length === NUM_ROWS, 'Invalid FEN: expected 8 ranks');
 
     const board: ChessBoardType = Array(NUM_SQUARES).fill(undefined);
     for (let row = 0; row < NUM_ROWS; row++) {
@@ -103,7 +89,7 @@ export function createBoardFromFEN(placementString: string): ChessBoardType {
             if (digit >= 1 && digit <= NUM_COLS) {
                 col += digit;
                 invariant(col <= NUM_COLS, 'Invalid FEN: too many squares in a rank');
-            } else if (VALID[char]) {
+            } else if (isValidPieceShortAlias(char)) {
                 invariant(col < NUM_COLS, 'Invalid FEN: too many squares in a rank');
                 const boardIndex = rowColToIndex({ row, col });
                 board[boardIndex] = char as PieceShortAlias;
@@ -112,7 +98,7 @@ export function createBoardFromFEN(placementString: string): ChessBoardType {
                 invariant(false, `Invalid FEN: unexpected character '${char}'`);
             }
         }
-        invariant(col === 8, 'Invalid FEN: incomplete rank');
+        invariant(col === NUM_COLS, 'Invalid FEN: incomplete rank');
     }
 
     return board;
@@ -125,7 +111,7 @@ export function createBoardFromFEN(placementString: string): ChessBoardType {
 export function algebraicNotationToIndex(algebraicNotation: string): number {
     const formattedNotation = algebraicNotation.trim();
     if (formattedNotation === '-') return -1;
-    invariant(/^[a-h][1-8]$/.test(formattedNotation), `Invalid square notation: ${algebraicNotation}`);
+    invariant(isValidAlgebraicNotation(formattedNotation), `Invalid square notation: ${algebraicNotation}`);
     const fileCharCode = formattedNotation.charCodeAt(0); // 'a'..'h'
     const rank = Number(formattedNotation[1]); // '1'..'8'
     const col = fileCharCode - 'a'.charCodeAt(0);
