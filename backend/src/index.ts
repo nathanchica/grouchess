@@ -1,18 +1,17 @@
 import { createServer } from 'node:http';
-import process from 'node:process';
 
 import { Server as SocketIOServer } from 'socket.io';
 
 import { createApp } from './app.js';
+import config from './config.js';
 
-const PORT = Number.parseInt(process.env.PORT ?? '4000', 10);
-const HOST = process.env.HOST ?? '0.0.0.0';
+const { PORT, HOST, CLIENT_URL } = config;
 
 const app = createApp();
 const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: process.env.CLIENT_ORIGIN ?? '*',
+        origin: CLIENT_URL,
     },
 });
 
