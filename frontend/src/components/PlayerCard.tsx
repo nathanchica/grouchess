@@ -38,7 +38,7 @@ function PlayerCard({ color, displayName }: Props) {
                 isActive ? 'ring-2 ring-white/60 transition-all opacity-100 duration-300 ease-in-out' : 'opacity-50'
             }
         >
-            <div className="flex flex-col gap-4 xl:p-4 p-2">
+            <div className="flex flex-col min-w-80 gap-4 xl:p-4 p-2">
                 <h1 className="text-zinc-100 xl:text-xl flex items-baseline gap-2">
                     <span
                         aria-hidden="true"
