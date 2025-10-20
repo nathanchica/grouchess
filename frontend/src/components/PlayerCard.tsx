@@ -2,6 +2,7 @@ import InfoCard from './InfoCard';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
+import { getDisplayTextForDrawStatus, isDrawStatus } from '../utils/draws';
 import type { PieceColor } from '../utils/pieces';
 
 type Props = {
@@ -25,8 +26,10 @@ function PlayerCard({ color, displayName }: Props) {
     let statusText;
     if (winner === color) {
         statusText = 'Winner by checkmate';
-    } else if (status === 'stalemate') {
-        statusText = 'Draw by stalemate';
+    } else if (status === 'draw-by-agreement') {
+        statusText = 'Draw by agreement';
+    } else if (isDrawStatus(status)) {
+        statusText = `Draw by ${getDisplayTextForDrawStatus(status)}`;
     }
 
     return (

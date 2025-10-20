@@ -2,18 +2,11 @@ import { useEffect, useRef } from 'react';
 
 import invariant from 'tiny-invariant';
 
-
 import { useChessGame, type GameStatus } from '../providers/ChessGameProvider';
 import { useSound, type SoundName } from '../providers/SoundProvider';
+import { isDrawStatus } from '../utils/draws';
 
 const CHECK_DELAY_MS = 120;
-
-const DRAW_STATUSES: ReadonlySet<GameStatus['status']> = new Set<GameStatus['status']>([
-    'stalemate',
-    '50-move-draw',
-    'threefold-repetition',
-    'draw-by-agreement',
-] as const);
 
 const getMoveSoundName = (san: string, isCapture: boolean): SoundName => {
     if (isCapture) return 'capture';
@@ -28,7 +21,7 @@ const getGameEndSoundName = (status: GameStatus['status'], winner?: 'white' | 'b
         return winner === 'white' ? 'victory' : 'defeat';
     }
 
-    if (DRAW_STATUSES.has(status)) {
+    if (isDrawStatus(status)) {
         return 'draw';
     }
 
