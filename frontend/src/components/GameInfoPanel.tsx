@@ -8,13 +8,17 @@ import ShareBoardStateModal from './ShareBoardStateModal';
 import SoundControls from './SoundControls';
 import TooltipContainer from './TooltipContainer';
 
+
 import FileImportIcon from '../assets/icons/file-import.svg?react';
 import GearIcon from '../assets/icons/gear.svg?react';
 import ShareNodesIcon from '../assets/icons/share-nodes.svg?react';
+import { useGameRoom } from '../providers/GameRoomProvider';
 
 type Views = 'history' | 'settings';
 
 function GameInfoPanel() {
+    const { room } = useGameRoom();
+
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
     const [loadFenModalIsShowing, setLoadFenModalIsShowing] = useState(false);
     const [currentView, setCurrentView] = useState<Views>('history');
@@ -27,10 +31,30 @@ function GameInfoPanel() {
         setLoadFenModalIsShowing(false);
     };
 
+    if (!room) return null;
+    const { players, playerIdToScore, type } = room;
+
+    let headerText = '';
+    let scoreText = '';
+    if (type === 'self') {
+        headerText = 'Freeplay';
+    } else {
+        const [player1, player2] = players;
+        headerText = `${player1.displayName} vs. ${player2.displayName}`;
+        scoreText = `${playerIdToScore[player1.id]}-${playerIdToScore[player2.id]}`;
+    }
+
     return (
         <>
             <InfoCard className="h-full">
-                <div className="xl:p-8 p-3 flex flex-col gap-4 h-full">
+                <div className="xl:px-6 xl:py-5 p-3 flex flex-col gap-4 h-full">
+                    <section className="flex lg:flex-row flex-col gap-1 justify-between">
+                        <span className="lg:text-lg text-sm text-zinc-100">{headerText}</span>
+                        <span className="lg:text-base text-xs text-zinc-300 tracking-[0.2em] proportional-nums">
+                            {scoreText}
+                        </span>
+                    </section>
+
                     {currentView === 'history' && <MoveHistoryTable />}
                     {currentView === 'settings' && (
                         <>

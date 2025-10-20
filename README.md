@@ -54,10 +54,12 @@ Notes
 │     │  ├─ SoundControls.tsx                                 # Mute/volume UI controls
 │     │  ├─ GameInfoPanel.tsx                                 # Side panel with move history and game actions
 │     │  ├─ InfoCard.tsx, PlayerCard.tsx, ResetButton.tsx     # Non-chessboard components
+│     │  ├─ GameRoomController.tsx                            # Syncs game room state with backend
 │     ├─ providers/                                           # React context providers
 │     │  ├─ ChessGameProvider.tsx                             # Game state/reducer and context API
 │     │  ├─ SoundProvider.tsx                                 # Sound effects context API
-│     │  └─ ImagesProvider.tsx                                # Preload/decode piece images
+│     │  ├─ ImagesProvider.tsx                                # Preload/decode piece images
+│     │  └─ GameRoomProvider.tsx                              # Game room state
 │     └─ utils/                                               # Core chess logic + helpers
 │        ├─ board.ts                                          # Board coords, bounds, king lookups, glow helpers
 │        ├─ draws.ts                                          # Draw conditions and status computation
@@ -119,6 +121,9 @@ Notes
     - `frontend/src/providers/SoundProvider.tsx` manages sound state and HTMLAudioElement pooling.
     - `frontend/src/components/SoundEffects.tsx` subscribes to game state changes and plays sounds.
     - `frontend/src/components/SoundControls.tsx` has sound settings UI (mute/volume).
+
+- Game room: `frontend/src/providers/GameRoomProvider.tsx`, `frontend/src/components/GameRoomController.tsx`
+    - Provides room context (room id, membership, status) and actions
 
 ## Roadmap
 
