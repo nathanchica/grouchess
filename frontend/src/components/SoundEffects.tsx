@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 
 import invariant from 'tiny-invariant';
 
-
 import { useChessGame, type GameStatus } from '../providers/ChessGameProvider';
 import { useSound, type SoundName } from '../providers/SoundProvider';
 
@@ -13,6 +12,7 @@ const DRAW_STATUSES: ReadonlySet<GameStatus['status']> = new Set<GameStatus['sta
     '50-move-draw',
     'threefold-repetition',
     'draw-by-agreement',
+    'insufficient-material',
 ] as const);
 
 const getMoveSoundName = (san: string, isCapture: boolean): SoundName => {

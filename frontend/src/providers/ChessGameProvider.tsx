@@ -4,6 +4,7 @@ import invariant from 'tiny-invariant';
 
 import {
     computeEnPassantTargetIndex,
+    hasInsufficientMatingMaterial,
     isPromotionSquare,
     NUM_SQUARES,
     type ChessBoardType,
@@ -36,7 +37,8 @@ export type GameStatus = {
         | 'draw-by-agreement'
         | 'resigned'
         | 'time-out'
-        | 'threefold-repetition';
+        | 'threefold-repetition'
+        | 'insufficient-material';
     winner?: PieceColor;
     check?: PieceColor;
 };
@@ -95,6 +97,8 @@ function computeGameStatusFromState({ board, playerTurn, halfmoveClock, legalMov
         return { status: 'stalemate' };
     } else if (halfmoveClock >= FIFTY_MOVE_RULE_HALFMOVES) {
         return { status: '50-move-draw' };
+    } else if (hasInsufficientMatingMaterial(board)) {
+        return { status: 'insufficient-material' };
     } else if (isInCheck) {
         return {
             status: 'in-progress',
