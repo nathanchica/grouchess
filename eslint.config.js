@@ -99,4 +99,10 @@ export default [
             react: { version: 'detect' },
         },
     },
+    {
+        files: ['backend/**/*.ts'],
+        rules: {
+            'no-console': 'off',
+        },
+    },
 ];
