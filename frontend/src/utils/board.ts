@@ -1,6 +1,6 @@
 import invariant from 'tiny-invariant';
 
-import { getPiece, isValidPieceShortAlias, type PieceShortAlias, type PieceColor } from './pieces';
+import { isValidPieceShortAlias, type PieceShortAlias, type PieceColor } from './pieces';
 
 export type ChessBoardType = Array<PieceShortAlias | undefined>;
 
@@ -116,93 +116,4 @@ export function algebraicNotationToIndex(algebraicNotation: string): number {
     const col = fileCharCode - 'a'.charCodeAt(0);
     const row = NUM_ROWS - rank;
     return rowColToIndex({ row, col });
-}
-
-/**
- * Determines whether neither side can possibly checkmate given the remaining material.
- * Considers the following drawn cases:
- * - King vs king (bare kings)
- * - King + bishop vs king
- * - King + knight vs king
- * - King + two knights vs king (per chess.com's rule)
- * - King + bishop vs king + bishop when both bishops live on the same color squares
- *
- * https://support.chess.com/en/articles/8705277-what-does-insufficient-mating-material-mean
- */
-export function hasInsufficientMatingMaterial(board: ChessBoardType): boolean {
-    type MaterialSummary = {
-        pawns: number;
-        rooks: number;
-        queens: number;
-        knights: number;
-        bishopsLight: number;
-        bishopsDark: number;
-    };
-
-    const material: Record<PieceColor, MaterialSummary> = {
-        white: { pawns: 0, rooks: 0, queens: 0, knights: 0, bishopsLight: 0, bishopsDark: 0 },
-        black: { pawns: 0, rooks: 0, queens: 0, knights: 0, bishopsLight: 0, bishopsDark: 0 },
-    };
-
-    board.forEach((alias, index) => {
-        if (!alias) return;
-        const { color, type } = getPiece(alias);
-        const colorMaterial = material[color];
-        switch (type) {
-            case 'pawn':
-                colorMaterial.pawns += 1;
-                break;
-            case 'rook':
-                colorMaterial.rooks += 1;
-                break;
-            case 'queen':
-                colorMaterial.queens += 1;
-                break;
-            case 'knight':
-                colorMaterial.knights += 1;
-                break;
-            case 'bishop': {
-                const { row, col } = indexToRowCol(index);
-                if ((row + col) % 2 === 0) colorMaterial.bishopsLight += 1;
-                else colorMaterial.bishopsDark += 1;
-                break;
-            }
-            case 'king':
-                break;
-            default:
-                invariant(false, `Unexpected piece type '${type}'`);
-        }
-    });
-
-    const hasMajorMaterial = ({ pawns, rooks, queens }: MaterialSummary): boolean =>
-        pawns > 0 || rooks > 0 || queens > 0;
-    if (hasMajorMaterial(material.white) || hasMajorMaterial(material.black)) return false;
-
-    const whiteBishops = material.white.bishopsLight + material.white.bishopsDark;
-    const blackBishops = material.black.bishopsLight + material.black.bishopsDark;
-    const whiteMinor = whiteBishops + material.white.knights;
-    const blackMinor = blackBishops + material.black.knights;
-
-    if (whiteMinor === 0 && blackMinor === 0) return true;
-
-    if (blackMinor === 0) {
-        if (whiteBishops === 1 && material.white.knights === 0) return true;
-        if (material.white.knights === 1 && whiteBishops === 0) return true;
-        // Chess.com specific rule: king + 2 knights vs king is a draw
-        if (material.white.knights === 2 && whiteBishops === 0) return true;
-    }
-    if (whiteMinor === 0) {
-        if (blackBishops === 1 && material.black.knights === 0) return true;
-        if (material.black.knights === 1 && blackBishops === 0) return true;
-        // Chess.com specific rule: king + 2 knights vs king is a draw
-        if (material.black.knights === 2 && blackBishops === 0) return true;
-    }
-
-    if (whiteBishops === 1 && blackBishops === 1 && material.white.knights === 0 && material.black.knights === 0) {
-        const whiteBishopOnLight = material.white.bishopsLight === 1;
-        const blackBishopOnLight = material.black.bishopsLight === 1;
-        if (whiteBishopOnLight === blackBishopOnLight) return true;
-    }
-
-    return false;
 }

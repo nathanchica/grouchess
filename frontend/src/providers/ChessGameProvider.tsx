@@ -4,13 +4,13 @@ import invariant from 'tiny-invariant';
 
 import {
     computeEnPassantTargetIndex,
-    hasInsufficientMatingMaterial,
     isPromotionSquare,
     NUM_SQUARES,
     type ChessBoardType,
     createBoardFromFEN,
     algebraicNotationToIndex,
 } from '../utils/board';
+import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from '../utils/draws';
 import {
     computeAllLegalMoves,
     computeCastleRightsChangesFromMove,
@@ -43,9 +43,12 @@ export type GameStatus = {
     check?: PieceColor;
 };
 
-type State = {
+export type BoardState = {
+    // Array of 64 squares representing the chess board, each square can be empty (undefined) or a piece short alias
     board: ChessBoardType;
+    // Color that has the turn to move
     playerTurn: PieceColor;
+    // Castling rights for both colors
     castleRightsByColor: CastleRightsByColor;
     // index that was skipped by a pawn that moved two squares in the previous move
     enPassantTargetIndex: number | null;
@@ -53,14 +56,25 @@ type State = {
     halfmoveClock: number;
     // Full-move number (increments after each black move)
     fullmoveClock: number;
+};
+
+type State = BoardState & {
+    // Indices of the squares involved in the previous move used for highlighting
     previousMoveIndices: number[];
+    // Array of captured pieces
     captures: CaptureProps[];
+    // History of moves in various notations
     moveHistory: MoveNotation[];
+    // Version number to force re-renders when resetting/loading games
     timelineVersion: number;
+    // Pending promotion info (if a pawn has reached the last rank and is awaiting promotion choice)
     pendingPromotion: { move: Move; preBoard: ChessBoardType; prePreviousMoveIndices: number[] } | null;
+    // Current game status derived from the board state
     gameStatus: GameStatus;
     // Store of legal moves for the current player
     legalMovesStore: LegalMovesStore;
+    // Counts of positions (FEN strings) for threefold repetition detection
+    positionCounts: Record<string, number>;
 };
 
 type Action =
@@ -78,13 +92,13 @@ export type ChessGameContextType = State & {
     loadFEN: (fenString: string) => void;
 };
 
-/**
- * fifty consecutive moves (i.e. 100 single moves) occuring without any capture or any pawn move
- * https://www.janko.at/Retros/Glossary/FiftyMoves.htm
- */
-const FIFTY_MOVE_RULE_HALFMOVES = 100;
-
-function computeGameStatusFromState({ board, playerTurn, halfmoveClock, legalMovesStore }: State): GameStatus {
+function computeGameStatusFromState({
+    board,
+    playerTurn,
+    halfmoveClock,
+    legalMovesStore,
+    positionCounts,
+}: State): GameStatus {
     const isInCheck = isKingInCheck(board, playerTurn);
     const hasNoLegalMoves = legalMovesStore.allMoves.length === 0;
     if (isInCheck && hasNoLegalMoves) {
@@ -93,12 +107,10 @@ function computeGameStatusFromState({ board, playerTurn, halfmoveClock, legalMov
             winner: playerTurn === 'white' ? 'black' : 'white',
             check: playerTurn,
         };
-    } else if (hasNoLegalMoves) {
-        return { status: 'stalemate' };
-    } else if (halfmoveClock >= FIFTY_MOVE_RULE_HALFMOVES) {
-        return { status: '50-move-draw' };
-    } else if (hasInsufficientMatingMaterial(board)) {
-        return { status: 'insufficient-material' };
+    }
+    const forcedDrawStatus = computeForcedDrawStatus(board, hasNoLegalMoves, halfmoveClock, positionCounts);
+    if (forcedDrawStatus) {
+        return { status: forcedDrawStatus };
     } else if (isInCheck) {
         return {
             status: 'in-progress',
@@ -144,13 +156,18 @@ function createInitialCastleRights(): CastleRightsByColor {
 }
 
 function createInitialChessGame(): State {
-    const initialState: Omit<State, 'legalMovesStore'> = {
+    const boardState = {
         board: createInitialBoard(),
-        playerTurn: 'white',
+        playerTurn: 'white' as PieceColor,
         castleRightsByColor: createInitialCastleRights(),
         enPassantTargetIndex: null,
         halfmoveClock: 0,
         fullmoveClock: 1,
+    };
+    const positionKey = createRepetitionKeyFromBoardState(boardState);
+
+    return {
+        ...boardState,
         previousMoveIndices: [],
         captures: [],
         moveHistory: [],
@@ -159,15 +176,8 @@ function createInitialChessGame(): State {
         gameStatus: {
             status: 'in-progress',
         },
-    };
-    return {
-        ...initialState,
-        legalMovesStore: computeAllLegalMoves(
-            initialState.board,
-            initialState.playerTurn,
-            initialState.castleRightsByColor,
-            initialState.enPassantTargetIndex
-        ),
+        legalMovesStore: computeAllLegalMoves(boardState),
+        positionCounts: { [positionKey]: 1 },
     };
 }
 
@@ -180,45 +190,44 @@ function createChessGameFromFEN(fenString: string): State {
     invariant(parts.length === 6, 'FEN must have exactly 6 fields');
     const [placementPart, activeColorPart, castlingPart, enPassantPart, halfmovePart, fullmovePart] = parts;
 
-    const board = createBoardFromFEN(placementPart);
-    const playerTurn: PieceColor = activeColorPart === 'w' ? 'white' : 'black';
-    const castleRightsByColor =
-        castlingPart === '-'
-            ? {
-                  white: { canShortCastle: false, canLongCastle: false },
-                  black: { canShortCastle: false, canLongCastle: false },
-              }
-            : {
-                  white: {
-                      canShortCastle: castlingPart.includes('K'),
-                      canLongCastle: castlingPart.includes('Q'),
+    const boardState: BoardState = {
+        board: createBoardFromFEN(placementPart),
+        playerTurn: activeColorPart === 'w' ? 'white' : 'black',
+        castleRightsByColor:
+            castlingPart === '-'
+                ? {
+                      white: { canShortCastle: false, canLongCastle: false },
+                      black: { canShortCastle: false, canLongCastle: false },
+                  }
+                : {
+                      white: {
+                          canShortCastle: castlingPart.includes('K'),
+                          canLongCastle: castlingPart.includes('Q'),
+                      },
+                      black: {
+                          canShortCastle: castlingPart.includes('k'),
+                          canLongCastle: castlingPart.includes('q'),
+                      },
                   },
-                  black: {
-                      canShortCastle: castlingPart.includes('k'),
-                      canLongCastle: castlingPart.includes('q'),
-                  },
-              };
-    const enPassantTargetIndex = enPassantPart === '-' ? null : algebraicNotationToIndex(enPassantPart);
-
-    const state: State = {
-        board,
-        playerTurn,
-        castleRightsByColor,
-        enPassantTargetIndex,
+        enPassantTargetIndex: enPassantPart === '-' ? null : algebraicNotationToIndex(enPassantPart),
         halfmoveClock: parseInt(halfmovePart, 10),
         fullmoveClock: parseInt(fullmovePart, 10),
+    };
+    const positionKey = createRepetitionKeyFromBoardState(boardState);
+
+    const state: State = {
+        ...boardState,
         previousMoveIndices: [],
         captures: [],
         moveHistory: [],
         timelineVersion: 0,
         pendingPromotion: null,
         gameStatus: { status: 'in-progress' },
-        legalMovesStore: computeAllLegalMoves(board, playerTurn, castleRightsByColor, enPassantTargetIndex),
+        legalMovesStore: computeAllLegalMoves(boardState),
+        positionCounts: { [positionKey]: 1 },
     };
 
-    const gameStatus = computeGameStatusFromState(state);
-
-    return { ...state, gameStatus };
+    return { ...state, gameStatus: computeGameStatusFromState(state) };
 }
 
 const ChessGameContext = createContext<ChessGameContextType>({
@@ -252,6 +261,7 @@ function reducer(state: State, action: Action): State {
                 captures,
                 moveHistory,
                 legalMovesStore,
+                positionCounts,
             } = state;
             const { startIndex, endIndex, type, capturedPiece, piece } = move;
             const { type: pieceType } = piece;
@@ -282,23 +292,28 @@ function reducer(state: State, action: Action): State {
                 black: { ...castleRightsByColor.black, ...(rightsDiff.black ?? {}) },
             };
 
-            const nextState: State = {
-                ...state,
+            const boardState: BoardState = {
                 board: nextBoard,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 castleRightsByColor: nextCastleRights,
                 enPassantTargetIndex: isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null,
                 halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : halfmoveClock + 1,
                 fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
+            };
+            const positionKey = createRepetitionKeyFromBoardState(boardState);
+
+            const nextState: State = {
+                ...state,
+                ...boardState,
                 previousMoveIndices: [startIndex, endIndex],
                 captures: captureProps ? [...captures, captureProps] : captures,
+                legalMovesStore: computeAllLegalMoves(boardState),
+                positionCounts:
+                    boardState.halfmoveClock === 0
+                        ? { [positionKey]: 1 }
+                        : { ...positionCounts, [positionKey]: (positionCounts[positionKey] ?? 0) + 1 },
             };
-            nextState.legalMovesStore = computeAllLegalMoves(
-                nextState.board,
-                nextState.playerTurn,
-                nextState.castleRightsByColor,
-                nextState.enPassantTargetIndex
-            );
+
             const gameStatus = computeGameStatusFromState(nextState);
 
             /**
@@ -337,6 +352,16 @@ function reducer(state: State, action: Action): State {
                 nextCaptures = [...captures, { piece: capturedPiece, moveIndex: moveHistory.length }];
             }
 
+            const boardState: BoardState = {
+                board: updatedBoard,
+                playerTurn: playerTurn === 'white' ? 'black' : 'white',
+                castleRightsByColor: state.castleRightsByColor,
+                enPassantTargetIndex: null,
+                halfmoveClock: 0, // promotion is always a pawn move
+                fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
+            };
+            const positionKey = createRepetitionKeyFromBoardState(boardState);
+
             const nextState: State = {
                 ...state,
                 board: updatedBoard,
@@ -345,13 +370,13 @@ function reducer(state: State, action: Action): State {
                 pendingPromotion: null,
                 halfmoveClock: 0, // promotion is always a pawn move
                 fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
+                legalMovesStore: computeAllLegalMoves(boardState),
+                positionCounts: {
+                    ...state.positionCounts,
+                    [positionKey]: (state.positionCounts[positionKey] ?? 0) + 1,
+                },
             };
-            nextState.legalMovesStore = computeAllLegalMoves(
-                nextState.board,
-                nextState.playerTurn,
-                nextState.castleRightsByColor,
-                nextState.enPassantTargetIndex
-            );
+
             const gameStatus = computeGameStatusFromState(nextState);
             const moveWithPromotion: Move = { ...move, promotion: pawnPromotion };
 

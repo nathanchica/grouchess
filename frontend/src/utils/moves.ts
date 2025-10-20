@@ -4,6 +4,8 @@ import { indexToRowCol, isRowColInBounds, rowColToIndex, getKingIndices, NUM_ROW
 import { getColorFromAlias, getEnemyColor, getPiece } from './pieces';
 import type { Piece, PieceColor, PieceShortAlias, PieceType, PawnPromotion } from './pieces';
 
+import type { BoardState } from '../providers/ChessGameProvider';
+
 type RowColDeltas = Array<[number, number]>;
 export type CastleRights = {
     canShortCastle: boolean;
@@ -395,25 +397,22 @@ export function computePossibleMovesForIndex(
 
 /**
  * Computes all possible moves for a player given the current board state.
- * @param board The current state of the chess board.
- * @param color The color of the player to move.
- * @param castleRightsByColor The castling rights for both colors.
- * @param enPassantTargetIndex The index of the en passant target square, if any.
+ * @param boardState The current state of the chess board.
  * @returns An object containing all legal moves and various lookup maps.
  */
-export function computeAllLegalMoves(
-    board: ChessBoardType,
-    color: PieceColor,
-    castleRightsByColor: CastleRightsByColor,
-    enPassantTargetIndex: number | null
-): LegalMovesStore {
+export function computeAllLegalMoves({
+    board,
+    playerTurn,
+    castleRightsByColor,
+    enPassantTargetIndex,
+}: BoardState): LegalMovesStore {
     const allMoves: Move[] = [];
     const byStartIndex: Record<number, Move[]> = {};
     const byEndIndex: Record<number, Move[]> = {};
     const typeAndEndIndexToStartIndex: Record<`${PieceType}:${number}`, number[]> = {};
 
     board.forEach((pieceAlias, index) => {
-        if (pieceAlias && getColorFromAlias(pieceAlias) === color) {
+        if (pieceAlias && getColorFromAlias(pieceAlias) === playerTurn) {
             const movesForIndex = computePossibleMovesForIndex(index, board, castleRightsByColor, enPassantTargetIndex);
             if (movesForIndex.length > 0) {
                 allMoves.push(...movesForIndex);

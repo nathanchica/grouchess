@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { useChessGame } from '../providers/ChessGameProvider';
+import { getDisplayTextForDrawStatus, isDrawStatus } from '../utils/draws';
 import { type MoveNotation } from '../utils/notations';
 
 function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
@@ -24,10 +25,11 @@ function MoveHistoryTable() {
 
     const movePairs = createMovePairs(moveHistory);
     const isGameOver = gameStatus.status !== 'in-progress';
-    const isDraw = isGameOver && !gameStatus.winner;
+    const isDraw = isDrawStatus(gameStatus.status);
     const winnerLabel = isDraw ? 'Draw' : gameStatus.winner === 'white' ? 'White wins' : 'Black wins';
     const resultScore = gameStatus.winner === 'white' ? '1-0' : gameStatus.winner === 'black' ? '0-1' : '1/2-1/2';
     const statusLabel = (() => {
+        if (isDraw) return getDisplayTextForDrawStatus(gameStatus.status);
         const label = gameStatus.status.replace(/-/g, ' ');
         return label.charAt(0).toUpperCase() + label.slice(1);
     })();
@@ -89,9 +91,9 @@ function MoveHistoryTable() {
                 <div
                     aria-live="polite"
                     role="status"
-                    className="mt-4 rounded-md border border-white/10 bg-zinc-900 p-3 text-sm text-zinc-200"
+                    className="my-4 rounded-md border border-white/10 bg-zinc-900 p-3 w-[95%] text-sm text-zinc-200"
                 >
-                    <p className="text-xs uppercase tracking-wide text-zinc-400">Game over • {statusLabel}</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">{statusLabel}</p>
                     <p className="mt-1 text-base font-semibold text-zinc-100">{winnerLabel}</p>
                     <p className="text-sm text-zinc-200">{resultScore}</p>
                 </div>

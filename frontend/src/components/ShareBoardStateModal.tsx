@@ -20,14 +20,14 @@ function ShareBoardStateModal({ onDismiss }: Props) {
     const [copied, setCopied] = useState(false);
     const timerRef = useRef<number | null>(null);
 
-    const fenString = createFEN(
+    const fenString = createFEN({
         board,
         playerTurn,
         castleRightsByColor,
         enPassantTargetIndex,
         halfmoveClock,
-        fullmoveClock
-    );
+        fullmoveClock,
+    });
 
     const handleCopy = useCallback(async () => {
         try {

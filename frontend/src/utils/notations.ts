@@ -1,10 +1,10 @@
 import invariant from 'tiny-invariant';
 
-import { indexToRowCol, rowColToIndex, NUM_COLS, NUM_ROWS, type ChessBoardType } from './board';
-import { type CastleRightsByColor, type LegalMovesStore, type Move } from './moves';
-import { isValidPieceShortAlias, type PieceColor, type PieceShortAlias } from './pieces';
+import { indexToRowCol, rowColToIndex, NUM_COLS, NUM_ROWS } from './board';
+import { type LegalMovesStore, type Move } from './moves';
+import { isValidPieceShortAlias, type PieceShortAlias } from './pieces';
 
-import { type GameStatus } from '../providers/ChessGameProvider';
+import { type BoardState, type GameStatus } from '../providers/ChessGameProvider';
 
 export type MoveNotation = {
     // For display or common use. Standard (short-form) algebraic notation.
@@ -17,7 +17,7 @@ export type MoveNotation = {
 
 type Disambiguator = 'none' | 'file' | 'rank' | 'both';
 
-const LOWERCASE_A_CHARCODE = 97;
+const LOWERCASE_A_CHARCODE = 'a'.charCodeAt(0);
 const SHORT_ALIAS_TO_FIGURINE_UNICODE: Partial<Record<PieceShortAlias, string>> = {
     K: '\u265A',
     Q: '\u265B',
@@ -30,7 +30,7 @@ function getFileFromColumn(col: number) {
     return String.fromCharCode(LOWERCASE_A_CHARCODE + col);
 }
 
-function indexToAlgebraicNotation(index: number): string {
+export function indexToAlgebraicNotation(index: number): string {
     const { row, col } = indexToRowCol(index);
     return `${getFileFromColumn(col)}${NUM_ROWS - row}`;
 }
@@ -105,14 +105,14 @@ export function createAlgebraicNotation(
  * Creates a FEN string representing the current game state.
  * Fields: piece placement, active color, castling availability, en passant target, halfmove clock, fullmove number.
  */
-export function createFEN(
-    board: ChessBoardType,
-    playerTurn: PieceColor,
-    castleRightsByColor: CastleRightsByColor,
-    enPassantTargetIndex: number | null,
-    halfmoveClock: number,
-    fullmoveClock: number
-): string {
+export function createFEN({
+    board,
+    playerTurn,
+    castleRightsByColor,
+    enPassantTargetIndex,
+    halfmoveClock,
+    fullmoveClock,
+}: BoardState): string {
     // Piece placement (from 8th rank to 1st)
     let placementRows: string[] = [];
     for (let row = 0; row < NUM_ROWS; row++) {

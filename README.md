@@ -60,6 +60,7 @@ Notes
 │     │  └─ ImagesProvider.tsx                                # Preload/decode piece images
 │     └─ utils/                                               # Core chess logic + helpers
 │        ├─ board.ts                                          # Board coords, bounds, king lookups, glow helpers
+│        ├─ draws.ts                                          # Draw conditions and status computation
 │        ├─ pieces.ts                                         # Piece metadata, colors, constants
 │        ├─ moves.ts                                          # Move engine (Move type, gen, legality, en passant, castling)
 │        ├─ notations.ts                                      # algebraic notation generation/parsing
@@ -89,16 +90,23 @@ Notes
     - Able to initialize from FEN strings.
 
 - Move engine: `frontend/src/utils/moves.ts`
-    - `type Move` models a move (start/end/type, moving piece, optional capture info).
+    - `type Move` models a move (start/end/type, moving piece, optional capture info, optional promotion info).
     - `computePossibleMovesForIndex(...)` generates legal moves for a square and filters out self-check.
     - `isSquareAttacked(...)` detects attacks via pre-hoisted attacker sets.
     - `computeNextChessBoardFromMove(board, move)` returns a chess board with a given move applied to it
       (castling/en passant included).
     - `computeCastleRightsChangesFromMove(move)` produces castling rights diffs.
 
+- Draws: `frontend/src/utils/draws.ts`
+    - `computeForcedDrawStatus(...)` checks for stalemate, 50-move rule, insufficient material.
+
+- Notations: `frontend/src/utils/notations.ts`
+    - `createFEN(...)` builds FEN strings from board state.
+    - `createAlgebraicNotation(...)` builds SAN strings from moves and board state.
+
 - Board UI: `frontend/src/components/ChessBoard.tsx`
     - Pointer drag-and-drop and click-to-move.
-    - Builds an `endIndex -> Move` map for the selected piece and glows squares accordingly.
+    - Determines glowing squares based off legalMoveStore and previousMoveIndices from state.
 
 - Visuals: `frontend/src/components/ChessSquare.tsx`
     - Renders per-square state (selected, previous move, check, canMove/canCapture).
@@ -114,15 +122,15 @@ Notes
 
 ## Roadmap
 
-- Draw and ~~checkmate~~ detection (~~stalemate~~, ~~checkmate~~, ~~50-move~~, threefold, insufficient material)
-- Move undos
 - Game timers
+- Game room
+- Move undos
 - Resign/draw offers
+- Main menu to start a new game or join a game
+- Backend service with Express + Socket.io for realtime play with other players
 - Change piece set images
 - Change board colors
 - Piece sliding animations
-- Backend service with Express + Socket.io for realtime play with other players
-- Main menu to start a new game or join a game
 
 ## Credits
 
