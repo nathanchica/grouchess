@@ -44,6 +44,7 @@ export default [
                 Audio: 'readonly',
                 Image: 'readonly',
                 HTMLAudioElement: 'readonly',
+                HTMLButtonElement: 'readonly',
                 HTMLDivElement: 'readonly',
                 HTMLFormElement: 'readonly',
                 HTMLImageElement: 'readonly',

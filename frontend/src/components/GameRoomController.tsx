@@ -38,6 +38,8 @@ function GameRoomController() {
      * - fetch room info from backend
      */
     useEffect(() => {
+        if (room) return;
+
         const player1: Player = {
             id: 'player-1',
             displayName: 'Player 1',

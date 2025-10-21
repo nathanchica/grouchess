@@ -1,17 +1,19 @@
 import { useState } from 'react';
 
 import { useFetchTimeControlOptions } from '../../hooks/useFetchTimeControlOptions';
+import type { TimeControl } from '../../providers/GameRoomProvider';
 
 const NUM_SHIMMERS = 6;
 
 type Props = {
-    onTimeControlSelect: (timeControlAlias: string | null) => void;
+    onTimeControlSelect: (timeControl: TimeControl | null) => void;
 };
 
 function TimeControlForm({ onTimeControlSelect }: Props) {
     const [selectedTimeControlAlias, setSelectedTimeControlAlias] = useState<string | null>(null);
     const {
         timeControlOptions,
+        timeControlOptionsByAlias,
         loading: isLoadingTimeControls,
         error: timeControlError,
     } = useFetchTimeControlOptions();
@@ -20,7 +22,7 @@ function TimeControlForm({ onTimeControlSelect }: Props) {
 
     const handleSelectionChange = (alias: string | null) => {
         setSelectedTimeControlAlias(alias);
-        onTimeControlSelect(alias);
+        onTimeControlSelect(alias ? timeControlOptionsByAlias[alias] : null);
     };
 
     return (

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import ExitGameRoomModal from './ExitGameRoomModal';
 import InfoCard from './InfoCard';
 import LoadFENModal from './LoadFENModal';
 import MoveHistoryTable from './MoveHistoryTable';
@@ -8,7 +9,7 @@ import ShareBoardStateModal from './ShareBoardStateModal';
 import SoundControls from './SoundControls';
 import TooltipContainer from './TooltipContainer';
 
-
+import ArrowRightFromBracketIcon from '../assets/icons/arrow-right-from-bracket.svg?react';
 import FileImportIcon from '../assets/icons/file-import.svg?react';
 import GearIcon from '../assets/icons/gear.svg?react';
 import ShareNodesIcon from '../assets/icons/share-nodes.svg?react';
@@ -21,6 +22,7 @@ function GameInfoPanel() {
 
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
     const [loadFenModalIsShowing, setLoadFenModalIsShowing] = useState(false);
+    const [exitModalIsShowing, setExitModalIsShowing] = useState(false);
     const [currentView, setCurrentView] = useState<Views>('history');
 
     const onShareModalDismiss = () => {
@@ -29,6 +31,10 @@ function GameInfoPanel() {
 
     const onLoadFenModalDismiss = () => {
         setLoadFenModalIsShowing(false);
+    };
+
+    const onExitModalDismiss = () => {
+        setExitModalIsShowing(false);
     };
 
     if (!room) return null;
@@ -106,12 +112,26 @@ function GameInfoPanel() {
                                 <ShareNodesIcon className="w-5 h-5" aria-hidden="true" />
                             </button>
                         </TooltipContainer>
+
+                        <TooltipContainer tooltipText="Exit Game">
+                            <button
+                                type="button"
+                                onClick={() => setExitModalIsShowing(true)}
+                                aria-label="Exit Game"
+                                aria-haspopup="dialog"
+                                aria-controls={exitModalIsShowing ? 'exit-game-room-modal' : undefined}
+                                className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
+                            >
+                                <ArrowRightFromBracketIcon className="w-5 h-5" aria-hidden="true" />
+                            </button>
+                        </TooltipContainer>
                     </section>
                 </div>
             </InfoCard>
 
             {shareModalIsShowing && <ShareBoardStateModal onDismiss={onShareModalDismiss} />}
             {loadFenModalIsShowing && <LoadFENModal onDismiss={onLoadFenModalDismiss} />}
+            {exitModalIsShowing && <ExitGameRoomModal onDismiss={onExitModalDismiss} />}
         </>
     );
 }
