@@ -4,6 +4,9 @@ import { useChessGame } from '../providers/ChessGameProvider';
 import { useGameRoom, type GameRoom, type Player } from '../providers/GameRoomProvider';
 import { isDrawStatus } from '../utils/draws';
 
+/**
+ * Placeholder until we have a proper backend system maintaining game room states
+ */
 function GameRoomController() {
     const { room, setRoom, increasePlayerScore } = useGameRoom();
     const { gameStatus } = useChessGame();
@@ -56,6 +59,12 @@ function GameRoomController() {
         setRoom({
             id: 'game-room',
             type: 'player-vs-player',
+            timeControl: {
+                alias: '5|0',
+                minutes: 5,
+                displayText: '5 min',
+                increment: 0,
+            },
             players,
             playerIdToDisplayName,
             playerIdToScore,
