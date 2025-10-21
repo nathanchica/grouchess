@@ -4,6 +4,9 @@ import { createRoot } from 'react-dom/client';
 
 import { BrowserRouter } from 'react-router';
 
+import '@fontsource-variable/merriweather';
+import '@fontsource-variable/playfair-display';
+
 import './index.css';
 import App from './App';
 
