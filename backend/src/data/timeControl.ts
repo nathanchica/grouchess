@@ -11,3 +11,8 @@ export const SUPPORTED_TIME_CONTROLS: TimeControl[] = [
     { alias: '15|10', minutes: 15, increment: 10, displayText: '15|10' },
     { alias: '30|0', minutes: 30, increment: 0, displayText: '30 min' },
 ];
+
+export function getTimeControlByAlias(alias: string): TimeControl | null {
+    const timeControl = SUPPORTED_TIME_CONTROLS.find((timeControl) => timeControl.alias === alias);
+    return timeControl || null;
+}
