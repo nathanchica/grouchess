@@ -19,7 +19,7 @@ function ChessGameView() {
                     <section className="lg:col-span-6 sm:col-span-9 col-span-12">
                         <MainSection />
                     </section>
-                    <section className="col-span-3 2xl:max-h-[800px] max-h-[700px] sm:block hidden">
+                    <section className="col-span-3 sm:block hidden contain-size">
                         <GameInfoPanel />
                     </section>
                 </div>
