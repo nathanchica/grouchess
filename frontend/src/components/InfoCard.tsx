@@ -6,7 +6,7 @@ type Props = {
 };
 
 function InfoCard({ className, children }: Props) {
-    return <div className={`bg-zinc-700 rounded-xl shadow-lg overflow-hidden ${className}`}>{children}</div>;
+    return <div className={`bg-zinc-700 rounded-xl shadow-lg ${className}`}>{children}</div>;
 }
 
 export default InfoCard;

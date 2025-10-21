@@ -5,6 +5,7 @@ import type { Player, GameRoom, RoomType, TimeControl } from '../../providers/Ga
 import { useGameRoom } from '../../providers/GameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
 import { getPiece, type PieceColor } from '../../utils/pieces';
+import Spinner from '../common/Spinner';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';
 import SideSelectForm from '../mainmenu/SideSelectForm';
 import TimeControlForm from '../mainmenu/TimeControlForm';
@@ -173,15 +174,24 @@ function MainMenuView() {
                             })}
                         </div>
 
-                        {errorMessage && <span className="text-sm font-semibold text-red-500">{errorMessage}</span>}
-                        <button
-                            type="button"
-                            disabled={loading}
-                            className="mt-8 cursor-pointer w-full rounded-2xl bg-emerald-500/90 px-6 py-4 text-center font-semibold text-zinc-900 transition hover:bg-emerald-500/100 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-                            onClick={handleStartClick}
-                        >
-                            {loading ? 'Creating game room...' : 'Start'}
-                        </button>
+                        <div className="flex flex-col gap-4">
+                            {errorMessage && <span className="text-sm font-semibold text-red-500">{errorMessage}</span>}
+                            <button
+                                type="button"
+                                disabled={loading}
+                                className="cursor-pointer w-full rounded-2xl bg-emerald-700/90 px-6 py-4 text-center font-semibold text-zinc-100 transition hover:bg-emerald-700/100 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+                                onClick={handleStartClick}
+                            >
+                                {loading ? (
+                                    <div className="flex items-center justify-center">
+                                        <Spinner />
+                                        Creating game room...
+                                    </div>
+                                ) : (
+                                    'Start'
+                                )}
+                            </button>
+                        </div>
                     </section>
 
                     <section className="flex flex-col gap-12 rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-8 shadow-2xl shadow-emerald-900/20">
