@@ -12,20 +12,24 @@ function ChessGameView() {
             <GameRoomController />
 
             <main className="min-h-dvh font-serif bg-zinc-800">
-                <div className="grid grid-cols-12 2xl:gap-16 xl:gap-12 lg:gap-8 gap-4 py-8 2xl:px-24 xl:px-12 px-4">
+                <div className="grid grid-cols-12 2xl:gap-12 xl:gap-10 lg:gap-8 gap-4 py-8 2xl:px-24 xl:px-12 px-4">
                     <section className="md:col-span-3 lg:block hidden">
                         <PlayersInfoSection variant="col" />
                     </section>
-                    <section className="lg:col-span-6 col-span-9">
+                    <section className="lg:col-span-6 sm:col-span-9 col-span-12">
                         <MainSection />
                     </section>
-                    <section className="col-span-3 2xl:max-h-[800px] max-h-[700px]">
+                    <section className="col-span-3 2xl:max-h-[800px] max-h-[700px] sm:block hidden">
                         <GameInfoPanel />
                     </section>
                 </div>
 
                 <section className="lg:hidden">
                     <PlayersInfoSection variant="row" />
+                </section>
+
+                <section className="sm:hidden mt-8 px-4 pb-8">
+                    <GameInfoPanel />
                 </section>
             </main>
         </ChessGameProvider>

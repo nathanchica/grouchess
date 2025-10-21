@@ -4,41 +4,51 @@ import ExitGameRoomModal from './ExitGameRoomModal';
 import InfoCard from './InfoCard';
 import LoadFENModal from './LoadFENModal';
 import MoveHistoryTable from './MoveHistoryTable';
-import ResetButton from './ResetButton';
 import ShareBoardStateModal from './ShareBoardStateModal';
 import SoundControls from './SoundControls';
-import TooltipContainer from './TooltipContainer';
+import IconButton, { type IconButtonProps } from './common/IconButton';
 
 import ArrowRightFromBracketIcon from '../assets/icons/arrow-right-from-bracket.svg?react';
 import FileImportIcon from '../assets/icons/file-import.svg?react';
 import GearIcon from '../assets/icons/gear.svg?react';
+import RotateLeftIcon from '../assets/icons/rotate-left.svg?react';
 import ShareNodesIcon from '../assets/icons/share-nodes.svg?react';
+import { useChessGame } from '../providers/ChessGameProvider';
 import { useGameRoom } from '../providers/GameRoomProvider';
 
+const ICON_CLASSES = 'w-4 h-4 2xl:w-5 2xl:h-5';
+
 type Views = 'history' | 'settings';
+type IconButtonPropsWithKey = IconButtonProps & { key: string };
 
 function GameInfoPanel() {
-    const { room } = useGameRoom();
+    const { room, incrementGameCount } = useGameRoom();
+    const { resetGame } = useChessGame();
 
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
-    const [loadFenModalIsShowing, setLoadFenModalIsShowing] = useState(false);
+    const [loadBoardModalIsShowing, setLoadBoardModalIsShowing] = useState(false);
     const [exitModalIsShowing, setExitModalIsShowing] = useState(false);
     const [currentView, setCurrentView] = useState<Views>('history');
+
+    if (!room) return null;
+    const { players, playerIdToScore, type } = room;
 
     const onShareModalDismiss = () => {
         setShareModalIsShowing(false);
     };
 
-    const onLoadFenModalDismiss = () => {
-        setLoadFenModalIsShowing(false);
+    const onLoadBoardModalDismiss = () => {
+        setLoadBoardModalIsShowing(false);
     };
 
     const onExitModalDismiss = () => {
         setExitModalIsShowing(false);
     };
 
-    if (!room) return null;
-    const { players, playerIdToScore, type } = room;
+    const onResetButtonClick = () => {
+        resetGame();
+        incrementGameCount();
+    };
 
     let headerText = '';
     let scoreText = '';
@@ -49,6 +59,61 @@ function GameInfoPanel() {
         headerText = `${player1.displayName} vs. ${player2.displayName}`;
         scoreText = `${playerIdToScore[player1.id]}-${playerIdToScore[player2.id]}`;
     }
+
+    const iconButtons: IconButtonPropsWithKey[] = [
+        {
+            key: 'reset-game-button',
+            icon: <RotateLeftIcon className={ICON_CLASSES} aria-hidden="true" />,
+            onClick: onResetButtonClick,
+            ariaProps: {
+                'aria-label': 'Reset game',
+            },
+            tooltipText: 'Reset game',
+        },
+        {
+            key: 'load-board-button',
+            icon: <FileImportIcon className={ICON_CLASSES} aria-hidden="true" />,
+            onClick: () => setLoadBoardModalIsShowing(true),
+            ariaProps: {
+                'aria-label': 'Load Board',
+                'aria-haspopup': 'dialog',
+                'aria-controls': loadBoardModalIsShowing ? 'load-fen-modal' : undefined,
+            },
+            tooltipText: 'Load Board',
+        },
+        {
+            key: 'settings-button',
+            icon: <GearIcon className={ICON_CLASSES} aria-hidden="true" />,
+            onClick: () => setCurrentView((prev) => (prev === 'settings' ? 'history' : 'settings')),
+            ariaProps: {
+                'aria-label': 'Settings',
+            },
+            tooltipText: 'Settings',
+            isActive: currentView === 'settings',
+        },
+        {
+            key: 'share-button',
+            icon: <ShareNodesIcon className={ICON_CLASSES} aria-hidden="true" />,
+            onClick: () => setShareModalIsShowing(true),
+            ariaProps: {
+                'aria-label': 'Share',
+                'aria-haspopup': 'dialog',
+                'aria-controls': shareModalIsShowing ? 'share-board-modal' : undefined,
+            },
+            tooltipText: 'Share',
+        },
+        {
+            key: 'exit-game-room-button',
+            icon: <ArrowRightFromBracketIcon className={ICON_CLASSES} aria-hidden="true" />,
+            onClick: () => setExitModalIsShowing(true),
+            ariaProps: {
+                'aria-label': 'Exit Game',
+                'aria-haspopup': 'dialog',
+                'aria-controls': exitModalIsShowing ? 'exit-game-room-modal' : undefined,
+            },
+            tooltipText: 'Exit Game',
+        },
+    ];
 
     return (
         <>
@@ -69,68 +134,23 @@ function GameInfoPanel() {
                         </>
                     )}
 
-                    <section className="flex justify-between gap-8" aria-label="Game actions">
-                        <TooltipContainer tooltipText="Reset">
-                            <ResetButton />
-                        </TooltipContainer>
-
-                        <TooltipContainer tooltipText="Load FEN">
-                            <button
-                                type="button"
-                                onClick={() => setLoadFenModalIsShowing(true)}
-                                aria-label="Load FEN"
-                                aria-haspopup="dialog"
-                                aria-controls={loadFenModalIsShowing ? 'load-fen-modal' : undefined}
-                                className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
-                            >
-                                <FileImportIcon className="w-5 h-5" aria-hidden="true" />
-                            </button>
-                        </TooltipContainer>
-
-                        <div className="grow" />
-
-                        <TooltipContainer tooltipText="Settings">
-                            <button
-                                type="button"
-                                onClick={() => setCurrentView((prev) => (prev === 'settings' ? 'history' : 'settings'))}
-                                aria-label="Settings"
-                                className={`${currentView === 'settings' ? 'text-zinc-100' : 'text-zinc-400'} cursor-pointer`}
-                            >
-                                <GearIcon className="w-5 h-5" aria-hidden="true" />
-                            </button>
-                        </TooltipContainer>
-
-                        <TooltipContainer tooltipText="Share">
-                            <button
-                                type="button"
-                                onClick={() => setShareModalIsShowing(true)}
-                                aria-label="Share"
-                                aria-haspopup="dialog"
-                                aria-controls={shareModalIsShowing ? 'share-board-modal' : undefined}
-                                className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
-                            >
-                                <ShareNodesIcon className="w-5 h-5" aria-hidden="true" />
-                            </button>
-                        </TooltipContainer>
-
-                        <TooltipContainer tooltipText="Exit Game">
-                            <button
-                                type="button"
-                                onClick={() => setExitModalIsShowing(true)}
-                                aria-label="Exit Game"
-                                aria-haspopup="dialog"
-                                aria-controls={exitModalIsShowing ? 'exit-game-room-modal' : undefined}
-                                className="text-zinc-400 hover:text-zinc-100 cursor-pointer"
-                            >
-                                <ArrowRightFromBracketIcon className="w-5 h-5" aria-hidden="true" />
-                            </button>
-                        </TooltipContainer>
+                    <section className="flex justify-between" aria-label="Game actions">
+                        {iconButtons.map(({ key, icon, onClick, ariaProps, isActive, tooltipText }) => (
+                            <IconButton
+                                key={key}
+                                icon={icon}
+                                onClick={onClick}
+                                ariaProps={ariaProps}
+                                isActive={isActive}
+                                tooltipText={tooltipText}
+                            />
+                        ))}
                     </section>
                 </div>
             </InfoCard>
 
             {shareModalIsShowing && <ShareBoardStateModal onDismiss={onShareModalDismiss} />}
-            {loadFenModalIsShowing && <LoadFENModal onDismiss={onLoadFenModalDismiss} />}
+            {loadBoardModalIsShowing && <LoadFENModal onDismiss={onLoadBoardModalDismiss} />}
             {exitModalIsShowing && <ExitGameRoomModal onDismiss={onExitModalDismiss} />}
         </>
     );
