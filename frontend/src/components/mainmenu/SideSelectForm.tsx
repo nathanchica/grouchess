@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import type { PieceColor } from '../../utils/pieces';
+
 const OPTIONS = [
     { label: 'White', value: 'white' },
     { label: 'Black', value: 'black' },
@@ -8,7 +10,7 @@ const OPTIONS = [
 const DEFAULT_OPTION = OPTIONS[0].value;
 
 type Props = {
-    onSideSelect: (side: string | null) => void;
+    onSideSelect: (side: PieceColor | null) => void;
 };
 
 function SideSelectForm({ onSideSelect }: Props) {
@@ -16,7 +18,7 @@ function SideSelectForm({ onSideSelect }: Props) {
 
     const handleSideSelect = (side: string | null) => {
         setSelectedSide(side);
-        onSideSelect(side);
+        onSideSelect(side === 'white' || side === 'black' ? side : null);
     };
 
     return (

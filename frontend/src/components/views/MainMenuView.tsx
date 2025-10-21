@@ -1,13 +1,13 @@
 import { useState } from 'react';
 
+import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
 import type { Player, GameRoom, RoomType, TimeControl } from '../../providers/GameRoomProvider';
 import { useGameRoom } from '../../providers/GameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
-import { getPiece } from '../../utils/pieces';
+import { getPiece, type PieceColor } from '../../utils/pieces';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';
 import SideSelectForm from '../mainmenu/SideSelectForm';
 import TimeControlForm from '../mainmenu/TimeControlForm';
-
 
 const ROOM_OPTION_CLASSES =
     'flex w-full cursor-pointer flex-col items-start gap-1 rounded-2xl border border-zinc-800 px-6 py-5 text-left transition hover:border-emerald-400/50 hover:bg-emerald-500/10 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400';
@@ -46,17 +46,19 @@ const ROOM_TYPE_TO_FORMS_MAP: Record<string, string[]> = {
 function MainMenuView() {
     const { imgSrcMap } = useImages();
     const { setRoom } = useGameRoom();
+    const { createGameRoom, loading, error } = useCreateGameRoom();
 
     const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
     const [selectedTimeControlOption, setSelectedTimeControlOption] = useState<TimeControl | null>(null);
     const [selectedDisplayName, setSelectedDisplayName] = useState<string | null>(null);
-    const [selectedSide, setSelectedSide] = useState<string | null>(null);
+    const [selectedSide, setSelectedSide] = useState<PieceColor | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const onDisplayNameChange = (name: string) => {
         setSelectedDisplayName(name);
     };
 
-    const onSideSelect = (side: string | null) => {
+    const onSideSelect = (side: PieceColor | null) => {
         setSelectedSide(side);
     };
 
@@ -81,42 +83,58 @@ function MainMenuView() {
         }
     });
 
-    const handleStartClick = () => {
-        // TODO: remove this line
-        console.log(selectedSide); // eslint-disable-line no-console
+    const handleStartClick = async () => {
+        setErrorMessage(null);
 
-        const player1: Player = {
-            id: 'player-1',
-            displayName: selectedDisplayName ?? 'Player 1',
-        };
-        const player2: Player = {
-            id: 'player-2',
-            displayName: 'Player 2',
-        };
-        const players = [player1, player2];
+        if (selectedRoomType === 'self') {
+            const player1: Player = {
+                id: 'player-1',
+                displayName: selectedDisplayName ?? 'Player 1',
+            };
+            const player2: Player = {
+                id: 'player-2',
+                displayName: 'Player 2',
+            };
+            const players = [player1, player2];
 
-        let playerIdToDisplayName: GameRoom['playerIdToDisplayName'] = {};
-        let playerIdToScore: GameRoom['playerIdToScore'] = {};
+            let playerIdToDisplayName: GameRoom['playerIdToDisplayName'] = {};
+            let playerIdToScore: GameRoom['playerIdToScore'] = {};
 
-        players.forEach(({ id, displayName }) => {
-            playerIdToDisplayName[id] = displayName;
-            playerIdToScore[id] = 0;
-        });
-        const gameRoom: GameRoom = {
-            id: 'game-room',
-            type: selectedRoomType,
-            timeControl: selectedTimeControlOption,
-            players,
-            playerIdToDisplayName,
-            playerIdToScore,
-            colorToPlayerId: {
-                white: player1.id,
-                black: player2.id,
-            },
-            messages: [],
-            gameCount: 1,
-        };
-        setRoom(gameRoom);
+            players.forEach(({ id, displayName }) => {
+                playerIdToDisplayName[id] = displayName;
+                playerIdToScore[id] = 0;
+            });
+            const gameRoom: GameRoom = {
+                id: 'game-room',
+                type: selectedRoomType,
+                timeControl: selectedTimeControlOption,
+                players,
+                playerIdToDisplayName,
+                playerIdToScore,
+                colorToPlayerId: {
+                    white: player1.id,
+                    black: player2.id,
+                },
+                messages: [],
+                gameCount: 1,
+            };
+            setRoom(gameRoom);
+            return;
+        }
+
+        const data = await createGameRoom(
+            selectedDisplayName ?? 'Player 1',
+            selectedSide,
+            selectedTimeControlOption ? selectedTimeControlOption.alias : null,
+            selectedRoomType
+        );
+
+        if (!data || error) {
+            setErrorMessage(error instanceof Error ? error.message : 'An unknown error occurred');
+        }
+
+        // TODO: start socket connection to get full room data. this console.log will be removed later
+        console.log('Created game room:', data); // eslint-disable-line no-console
     };
 
     return (
@@ -155,12 +173,14 @@ function MainMenuView() {
                             })}
                         </div>
 
+                        {errorMessage && <span className="text-sm font-semibold text-red-500">{errorMessage}</span>}
                         <button
                             type="button"
+                            disabled={loading}
                             className="mt-8 cursor-pointer w-full rounded-2xl bg-emerald-500/90 px-6 py-4 text-center font-semibold text-zinc-900 transition hover:bg-emerald-500/100 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                             onClick={handleStartClick}
                         >
-                            Start
+                            {loading ? 'Creating game room...' : 'Start'}
                         </button>
                     </section>
 
