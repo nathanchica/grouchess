@@ -4,14 +4,14 @@ Grouchess is a Lichess-clone project just for fun and learning. A chess game bui
 The goal is to replicate core Lichess gameplay UX and then explore a realtime backend with Express + Socket.io to play
 with other players.
 
-Status: UI-only. There is no backend yet; all gameplay runs client-side.
+Status: UI-only. There is no backend yet aside from a simple scaffolded service; all gameplay runs client-side.
 The move engine supports standard moves, castling, pawn promotions, and en passant. See [Roadmap](#roadmap).
 
 ## Tech Stack
 
-- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4
-- Planned backend: Express + Socket.io (placeholder workspace exists but no code yet)
-- Tooling: ESLint, Prettier, TypeScript project refs, workspaces
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4, React Router
+- Backend: Express, Socket.io, Zod
+- Tooling: ESLint, Prettier, TypeScript
 
 ## Quick Start
 
@@ -67,7 +67,7 @@ Notes
 │        ├─ moves.ts                                          # Move engine (Move type, gen, legality, en passant, castling)
 │        ├─ notations.ts                                      # algebraic notation generation/parsing
 │        └─ preload.ts                                        # Image preloading utilities
-├─ backend/                                                   # Placeholder workspace (Express + Socket.io planned)
+├─ backend/                                                   # Express + Socket.io planned
 └─ package.json                                               # Workspace scripts
 ```
 
@@ -127,15 +127,32 @@ Notes
 
 ## Roadmap
 
-- Game timers
-- Game room
-- Move undos
-- Resign/draw offers
-- Main menu to start a new game or join a game
 - Backend service with Express + Socket.io for realtime play with other players
+- Main menu to start a new game room or join a game room
+- Game room
+- Game timers
+- Chat panel
+    - Move takebacks
+    - Resign
+    - Draw offers
+    - Game rematches
+- Player vs CPU mode
+    - AI chat
+- Timeline jumping
 - Change piece set images
 - Change board colors
 - Piece sliding animations
+
+#### Won't implement
+
+- Correspondence chess
+- Puzzles / tactics trainer / analysis board
+- Variants (Chess960, King of the Hill, Three-check, etc.)
+- User accounts / profiles / ratings
+- Custom time controls
+    - Separate time controls per player
+- Game room long persistence (game rooms are deleted when all players leave)
+- Spectators
 
 ## Credits
 
