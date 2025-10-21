@@ -1,32 +1,40 @@
 import { useState } from 'react';
 
+import type { Player, GameRoom, RoomType, TimeControl } from '../../providers/GameRoomProvider';
+import { useGameRoom } from '../../providers/GameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
 import { getPiece } from '../../utils/pieces';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';
 import SideSelectForm from '../mainmenu/SideSelectForm';
 import TimeControlForm from '../mainmenu/TimeControlForm';
 
+
 const ROOM_OPTION_CLASSES =
     'flex w-full cursor-pointer flex-col items-start gap-1 rounded-2xl border border-zinc-800 px-6 py-5 text-left transition hover:border-emerald-400/50 hover:bg-emerald-500/10 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400';
 
-const ROOM_TYPES = [
+type RoomTypeOption = {
+    type: RoomType;
+    label: string;
+    description: string;
+};
+const ROOM_TYPES: RoomTypeOption[] = [
     {
-        id: 'player-vs-player',
+        type: 'player-vs-player',
         label: 'Play against a Friend',
         description: 'Create a private room and share the link',
     },
     {
-        id: 'player-vs-cpu',
+        type: 'player-vs-cpu',
         label: 'Play against a Computer',
         description: 'Face a computer opponent',
     },
     {
-        id: 'self',
+        type: 'self',
         label: 'Self-Play',
         description: 'Play both sides of the board',
     },
 ];
-const DEFAULT_ROOM_TYPE = ROOM_TYPES[0].id;
+const DEFAULT_ROOM_TYPE = ROOM_TYPES[0].type;
 
 const FORMS = ['time-control', 'side-select', 'display-name'];
 const ROOM_TYPE_TO_FORMS_MAP: Record<string, string[]> = {
@@ -37,9 +45,10 @@ const ROOM_TYPE_TO_FORMS_MAP: Record<string, string[]> = {
 
 function MainMenuView() {
     const { imgSrcMap } = useImages();
+    const { setRoom } = useGameRoom();
 
-    const [selectedRoomType, setSelectedRoomType] = useState<string>(DEFAULT_ROOM_TYPE);
-    const [selectedTimeControlAlias, setSelectedTimeControlAlias] = useState<string | null>(null);
+    const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
+    const [selectedTimeControlOption, setSelectedTimeControlOption] = useState<TimeControl | null>(null);
     const [selectedDisplayName, setSelectedDisplayName] = useState<string | null>(null);
     const [selectedSide, setSelectedSide] = useState<string | null>(null);
 
@@ -51,8 +60,8 @@ function MainMenuView() {
         setSelectedSide(side);
     };
 
-    const onTimeControlSelect = (timeControlAlias: string | null) => {
-        setSelectedTimeControlAlias(timeControlAlias);
+    const onTimeControlSelect = (timeControlOption: TimeControl | null) => {
+        setSelectedTimeControlOption(timeControlOption);
     };
 
     const { imgSrc: rookImgSrc, altText: rookAltText } = getPiece('white_rook');
@@ -73,12 +82,41 @@ function MainMenuView() {
     });
 
     const handleStartClick = () => {
-        // TODO: implement start game logic, console.log for now (will be removed later)
-        console.log('Starting game with settings:'); // eslint-disable-line no-console
-        console.log('Room Type:', selectedRoomType); // eslint-disable-line no-console
-        console.log('Time Control:', selectedTimeControlAlias); // eslint-disable-line no-console
-        console.log('Side:', selectedSide); // eslint-disable-line no-console
-        console.log('Display Name:', selectedDisplayName); // eslint-disable-line no-console
+        // TODO: remove this line
+        console.log(selectedSide); // eslint-disable-line no-console
+
+        const player1: Player = {
+            id: 'player-1',
+            displayName: selectedDisplayName ?? 'Player 1',
+        };
+        const player2: Player = {
+            id: 'player-2',
+            displayName: 'Player 2',
+        };
+        const players = [player1, player2];
+
+        let playerIdToDisplayName: GameRoom['playerIdToDisplayName'] = {};
+        let playerIdToScore: GameRoom['playerIdToScore'] = {};
+
+        players.forEach(({ id, displayName }) => {
+            playerIdToDisplayName[id] = displayName;
+            playerIdToScore[id] = 0;
+        });
+        const gameRoom: GameRoom = {
+            id: 'game-room',
+            type: selectedRoomType,
+            timeControl: selectedTimeControlOption,
+            players,
+            playerIdToDisplayName,
+            playerIdToScore,
+            colorToPlayerId: {
+                white: player1.id,
+                black: player2.id,
+            },
+            messages: [],
+            gameCount: 1,
+        };
+        setRoom(gameRoom);
     };
 
     return (
@@ -90,7 +128,7 @@ function MainMenuView() {
                         Grouchess
                     </h1>
                     <p className="mt-3 text-base text-zinc-300 sm:max-w-xl sm:text-lg">
-                        Grouchess is a Lichess-clone project just for fun and learning.
+                        Grouchess is a Lichess-clone project just for fun and learning
                     </p>
                 </header>
 
@@ -101,14 +139,14 @@ function MainMenuView() {
                         </div>
 
                         <div className="space-y-4 flex-1">
-                            {ROOM_TYPES.map(({ id, label, description }) => {
-                                const isSelected = selectedRoomType === id;
+                            {ROOM_TYPES.map(({ type, label, description }) => {
+                                const isSelected = selectedRoomType === type;
                                 return (
                                     <button
-                                        key={`room-option-${id}`}
+                                        key={`room-option-${type}`}
                                         type="button"
                                         className={`${ROOM_OPTION_CLASSES} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-500/10' : 'bg-zinc-900/60'}`}
-                                        onClick={() => setSelectedRoomType(id)}
+                                        onClick={() => setSelectedRoomType(type)}
                                     >
                                         <span className="text-lg font-semibold text-zinc-100">{label}</span>
                                         <span className="text-sm text-zinc-400">{description}</span>

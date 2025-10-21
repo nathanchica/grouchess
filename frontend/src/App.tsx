@@ -1,7 +1,5 @@
-import { Routes, Route } from 'react-router';
-
-import ChessGameView from './components/views/ChessGameView';
-import MainMenuView from './components/views/MainMenuView';
+import ViewController from './components/views/ViewController';
+import GameRoomProvider from './providers/GameRoomProvider';
 import ImagesProvider from './providers/ImagesProvider';
 import SoundProvider from './providers/SoundProvider';
 import { uniquePieceImgSrcs } from './utils/pieces';
@@ -10,10 +8,9 @@ function App() {
     return (
         <ImagesProvider imgSrcs={uniquePieceImgSrcs}>
             <SoundProvider>
-                <Routes>
-                    <Route path="/" element={<MainMenuView />} />
-                    <Route path="/freeplay" element={<ChessGameView />} />
-                </Routes>
+                <GameRoomProvider>
+                    <ViewController />
+                </GameRoomProvider>
             </SoundProvider>
         </ImagesProvider>
     );

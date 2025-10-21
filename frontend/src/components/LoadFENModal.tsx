@@ -112,7 +112,7 @@ function LoadFENModal({ onDismiss }: Props) {
                             <button
                                 type="submit"
                                 disabled={!canLoad}
-                                className="px-4 py-2 rounded bg-sky-700 text-white cursor-pointer hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 rounded bg-emerald-700 text-white cursor-pointer hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Load
                             </button>

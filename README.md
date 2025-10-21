@@ -9,7 +9,7 @@ The move engine supports standard moves, castling, pawn promotions, and en passa
 
 ## Tech Stack
 
-- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4, React Router
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4
 - Backend: Express, Socket.io, Zod
 - Tooling: ESLint, Prettier, TypeScript
 
@@ -60,6 +60,10 @@ Notes
 │     │  ├─ SoundProvider.tsx                                 # Sound effects context API
 │     │  ├─ ImagesProvider.tsx                                # Preload/decode piece images
 │     │  └─ GameRoomProvider.tsx                              # Game room state
+│     ├─ views/                                               # Top-level views
+│     │  ├─ ChessGameView.tsx                                 # Chess game view
+│     │  ├─ MainMenuView.tsx                                  # Main menu view
+│     │  └─ ViewController.tsx                                # Manages current view state based on room/game status
 │     └─ utils/                                               # Core chess logic + helpers
 │        ├─ board.ts                                          # Board coords, bounds, king lookups, glow helpers
 │        ├─ draws.ts                                          # Draw conditions and status computation

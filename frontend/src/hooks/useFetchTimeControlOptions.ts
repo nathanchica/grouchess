@@ -11,6 +11,7 @@ const TIME_CONTROL_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/time-control` : null;
 
 type UseFetchTimeControlOptionsResult = {
     timeControlOptions: TimeControl[];
+    timeControlOptionsByAlias: Record<TimeControl['alias'], TimeControl>;
     loading: boolean;
     error: Error | null;
 };
@@ -63,8 +64,14 @@ export function useFetchTimeControlOptions(): UseFetchTimeControlOptionsResult {
         };
     }, []);
 
+    const timeControlOptionsByAlias = timeControlOptions.reduce<Record<string, TimeControl>>((result, timeControl) => {
+        result[timeControl.alias] = timeControl;
+        return result;
+    }, {});
+
     return {
         timeControlOptions,
+        timeControlOptionsByAlias,
         loading,
         error,
     };
