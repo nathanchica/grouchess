@@ -1,19 +1,24 @@
 import jwt from 'jsonwebtoken';
+import * as z from 'zod';
 
 import env from '../config.js';
 
-export type GameRoomTokenPayload = {
-    playerId: string;
-    roomId: string;
-};
+export const GameRoomTokenPayloadSchema = z.object({
+    playerId: z.string(),
+    roomId: z.string(),
+});
+export type GameRoomTokenPayload = z.infer<typeof GameRoomTokenPayloadSchema>;
+
+const ALGORITHM = 'HS256';
+const EXPIRES_IN = '7d'; // Long enough for typical game durations
 
 /**
  * Generates a JWT token for the game room and player.
- * @param payload - The token payload containing userId and roomId
+ * @param payload - The token payload containing playerId and roomId
  * @returns A signed JWT token
  */
 export function generateGameRoomToken(payload: GameRoomTokenPayload): string {
-    return jwt.sign(payload, env.JWT_SECRET);
+    return jwt.sign(payload, env.JWT_SECRET, { expiresIn: EXPIRES_IN, algorithm: ALGORITHM });
 }
 
 /**
@@ -23,8 +28,10 @@ export function generateGameRoomToken(payload: GameRoomTokenPayload): string {
  */
 export function verifyGameRoomToken(token: string): GameRoomTokenPayload | null {
     try {
-        return jwt.verify(token, env.JWT_SECRET) as GameRoomTokenPayload;
-    } catch {
+        const payload = jwt.verify(token, env.JWT_SECRET, { algorithms: [ALGORITHM] });
+        return GameRoomTokenPayloadSchema.parse(payload);
+    } catch (error) {
+        console.error('Error verifying game room token:', error instanceof Error ? error.message : error);
         return null;
     }
 }

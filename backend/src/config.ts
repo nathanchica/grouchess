@@ -16,6 +16,7 @@ const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
     CLIENT_URL: z.url().default('http://localhost:5173'),
+    JWT_SECRET: z.string().min(1),
 });
 
 /**
