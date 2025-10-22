@@ -1,5 +1,4 @@
-import type { GameRoomService } from './services/gameRoomService.ts';
-import type { PlayerService } from './services/playerService.ts';
+import type { GameRoomService, PlayerService } from './services/index.ts';
 
 declare global {
     namespace Express {
