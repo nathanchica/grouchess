@@ -2,7 +2,9 @@ import { Router } from 'express';
 import * as z from 'zod';
 
 import { getTimeControlByAlias, isValidTimeControlAlias } from '../data/timeControl.js';
+import { GameRoomIsFullError } from '../utils/errors.js';
 import { RoomTypeEnum, PieceColorEnum, PlayerSchema } from '../utils/schemas.js';
+import { generateGameRoomToken } from '../utils/token.js';
 
 export const roomRouter: Router = Router();
 
@@ -22,11 +24,11 @@ roomRouter.get('/:roomId', (req, res) => {
     });
 });
 
+const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
 const CreateGameRoomRequestSchema = z.object({
-    displayName: PlayerSchema.shape.displayName
-        .nullish()
-        .transform((val) => val || 'Player 1')
-        .describe('The display name of the player creating the room. Defaults to "Player 1" if not provided.'),
+    displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 1').describe(
+        'The display name of the player creating the room. Defaults to "Player 1" if not provided.'
+    ),
     color: PieceColorEnum.nullish().describe(
         'The preferred color for the creator. If not provided, a random color will be assigned.'
     ),
@@ -56,10 +58,12 @@ roomRouter.post('/', (req, res) => {
             creator: player,
             creatorColorInput: color,
         });
+        const token = generateGameRoomToken({ playerId: player.id, roomId });
 
         res.json({
             roomId,
             playerId: player.id,
+            token,
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -69,5 +73,42 @@ roomRouter.post('/', (req, res) => {
         }
         console.error('Error creating game room:', error);
         res.status(500).json({ error: 'Failed to create game room' });
+    }
+});
+
+roomRouter.post('/join/:roomId', (req, res) => {
+    const { playerService, gameRoomService } = req.services;
+    const { roomId } = req.params;
+
+    try {
+        const { displayName } = z
+            .object({
+                displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 2').describe(
+                    'The display name of the player joining the room. Defaults to "Player 2" if not provided.'
+                ),
+            })
+            .parse(req.body);
+
+        const player = playerService.createPlayer(displayName);
+        gameRoomService.joinGameRoom(roomId, player);
+        const token = generateGameRoomToken({ playerId: player.id, roomId });
+
+        res.json({
+            roomId,
+            playerId: player.id,
+            token,
+        });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            console.error('Validation error joining game room:', error.issues);
+            res.status(400).json({ error: 'Invalid request data', details: error.issues });
+            return;
+        }
+        if (error instanceof GameRoomIsFullError) {
+            res.status(409).json({ error: 'Game room is full' });
+            return;
+        }
+        console.error('Error joining game room:', error);
+        res.status(500).json({ error: 'Failed to join game room' });
     }
 });
