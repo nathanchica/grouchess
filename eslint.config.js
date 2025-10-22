@@ -97,7 +97,7 @@ export default [
             'no-console': ['warn', { allow: ['warn', 'error'] }],
         },
         settings: {
-            react: { version: 'detect' },
+            react: { version: '^19.2.0' },
         },
     },
     {

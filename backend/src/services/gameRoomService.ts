@@ -1,16 +1,12 @@
-import { getTimeControlByAlias } from '../data/timeControl.js';
-import type { Player, GameRoom, PieceColor, RoomType } from '../types.js';
+import { CreateGameRoomInput } from './gameRoomService.schemas.js';
+
 import { generateId } from '../utils/generateId.js';
+import { type GameRoom } from '../utils/schemas.js';
 
 export class GameRoomService {
     gameRoomIdToGameRoom: Map<GameRoom['id'], GameRoom> = new Map();
 
-    createGameRoom(
-        timeControlAlias: string | null,
-        roomType: RoomType,
-        creator: Player,
-        creatorColorInput: PieceColor | null
-    ): GameRoom {
+    createGameRoom({ timeControl, roomType, creator, creatorColorInput }: CreateGameRoomInput): GameRoom {
         let id = generateId();
         while (this.gameRoomIdToGameRoom.has(id)) {
             id = generateId();
@@ -19,7 +15,7 @@ export class GameRoomService {
         const creatorColor = creatorColorInput ?? (Math.random() < 0.5 ? 'white' : 'black');
         const gameRoom: GameRoom = {
             id,
-            timeControl: timeControlAlias ? getTimeControlByAlias(timeControlAlias) : null,
+            timeControl,
             players: [creator],
             playerIdToDisplayName: { [creator.id]: creator.displayName },
             playerIdToScore: { [creator.id]: 0 },
