@@ -80,7 +80,7 @@ export class GameRoomService {
             return; // Player already in the room
         }
         if (gameRoom.players.length >= 2 || (gameRoom.colorToPlayerId.white && gameRoom.colorToPlayerId.black)) {
-            throw new Error('Game room is full');
+            throw new Error('Game room is full', { cause: 'FULL' });
         }
         gameRoom.players.push(player);
         gameRoom.playerIdToDisplayName[player.id] = player.displayName;
