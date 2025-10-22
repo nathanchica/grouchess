@@ -4,16 +4,13 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import { healthRouter } from './routes/health.js';
 import { roomRouter } from './routes/room.js';
 import { timeControlRouter } from './routes/timeControl.js';
-import { GameRoomService } from './services/gameRoomService.js';
-import { PlayerService } from './services/playerService.js';
-
-const services = {
-    playerService: new PlayerService(),
-    gameRoomService: new GameRoomService(),
-};
+import { gameRoomService, playerService } from './services/index.js';
 
 const exposeServices = (req: Request, _res: Response, next: NextFunction) => {
-    req.services = services;
+    req.services = {
+        playerService,
+        gameRoomService,
+    };
     next();
 };
 
