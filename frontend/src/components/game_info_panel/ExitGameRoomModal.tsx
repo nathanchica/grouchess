@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-import InfoCard from './InfoCard';
 
-import DismissIcon from '../assets/icons/xmark.svg?react';
-import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
-import { useGameRoom } from '../providers/GameRoomProvider';
+import DismissIcon from '../../assets/icons/xmark.svg?react';
+import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
+import { useGameRoom } from '../../providers/GameRoomProvider';
+import InfoCard from '../InfoCard';
 
 type Props = {
     onDismiss: () => void;

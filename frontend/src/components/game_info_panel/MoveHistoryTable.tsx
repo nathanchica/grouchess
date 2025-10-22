@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-import { useChessGame } from '../providers/ChessGameProvider';
-import { getDisplayTextForDrawStatus, isDrawStatus } from '../utils/draws';
-import { type MoveNotation } from '../utils/notations';
+import { useChessGame } from '../../providers/ChessGameProvider';
+import { getDisplayTextForDrawStatus, isDrawStatus } from '../../utils/draws';
+import { type MoveNotation } from '../../utils/notations';
 
 function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
     if (allMoves.length === 0) return [];

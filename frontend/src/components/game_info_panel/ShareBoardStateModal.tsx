@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import InfoCard from './InfoCard';
 
-import CopyIcon from '../assets/icons/copy.svg?react';
-import DismissIcon from '../assets/icons/xmark.svg?react';
-import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
-import { useChessGame } from '../providers/ChessGameProvider';
-import { createFEN } from '../utils/notations';
+import CopyIcon from '../../assets/icons/copy.svg?react';
+import DismissIcon from '../../assets/icons/xmark.svg?react';
+import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
+import { useChessGame } from '../../providers/ChessGameProvider';
+import { createFEN } from '../../utils/notations';
+import InfoCard from '../InfoCard';
 
 type Props = {
     onDismiss: () => void;
