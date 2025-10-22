@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as z from 'zod';
 
 import { getTimeControlByAlias, isValidTimeControlAlias } from '../data/timeControl.js';
+import { GameRoomIsFullError } from '../utils/errors.js';
 import { RoomTypeEnum, PieceColorEnum, PlayerSchema } from '../utils/schemas.js';
 import { generateGameRoomToken } from '../utils/token.js';
 
@@ -103,8 +104,8 @@ roomRouter.post('/join/:roomId', (req, res) => {
             res.status(400).json({ error: 'Invalid request data', details: error.issues });
             return;
         }
-        if (error instanceof Error && error.cause === 'FULL') {
-            res.status(403).json({ error: 'Game room is full' });
+        if (error instanceof GameRoomIsFullError) {
+            res.status(409).json({ error: 'Game room is full' });
             return;
         }
         console.error('Error joining game room:', error);

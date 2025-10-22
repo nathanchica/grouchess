@@ -1,5 +1,6 @@
 import { CreateGameRoomInput } from './gameRoomService.schemas.js';
 
+import { GameRoomIsFullError } from '../utils/errors.js';
 import { generateId } from '../utils/generateId.js';
 import { type GameRoom, type Message, type Player } from '../utils/schemas.js';
 
@@ -80,7 +81,7 @@ export class GameRoomService {
             return; // Player already in the room
         }
         if (gameRoom.players.length >= 2 || (gameRoom.colorToPlayerId.white && gameRoom.colorToPlayerId.black)) {
-            throw new Error('Game room is full', { cause: 'FULL' });
+            throw new GameRoomIsFullError();
         }
         gameRoom.players.push(player);
         gameRoom.playerIdToDisplayName[player.id] = player.displayName;
