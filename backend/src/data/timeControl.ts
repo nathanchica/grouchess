@@ -1,4 +1,4 @@
-import type { TimeControl } from '../types.js';
+import type { TimeControl } from '../utils/schemas.js';
 
 export const SUPPORTED_TIME_CONTROLS: TimeControl[] = [
     { alias: '1|0', minutes: 1, increment: 0, displayText: '1 min' },
@@ -12,7 +12,15 @@ export const SUPPORTED_TIME_CONTROLS: TimeControl[] = [
     { alias: '30|0', minutes: 30, increment: 0, displayText: '30 min' },
 ];
 
+const timeControlByAlias = SUPPORTED_TIME_CONTROLS.reduce<Record<string, TimeControl>>((result, timeControl) => {
+    result[timeControl.alias] = timeControl;
+    return result;
+}, {});
+
 export function getTimeControlByAlias(alias: string): TimeControl | null {
-    const timeControl = SUPPORTED_TIME_CONTROLS.find((timeControl) => timeControl.alias === alias);
-    return timeControl || null;
+    return timeControlByAlias[alias] || null;
+}
+
+export function isValidTimeControlAlias(alias: string): boolean {
+    return Object.hasOwn(timeControlByAlias, alias);
 }

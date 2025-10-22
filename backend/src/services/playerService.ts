@@ -1,5 +1,5 @@
-import type { Player } from '../types.js';
 import { generateId } from '../utils/generateId.js';
+import type { Player } from '../utils/schemas.js';
 
 export class PlayerService {
     playerIdToPlayer: Map<string, Player> = new Map();
