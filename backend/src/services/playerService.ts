@@ -9,7 +9,7 @@ export class PlayerService {
         while (this.playerIdToPlayer.has(id)) {
             id = generateId();
         }
-        const player: Player = { id, displayName };
+        const player: Player = { id, displayName, isOnline: false };
         this.playerIdToPlayer.set(id, player);
         return player;
     }
@@ -20,5 +20,13 @@ export class PlayerService {
 
     deletePlayer(playerId: string): boolean {
         return this.playerIdToPlayer.delete(playerId);
+    }
+
+    updateStatus(playerId: string, isOnline: boolean): void {
+        const player = this.getPlayerById(playerId);
+        if (!player) {
+            throw new Error('Player not found');
+        }
+        player.isOnline = isOnline;
     }
 }

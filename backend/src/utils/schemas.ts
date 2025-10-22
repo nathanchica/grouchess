@@ -11,6 +11,7 @@ export const PlayerSchema = z.object({
         .trim()
         .regex(/^[a-z0-9 ]*$/i, 'Display name must be alphanumeric and can include spaces.')
         .max(20, 'Display name is too long. Max 20 characters'),
+    isOnline: z.boolean().default(false),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
