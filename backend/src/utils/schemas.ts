@@ -39,7 +39,7 @@ export const GameRoomSchema = z.object({
     timeControl: TimeControlSchema.nullable(),
     players: z.array(PlayerSchema),
     playerIdToDisplayName: z.record(PlayerSchema.shape.id, z.string()),
-    playerIdToScore: z.record(PlayerSchema.shape.id, z.number().int().nonnegative()),
+    playerIdToScore: z.record(PlayerSchema.shape.id, z.number().nonnegative()),
     colorToPlayerId: z.record(PieceColorEnum, PlayerSchema.shape.id.nullable()),
     messages: z.array(MessageSchema),
     gameCount: z.number().int().nonnegative(),
