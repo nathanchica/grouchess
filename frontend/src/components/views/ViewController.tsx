@@ -1,4 +1,3 @@
-
 import ChessGameView from './ChessGameView';
 import MainMenuView from './MainMenuView';
 

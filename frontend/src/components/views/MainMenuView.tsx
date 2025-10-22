@@ -90,11 +90,11 @@ function MainMenuView() {
         if (selectedRoomType === 'self') {
             const player1: Player = {
                 id: 'player-1',
-                displayName: selectedDisplayName ?? 'Player 1',
+                displayName: 'White',
             };
             const player2: Player = {
                 id: 'player-2',
-                displayName: 'Player 2',
+                displayName: 'Black',
             };
             const players = [player1, player2];
 
@@ -124,7 +124,7 @@ function MainMenuView() {
         }
 
         const data = await createGameRoom(
-            selectedDisplayName ?? 'Player 1',
+            selectedDisplayName,
             selectedSide,
             selectedTimeControlOption ? selectedTimeControlOption.alias : null,
             selectedRoomType

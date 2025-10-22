@@ -9,7 +9,7 @@ type CreateGameRoomResponse = {
 };
 
 type CreateGameRoomFn = (
-    displayName: string,
+    displayName: string | null,
     color: PieceColor | null,
     timeControlAlias: string | null,
     roomType: RoomType
