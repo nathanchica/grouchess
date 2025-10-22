@@ -55,7 +55,7 @@ function PlayerCard({ color, displayName }: Props) {
                     </span>
                 </section>
                 {statusText && (
-                    <span className="text-xs font-semibold tracking-[0.3em] uppercase text-zinc-400">{statusText}</span>
+                    <span className="text-xs font-semibold tracking-widest uppercase text-zinc-400">{statusText}</span>
                 )}
 
                 <div className="flex flex-row flex-wrap min-h-[3rem]">

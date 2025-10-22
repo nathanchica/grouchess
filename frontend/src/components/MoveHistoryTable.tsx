@@ -93,7 +93,7 @@ function MoveHistoryTable() {
                     role="status"
                     className="my-4 rounded-md border border-white/10 bg-zinc-900 p-3 w-[95%] text-sm text-zinc-200"
                 >
-                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">{statusLabel}</p>
+                    <p className="text-xs uppercase tracking-widest text-zinc-400">{statusLabel}</p>
                     <p className="mt-1 text-base font-semibold text-zinc-100">{winnerLabel}</p>
                     <p className={`text-sm text-zinc-200 ${isDraw && 'diagonal-fractions'}`}>{resultScore}</p>
                 </div>
