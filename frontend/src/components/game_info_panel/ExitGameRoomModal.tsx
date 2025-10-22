@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 
-
 import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useGameRoom } from '../../providers/GameRoomProvider';

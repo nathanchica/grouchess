@@ -5,7 +5,6 @@ import LoadBoardModal from './LoadBoardModal';
 import MoveHistoryTable from './MoveHistoryTable';
 import ShareBoardStateModal from './ShareBoardStateModal';
 
-
 import ArrowRightFromBracketIcon from '../../assets/icons/arrow-right-from-bracket.svg?react';
 import FileImportIcon from '../../assets/icons/file-import.svg?react';
 import GearIcon from '../../assets/icons/gear.svg?react';
