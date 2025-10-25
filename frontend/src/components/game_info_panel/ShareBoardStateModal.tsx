@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import CopyIcon from '../../assets/icons/copy.svg?react';
 import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useChessGame } from '../../providers/ChessGameProvider';
 import { createFEN } from '../../utils/notations';
 import InfoCard from '../InfoCard';
+import CopyableTextField from '../common/CopyableTextField';
 
 type Props = {
     onDismiss: () => void;
@@ -16,9 +14,6 @@ function ShareBoardStateModal({ onDismiss }: Props) {
         useChessGame();
     useDismissOnEscape(onDismiss);
 
-    const [copied, setCopied] = useState(false);
-    const timerRef = useRef<number | null>(null);
-
     const fenString = createFEN({
         board,
         playerTurn,
@@ -27,28 +22,6 @@ function ShareBoardStateModal({ onDismiss }: Props) {
         halfmoveClock,
         fullmoveClock,
     });
-
-    const handleCopy = useCallback(async () => {
-        try {
-            await navigator.clipboard.writeText(fenString);
-            setCopied(true);
-            if (timerRef.current) {
-                window.clearTimeout(timerRef.current);
-            }
-            timerRef.current = window.setTimeout(() => setCopied(false), 2000);
-        } catch {
-            // no-op if clipboard is unavailable
-        }
-    }, [fenString]);
-
-    /**
-     * Clear timeout on unmount
-     */
-    useEffect(() => {
-        return () => {
-            if (timerRef.current) window.clearTimeout(timerRef.current);
-        };
-    }, []);
 
     return (
         <div
@@ -77,34 +50,12 @@ function ShareBoardStateModal({ onDismiss }: Props) {
                             </button>
                         </section>
 
-                        <label htmlFor="fen-string" className="block text-slate-50 mb-1">
-                            FEN
-                        </label>
-                        <div className="relative">
-                            <input
-                                id="fen-string"
-                                type="text"
-                                readOnly
-                                value={fenString}
-                                className="text-slate-100 cursor-default pr-10 p-2 border border-slate-500 hover:border-slate-400 rounded w-full bg-zinc-700"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleCopy}
-                                aria-label="Copy FEN"
-                                className={`absolute inset-y-0 right-2 my-auto p-1 cursor-pointer transition-colors duration-300 ${copied ? 'text-emerald-300' : 'text-zinc-400 hover:text-zinc-100'}`}
-                            >
-                                <CopyIcon className="w-5 h-5" aria-hidden="true" />
-                            </button>
-                            <span
-                                className={`pointer-events-none absolute right-2 -top-8 select-none rounded bg-zinc-900 px-2 py-1 text-xs text-zinc-100 shadow-md transition-all duration-300 ease-out ${copied ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}`}
-                                role="status"
-                                aria-live={copied ? 'polite' : 'off'}
-                                aria-hidden={!copied}
-                            >
-                                Copied!
-                            </span>
-                        </div>
+                        <CopyableTextField
+                            text={fenString}
+                            label="FEN"
+                            id="fen-string"
+                            copyButtonAriaLabel="Copy FEN"
+                        />
                     </div>
                 </InfoCard>
             </div>
