@@ -13,7 +13,7 @@ function ChessGameView() {
 
             <main className="min-h-dvh font-serif bg-zinc-800">
                 <div className="grid grid-cols-12 2xl:gap-12 xl:gap-10 lg:gap-8 gap-4 py-8 2xl:px-24 xl:px-12 px-4">
-                    <section className="md:col-span-3 lg:block hidden">
+                    <section className="md:col-span-3 lg:block hidden contain-size">
                         <PlayersInfoSection variant="col" />
                     </section>
                     <section className="lg:col-span-6 sm:col-span-9 col-span-12">

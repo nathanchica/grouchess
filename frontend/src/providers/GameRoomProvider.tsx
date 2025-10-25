@@ -83,6 +83,7 @@ function GameRoomProvider({ children }: Props) {
             gameCount: 1,
         };
         setRoomState(gameRoom);
+        setCurrentPlayerIdState(player1.id);
     }, []);
 
     const addMessage = useCallback((message: Message) => {
