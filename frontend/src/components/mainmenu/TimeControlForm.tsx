@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { useFetchTimeControlOptions } from '../../hooks/useFetchTimeControlOptions';
-import type { TimeControl } from '../../providers/GameRoomProvider';
+import type { TimeControl } from '../../utils/types';
 
 const NUM_SHIMMERS = 6;
 

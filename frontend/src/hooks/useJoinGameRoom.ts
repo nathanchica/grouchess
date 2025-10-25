@@ -6,7 +6,13 @@ type JoinGameRoomResponse = {
     token: string;
 };
 
-type JoinGameRoomFn = (displayName?: string) => Promise<JoinGameRoomResponse | null>;
+type JoinGameRoomParams = {
+    displayName?: string;
+    onSuccess?: (data: JoinGameRoomResponse) => void;
+    onError?: (error: Error) => void;
+};
+
+type JoinGameRoomFn = (params?: JoinGameRoomParams) => Promise<JoinGameRoomResponse | null>;
 
 type Payload = {
     joinGameRoom: JoinGameRoomFn;
@@ -35,7 +41,9 @@ export function useJoinGameRoom(roomId: string): Payload {
     }, []);
 
     const joinGameRoom = useCallback<JoinGameRoomFn>(
-        async (displayName) => {
+        async (params) => {
+            const { displayName, onSuccess, onError } = params || {};
+
             // Prevent duplicate requests
             if (loadingRef.current) {
                 return null;
@@ -49,6 +57,7 @@ export function useJoinGameRoom(roomId: string): Payload {
                 const endpointError = new Error('Room endpoint is not configured.');
                 if (isMountedRef.current) {
                     setError(endpointError);
+                    onError?.(endpointError);
                 }
                 return null;
             }
@@ -72,7 +81,9 @@ export function useJoinGameRoom(roomId: string): Payload {
                     try {
                         payload = JSON.parse(responseText) as unknown;
                     } catch {
-                        setError(new Error('Received invalid response when joining game room.'));
+                        const parseError = new Error('Received invalid response when joining game room.');
+                        setError(parseError);
+                        onError?.(parseError);
                         return null;
                     }
                 }
@@ -86,7 +97,9 @@ export function useJoinGameRoom(roomId: string): Payload {
                         typeof (payload as { error?: unknown }).error === 'string'
                             ? (payload as { error: string }).error
                             : 'Unable to join game room right now.';
-                    setError(new Error(errorMessage));
+                    const responseError = new Error(errorMessage);
+                    setError(responseError);
+                    onError?.(responseError);
                     return null;
                 }
 
@@ -97,16 +110,20 @@ export function useJoinGameRoom(roomId: string): Payload {
                     typeof data.playerId !== 'string' ||
                     typeof data.token !== 'string'
                 ) {
-                    setError(new Error('Missing data when joining game room.'));
+                    const validationError = new Error('Missing data when joining game room.');
+                    setError(validationError);
+                    onError?.(validationError);
                     return null;
                 }
 
                 setError(null);
+                onSuccess?.(data);
                 return data;
             } catch (caughtError) {
                 const errorInstance =
                     caughtError instanceof Error ? caughtError : new Error('Failed to join game room.');
                 setError(errorInstance);
+                onError?.(errorInstance);
                 return null;
             } finally {
                 if (isMountedRef.current) {

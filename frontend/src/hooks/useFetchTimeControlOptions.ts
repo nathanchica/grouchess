@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { TimeControl } from '../providers/GameRoomProvider';
+import type { TimeControl } from '../utils/types';
 
 type TimeControlResponse = {
     supportedTimeControls: TimeControl[];

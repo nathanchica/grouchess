@@ -9,12 +9,16 @@ type CreateGameRoomResponse = {
     token: string;
 };
 
-type CreateGameRoomFn = (
-    displayName: string | null,
-    color: PieceColor | null,
-    timeControlAlias: string | null,
-    roomType: RoomType
-) => Promise<CreateGameRoomResponse | null>;
+type CreateGameRoomParams = {
+    displayName: string | null;
+    color: PieceColor | null;
+    timeControlAlias: string | null;
+    roomType: RoomType;
+    onSuccess?: (data: CreateGameRoomResponse) => void;
+    onError?: (error: Error) => void;
+};
+
+type CreateGameRoomFn = (params: CreateGameRoomParams) => Promise<CreateGameRoomResponse | null>;
 
 type Payload = {
     createGameRoom: CreateGameRoomFn;
@@ -42,88 +46,101 @@ export function useCreateGameRoom(): Payload {
         };
     }, []);
 
-    const createGameRoom = useCallback<CreateGameRoomFn>(async (displayName, color, timeControlAlias, roomType) => {
-        // Prevent duplicate requests
-        if (loadingRef.current) {
-            return null;
-        }
-
-        if (!isMountedRef.current) {
-            return null;
-        }
-
-        if (!ROOM_ENDPOINT) {
-            const endpointError = new Error('Room endpoint is not configured.');
-            if (isMountedRef.current) {
-                setError(endpointError);
+    const createGameRoom = useCallback<CreateGameRoomFn>(
+        async ({ displayName, color, timeControlAlias, roomType, onSuccess, onError }) => {
+            // Prevent duplicate requests
+            if (loadingRef.current) {
+                return null;
             }
-            return null;
-        }
 
-        loadingRef.current = true;
-        setLoading(true);
-        setError(null);
+            if (!isMountedRef.current) {
+                return null;
+            }
 
-        try {
-            const response = await fetch(ROOM_ENDPOINT, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    displayName,
-                    color,
-                    timeControlAlias,
-                    roomType,
-                }),
-            });
+            if (!ROOM_ENDPOINT) {
+                const endpointError = new Error('Room endpoint is not configured.');
+                if (isMountedRef.current) {
+                    setError(endpointError);
+                    onError?.(endpointError);
+                }
+                return null;
+            }
 
-            const responseText = await response.text();
-            let payload: unknown = null;
-            if (responseText) {
-                try {
-                    payload = JSON.parse(responseText) as unknown;
-                } catch {
-                    setError(new Error('Received invalid response when creating game room.'));
+            loadingRef.current = true;
+            setLoading(true);
+            setError(null);
+
+            try {
+                const response = await fetch(ROOM_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        displayName,
+                        color,
+                        timeControlAlias,
+                        roomType,
+                    }),
+                });
+
+                const responseText = await response.text();
+                let payload: unknown = null;
+                if (responseText) {
+                    try {
+                        payload = JSON.parse(responseText) as unknown;
+                    } catch {
+                        const parseError = new Error('Received invalid response when creating game room.');
+                        setError(parseError);
+                        onError?.(parseError);
+                        return null;
+                    }
+                }
+
+                if (!response.ok) {
+                    const errorMessage =
+                        payload &&
+                        typeof payload === 'object' &&
+                        payload !== null &&
+                        'error' in payload &&
+                        typeof (payload as { error?: unknown }).error === 'string'
+                            ? (payload as { error: string }).error
+                            : 'Unable to create game room right now.';
+                    const responseError = new Error(errorMessage);
+                    setError(responseError);
+                    onError?.(responseError);
                     return null;
                 }
-            }
 
-            if (!response.ok) {
-                const errorMessage =
-                    payload &&
-                    typeof payload === 'object' &&
-                    payload !== null &&
-                    'error' in payload &&
-                    typeof (payload as { error?: unknown }).error === 'string'
-                        ? (payload as { error: string }).error
-                        : 'Unable to create game room right now.';
-                setError(new Error(errorMessage));
+                const data = payload as CreateGameRoomResponse | null;
+                if (
+                    !data ||
+                    typeof data.roomId !== 'string' ||
+                    typeof data.playerId !== 'string' ||
+                    typeof data.token !== 'string'
+                ) {
+                    const validationError = new Error('Missing data when creating game room.');
+                    setError(validationError);
+                    onError?.(validationError);
+                    return null;
+                }
+
+                setError(null);
+                onSuccess?.(data);
+                return data;
+            } catch (caughtError) {
+                const errorInstance =
+                    caughtError instanceof Error ? caughtError : new Error('Failed to create game room.');
+                setError(errorInstance);
+                onError?.(errorInstance);
                 return null;
+            } finally {
+                if (isMountedRef.current) {
+                    loadingRef.current = false;
+                    setLoading(false);
+                }
             }
-
-            const data = payload as CreateGameRoomResponse | null;
-            if (
-                !data ||
-                typeof data.roomId !== 'string' ||
-                typeof data.playerId !== 'string' ||
-                typeof data.token !== 'string'
-            ) {
-                setError(new Error('Missing data when creating game room.'));
-                return null;
-            }
-
-            setError(null);
-            return data;
-        } catch (caughtError) {
-            const errorInstance = caughtError instanceof Error ? caughtError : new Error('Failed to create game room.');
-            setError(errorInstance);
-            return null;
-        } finally {
-            if (isMountedRef.current) {
-                loadingRef.current = false;
-                setLoading(false);
-            }
-        }
-    }, []);
+        },
+        []
+    );
 
     return {
         createGameRoom,
