@@ -53,6 +53,8 @@ export default [
                 URL: 'readonly',
                 DOMRect: 'readonly',
                 KeyboardEvent: 'readonly',
+                sessionStorage: 'readonly',
+                localStorage: 'readonly',
             },
         },
         plugins: {

@@ -50,4 +50,5 @@ export type WaitingRoom = {
     roomId: GameRoom['id'];
     playerId: Player['id'];
     token: string;
+    isCreator: boolean;
 };

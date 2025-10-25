@@ -4,11 +4,14 @@ import { useState, type ChangeEvent } from 'react';
 const VALID_PATTERN = /^[a-z0-9 ]{0,20}$/i;
 const MAX_DISPLAY_NAME_LENGTH = 20;
 
+const DEFAULT_LABEL_CLASSNAME = 'text-lg sm:text-xl font-medium text-zinc-100';
+
 type Props = {
+    labelClassName?: string;
     onDisplayNameChange: (name: string) => void;
 };
 
-function DisplayNameForm({ onDisplayNameChange }: Props) {
+function DisplayNameForm({ labelClassName = DEFAULT_LABEL_CLASSNAME, onDisplayNameChange }: Props) {
     const [displayName, setDisplayName] = useState('');
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -21,7 +24,7 @@ function DisplayNameForm({ onDisplayNameChange }: Props) {
 
     return (
         <form className="flex flex-col gap-4">
-            <label htmlFor="display-name" className="text-lg sm:text-xl font-medium text-zinc-100">
+            <label htmlFor="display-name" className={labelClassName}>
                 Display Name (optional)
             </label>
             <div className="flex flex-col gap-2">
