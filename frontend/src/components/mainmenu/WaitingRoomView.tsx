@@ -29,7 +29,7 @@ function WaitingRoomView({ roomToken, isCreator }: Props) {
 
     const navigate = useNavigate();
     const { connectToRoom } = useGameRoomSocket();
-    const { joinGameRoom, loading: isJoining, error: joinGameError } = useJoinGameRoom(roomId);
+    const { joinGameRoom, loading: isJoining } = useJoinGameRoom(roomId);
 
     const [isCreatorState, setIsCreatorState] = useState(isCreator);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -84,18 +84,19 @@ function WaitingRoomView({ roomToken, isCreator }: Props) {
         fetchRoomInfo();
     }, [roomId, roomToken, connectToRoom]);
 
-    const joinButtonIsDisabled = isLoading || isJoining || Boolean(errorMessage);
+    const joinButtonIsDisabled = isLoading || isJoining;
 
-    const handleJoinRoomClick = async () => {
+    const handleJoinRoomClick = () => {
         setErrorMessage(null);
-        const data = await joinGameRoom(displayName);
-
-        if (!data || joinGameError) {
-            setErrorMessage(joinGameError instanceof Error ? joinGameError.message : 'An unknown error occurred');
-            return;
-        }
-
-        connectToRoom(data.token);
+        joinGameRoom({
+            displayName,
+            onSuccess: (data) => {
+                connectToRoom(data.token);
+            },
+            onError: (error) => {
+                setErrorMessage(error.message);
+            },
+        });
     };
 
     let content;

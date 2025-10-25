@@ -2,57 +2,12 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 import invariant from 'tiny-invariant';
 
-import { type PieceColor } from '../utils/pieces';
-
-export interface Player {
-    id: string;
-    displayName: string;
-}
-
-type MessageType = 'standard' | 'rematch' | 'draw-offer';
-
-interface Message {
-    id: string;
-    type: MessageType;
-    createdAt: Date;
-    authorId: Player['id'];
-    content?: string;
-}
-
-export type TimeControl = {
-    alias: string;
-    minutes: number;
-    increment: number;
-    displayText: string;
-    mode?: 'fischer';
-};
-
-export type RoomType = 'self' | 'player-vs-cpu' | 'player-vs-player';
-
-export type GameRoom = {
-    // room id
-    id: string;
-    // room type
-    type: RoomType;
-    // time control for the room. if null, then unlimited time mode. correspondence is not supported.
-    timeControl: TimeControl | null;
-    // list of players in the game room
-    players: Player[];
-    // mapping of player id to display name for convenience
-    playerIdToDisplayName: Record<Player['id'], Player['displayName']>;
-    // mapping of player id to score
-    playerIdToScore: Record<Player['id'], number>;
-    // mapping of 'white' or 'black' to player id
-    colorToPlayerId: Record<PieceColor, Player['id']>;
-    // list of messages in the room
-    messages: Message[];
-    // number of games played in the room
-    gameCount: number;
-};
+import type { Player, Message, GameRoom, TimeControl } from '../utils/types';
 
 type GameRoomContextType = {
     room: GameRoom | null;
     setRoom: (room: GameRoom | null) => void;
+    startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
     increasePlayerScore: (playerId: Player['id'], halfPoint?: boolean) => void;
     addMessage: (message: Message) => void;
     swapColors: () => void;
@@ -62,6 +17,7 @@ type GameRoomContextType = {
 const GameRoomContext = createContext<GameRoomContextType>({
     room: null,
     setRoom: () => {},
+    startSelfPlayRoom: () => {},
     increasePlayerScore: () => {},
     addMessage: () => {},
     swapColors: () => {},
@@ -83,6 +39,41 @@ function GameRoomProvider({ children }: Props) {
 
     const setRoom = useCallback((room: GameRoom | null) => {
         setRoomState(room);
+    }, []);
+
+    const startSelfPlayRoom = useCallback((timeControlOption: TimeControl | null) => {
+        const player1: Player = {
+            id: 'player-1',
+            displayName: 'White',
+        };
+        const player2: Player = {
+            id: 'player-2',
+            displayName: 'Black',
+        };
+        const players = [player1, player2];
+
+        let playerIdToDisplayName: GameRoom['playerIdToDisplayName'] = {};
+        let playerIdToScore: GameRoom['playerIdToScore'] = {};
+
+        players.forEach(({ id, displayName }) => {
+            playerIdToDisplayName[id] = displayName;
+            playerIdToScore[id] = 0;
+        });
+        const gameRoom: GameRoom = {
+            id: 'game-room',
+            type: 'self',
+            timeControl: timeControlOption,
+            players,
+            playerIdToDisplayName,
+            playerIdToScore,
+            colorToPlayerId: {
+                white: player1.id,
+                black: player2.id,
+            },
+            messages: [],
+            gameCount: 1,
+        };
+        setRoomState(gameRoom);
     }, []);
 
     const addMessage = useCallback((message: Message) => {
@@ -136,12 +127,13 @@ function GameRoomProvider({ children }: Props) {
         return {
             room: roomState,
             setRoom,
+            startSelfPlayRoom,
             increasePlayerScore,
             addMessage,
             swapColors,
             incrementGameCount,
         };
-    }, [roomState, setRoom, increasePlayerScore, addMessage, swapColors, incrementGameCount]);
+    }, [roomState, setRoom, startSelfPlayRoom, increasePlayerScore, addMessage, swapColors, incrementGameCount]);
 
     return <GameRoomContext.Provider value={contextValue}>{children}</GameRoomContext.Provider>;
 }

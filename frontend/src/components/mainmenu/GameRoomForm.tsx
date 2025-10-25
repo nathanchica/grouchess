@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
 import { useGameRoom } from '../../providers/GameRoomProvider';
 import { type PieceColor } from '../../utils/pieces';
-import type { Player, GameRoom, RoomType, TimeControl, WaitingRoom } from '../../utils/types';
+import type { RoomType, TimeControl, WaitingRoom } from '../../utils/types';
 import Spinner from '../common/Spinner';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';
 import SideSelectForm from '../mainmenu/SideSelectForm';
@@ -49,8 +49,8 @@ type Props = {
 };
 
 function GameRoomForm({ onRoomCreated }: Props) {
-    const { setRoom } = useGameRoom();
-    const { createGameRoom, loading, error } = useCreateGameRoom();
+    const { startSelfPlayRoom } = useGameRoom();
+    const { createGameRoom, loading } = useCreateGameRoom();
 
     const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
     const [selectedTimeControlOption, setSelectedTimeControlOption] = useState<TimeControl | null>(null);
@@ -84,58 +84,26 @@ function GameRoomForm({ onRoomCreated }: Props) {
         }
     });
 
-    const handleStartClick = async () => {
+    const handleStartClick = () => {
         setErrorMessage(null);
 
         if (selectedRoomType === 'self') {
-            const player1: Player = {
-                id: 'player-1',
-                displayName: 'White',
-            };
-            const player2: Player = {
-                id: 'player-2',
-                displayName: 'Black',
-            };
-            const players = [player1, player2];
-
-            let playerIdToDisplayName: GameRoom['playerIdToDisplayName'] = {};
-            let playerIdToScore: GameRoom['playerIdToScore'] = {};
-
-            players.forEach(({ id, displayName }) => {
-                playerIdToDisplayName[id] = displayName;
-                playerIdToScore[id] = 0;
-            });
-            const gameRoom: GameRoom = {
-                id: 'game-room',
-                type: selectedRoomType,
-                timeControl: selectedTimeControlOption,
-                players,
-                playerIdToDisplayName,
-                playerIdToScore,
-                colorToPlayerId: {
-                    white: player1.id,
-                    black: player2.id,
-                },
-                messages: [],
-                gameCount: 1,
-            };
-            setRoom(gameRoom);
+            startSelfPlayRoom(selectedTimeControlOption);
             return;
         }
 
-        const data = await createGameRoom(
-            selectedDisplayName,
-            selectedSide,
-            selectedTimeControlOption ? selectedTimeControlOption.alias : null,
-            selectedRoomType
-        );
-
-        if (!data || error) {
-            setErrorMessage(error instanceof Error ? error.message : 'An unknown error occurred');
-            return;
-        }
-
-        onRoomCreated({ ...data, isCreator: true });
+        createGameRoom({
+            displayName: selectedDisplayName,
+            color: selectedSide,
+            timeControlAlias: selectedTimeControlOption ? selectedTimeControlOption.alias : null,
+            roomType: selectedRoomType,
+            onSuccess: (data) => {
+                onRoomCreated({ ...data, isCreator: true });
+            },
+            onError: (error) => {
+                setErrorMessage(error.message);
+            },
+        });
     };
 
     return (
