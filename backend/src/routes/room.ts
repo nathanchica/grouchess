@@ -8,6 +8,9 @@ import { generateGameRoomToken } from '../utils/token.js';
 
 export const roomRouter: Router = Router();
 
+/**
+ * Endpoint to get basic info about a game room.
+ */
 roomRouter.get('/:roomId', (req, res) => {
     const { roomId } = req.params;
     const { gameRoomService } = req.services;
@@ -44,6 +47,10 @@ const CreateGameRoomRequestSchema = z.object({
     roomType: RoomTypeEnum.describe('The type of room to create.'),
 });
 
+/**
+ * Endpoint to create a new game room.
+ * Returns the room ID, player ID, and authentication token for the creator.
+ */
 roomRouter.post('/', (req, res) => {
     const { playerService, gameRoomService } = req.services;
 
@@ -76,6 +83,10 @@ roomRouter.post('/', (req, res) => {
     }
 });
 
+/**
+ * Endpoint to join an existing game room.
+ * Returns the room ID, player ID, and authentication token for the joining player.
+ */
 roomRouter.post('/join/:roomId', (req, res) => {
     const { playerService, gameRoomService } = req.services;
     const { roomId } = req.params;

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { RoomType } from '../providers/GameRoomProvider';
 import type { PieceColor } from '../utils/pieces';
+import type { RoomType } from '../utils/types';
 
 type CreateGameRoomResponse = {
     roomId: string;
     playerId: string;
+    token: string;
 };
 
 type CreateGameRoomFn = (
@@ -25,7 +26,12 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const ROOM_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/room` : null;
 
 export function useCreateGameRoom(): Payload {
+    // Dual loading tracking: state for UI reactivity, ref for race condition prevention
+    // - loading state triggers re-renders for UI updates (spinners, disabled buttons)
+    // - loadingRef prevents duplicate requests without causing dependency array issues
     const [loading, setLoading] = useState<boolean>(false);
+    const loadingRef = useRef(false);
+
     const [error, setError] = useState<Error | null>(null);
     const isMountedRef = useRef(true);
 
@@ -37,10 +43,12 @@ export function useCreateGameRoom(): Payload {
     }, []);
 
     const createGameRoom = useCallback<CreateGameRoomFn>(async (displayName, color, timeControlAlias, roomType) => {
-        if (isMountedRef.current) {
-            setLoading(true);
-            setError(null);
-        } else {
+        // Prevent duplicate requests
+        if (loadingRef.current) {
+            return null;
+        }
+
+        if (!isMountedRef.current) {
             return null;
         }
 
@@ -51,6 +59,10 @@ export function useCreateGameRoom(): Payload {
             }
             return null;
         }
+
+        loadingRef.current = true;
+        setLoading(true);
+        setError(null);
 
         try {
             const response = await fetch(ROOM_ENDPOINT, {
@@ -89,7 +101,12 @@ export function useCreateGameRoom(): Payload {
             }
 
             const data = payload as CreateGameRoomResponse | null;
-            if (!data || typeof data.roomId !== 'string' || typeof data.playerId !== 'string') {
+            if (
+                !data ||
+                typeof data.roomId !== 'string' ||
+                typeof data.playerId !== 'string' ||
+                typeof data.token !== 'string'
+            ) {
                 setError(new Error('Missing data when creating game room.'));
                 return null;
             }
@@ -101,7 +118,10 @@ export function useCreateGameRoom(): Payload {
             setError(errorInstance);
             return null;
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) {
+                loadingRef.current = false;
+                setLoading(false);
+            }
         }
     }, []);
 
