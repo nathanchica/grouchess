@@ -6,6 +6,7 @@ import invariant from 'tiny-invariant';
 import DisplayNameForm from './DisplayNameForm';
 
 import { useJoinGameRoom } from '../../hooks/useJoinGameRoom';
+import { useGameRoom } from '../../providers/GameRoomProvider';
 import { useGameRoomSocket } from '../../providers/GameRoomSocketProvider';
 import { type WaitingRoom, type TimeControl } from '../../utils/types';
 import CopyableTextField from '../common/CopyableTextField';
@@ -30,6 +31,7 @@ function WaitingRoomView({ roomToken, isCreator }: Props) {
     const navigate = useNavigate();
     const { connectToRoom } = useGameRoomSocket();
     const { joinGameRoom, loading: isJoining } = useJoinGameRoom(roomId);
+    const { setCurrentPlayerId } = useGameRoom();
 
     const [isCreatorState, setIsCreatorState] = useState(isCreator);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -90,11 +92,12 @@ function WaitingRoomView({ roomToken, isCreator }: Props) {
         setErrorMessage(null);
         joinGameRoom({
             displayName,
-            onSuccess: (data) => {
-                connectToRoom(data.token);
+            onSuccess: ({ token, playerId }) => {
+                connectToRoom(token);
+                setCurrentPlayerId(playerId);
             },
-            onError: (error) => {
-                setErrorMessage(error.message);
+            onError: ({ message }) => {
+                setErrorMessage(message);
             },
         });
     };

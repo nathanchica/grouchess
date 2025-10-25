@@ -49,7 +49,7 @@ type Props = {
 };
 
 function GameRoomForm({ onRoomCreated }: Props) {
-    const { startSelfPlayRoom } = useGameRoom();
+    const { startSelfPlayRoom, setCurrentPlayerId } = useGameRoom();
     const { createGameRoom, loading } = useCreateGameRoom();
 
     const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
@@ -99,9 +99,10 @@ function GameRoomForm({ onRoomCreated }: Props) {
             roomType: selectedRoomType,
             onSuccess: (data) => {
                 onRoomCreated({ ...data, isCreator: true });
+                setCurrentPlayerId(data.playerId);
             },
-            onError: (error) => {
-                setErrorMessage(error.message);
+            onError: ({ message }) => {
+                setErrorMessage(message);
             },
         });
     };

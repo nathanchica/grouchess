@@ -7,6 +7,8 @@ import type { Player, Message, GameRoom, TimeControl } from '../utils/types';
 type GameRoomContextType = {
     room: GameRoom | null;
     setRoom: (room: GameRoom | null) => void;
+    currentPlayerId: Player['id'] | null;
+    setCurrentPlayerId: (playerId: Player['id'] | null) => void;
     startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
     increasePlayerScore: (playerId: Player['id'], halfPoint?: boolean) => void;
     addMessage: (message: Message) => void;
@@ -17,6 +19,8 @@ type GameRoomContextType = {
 const GameRoomContext = createContext<GameRoomContextType>({
     room: null,
     setRoom: () => {},
+    currentPlayerId: null,
+    setCurrentPlayerId: () => {},
     startSelfPlayRoom: () => {},
     increasePlayerScore: () => {},
     addMessage: () => {},
@@ -36,9 +40,14 @@ type Props = {
 
 function GameRoomProvider({ children }: Props) {
     const [roomState, setRoomState] = useState<GameRoom | null>(null);
+    const [currentPlayerIdState, setCurrentPlayerIdState] = useState<Player['id'] | null>(null);
 
     const setRoom = useCallback((room: GameRoom | null) => {
         setRoomState(room);
+    }, []);
+
+    const setCurrentPlayerId = useCallback((playerId: Player['id'] | null) => {
+        setCurrentPlayerIdState(playerId);
     }, []);
 
     const startSelfPlayRoom = useCallback((timeControlOption: TimeControl | null) => {
@@ -127,13 +136,25 @@ function GameRoomProvider({ children }: Props) {
         return {
             room: roomState,
             setRoom,
+            currentPlayerId: currentPlayerIdState,
+            setCurrentPlayerId,
             startSelfPlayRoom,
             increasePlayerScore,
             addMessage,
             swapColors,
             incrementGameCount,
         };
-    }, [roomState, setRoom, startSelfPlayRoom, increasePlayerScore, addMessage, swapColors, incrementGameCount]);
+    }, [
+        roomState,
+        setRoom,
+        currentPlayerIdState,
+        setCurrentPlayerId,
+        startSelfPlayRoom,
+        increasePlayerScore,
+        addMessage,
+        swapColors,
+        incrementGameCount,
+    ]);
 
     return <GameRoomContext.Provider value={contextValue}>{children}</GameRoomContext.Provider>;
 }
