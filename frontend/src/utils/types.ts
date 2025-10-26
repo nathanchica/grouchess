@@ -1,4 +1,4 @@
-import { type PieceColor } from './pieces';
+import { type PieceColor } from '@grouchess/chess';
 
 export interface Player {
     id: string;

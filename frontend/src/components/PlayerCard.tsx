@@ -1,9 +1,11 @@
+import type { PieceColor } from '@grouchess/chess';
+
 import InfoCard from './InfoCard';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
 import { getDisplayTextForDrawStatus, isDrawStatus } from '../utils/draws';
-import type { PieceColor } from '../utils/pieces';
+import { aliasToPieceImageData } from '../utils/pieces';
 
 type Props = {
     color: PieceColor;
@@ -61,7 +63,9 @@ function PlayerCard({ color, displayName }: Props) {
                 <div className="flex flex-row flex-wrap min-h-[3rem]">
                     {isImagesLoaded &&
                         ownCaptures.map(({ piece, moveIndex }) => {
-                            const { imgSrc, altText, alias } = piece;
+                            const { alias } = piece;
+                            const { imgSrc, altText } = aliasToPieceImageData[alias];
+
                             return (
                                 <img
                                     key={`turn-${moveIndex}-${alias}`}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { PieceColor } from '../utils/pieces';
+import type { PieceColor } from '@grouchess/chess';
+
 import type { RoomType } from '../utils/types';
 
 type CreateGameRoomResponse = {

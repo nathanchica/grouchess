@@ -1,7 +1,9 @@
 import type { PointerEventHandler } from 'react';
 
+import type { Piece } from '@grouchess/chess';
+
 import { useImages } from '../providers/ImagesProvider';
-import { type Piece } from '../utils/pieces';
+import { aliasToPieceImageData } from '../utils/pieces';
 
 type Props = {
     piece: Piece;
@@ -12,12 +14,13 @@ type Props = {
 
 function ChessPiece({ piece, showTextDisplay = false, onPointerDown, onImgLoadError }: Props) {
     const { imgSrcMap } = useImages();
-    const { altText, shortAlias, imgSrc } = piece;
+    const { alias } = piece;
+    const { altText, imgSrc } = aliasToPieceImageData[alias];
 
     if (showTextDisplay) {
         return (
             <span aria-label={altText} className="text-xl font-semibold select-none">
-                {shortAlias}
+                {alias}
             </span>
         );
     }

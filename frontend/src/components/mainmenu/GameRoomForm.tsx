@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
+import type { PieceColor } from '@grouchess/chess';
+
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
 import { useGameRoom } from '../../providers/GameRoomProvider';
-import { type PieceColor } from '../../utils/pieces';
 import type { RoomType, TimeControl, WaitingRoom } from '../../utils/types';
 import Spinner from '../common/Spinner';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';

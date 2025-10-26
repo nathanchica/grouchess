@@ -106,3 +106,8 @@ export function getColorFromAlias(alias: PieceAlias): PieceColor {
 export function getEnemyColor(color: PieceColor): PieceColor {
     return color === 'white' ? 'black' : 'white';
 }
+
+const VALID_PIECE_ALIAS_PATTERN = /^[pnbrqkPNBRQK]$/;
+export function isValidPieceAlias(alias: string): alias is PieceAlias {
+    return VALID_PIECE_ALIAS_PATTERN.test(alias);
+}

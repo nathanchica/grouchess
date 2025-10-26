@@ -1,10 +1,10 @@
+import { getPiece } from '@grouchess/chess';
+import type { ChessBoardState, ChessBoardType, PieceColor } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import { type ChessBoardType } from './board';
 import { createFEN } from './notations';
-import { getPiece, type PieceColor } from './pieces';
 
-import type { BoardState, GameStatus } from '../providers/ChessGameProvider';
+import type { GameStatus } from '../providers/ChessGameProvider';
 
 type MaterialSummary = {
     pawns: number;
@@ -45,7 +45,7 @@ export function getDisplayTextForDrawStatus(status: GameStatus['status']): strin
     return DRAW_STATUS_TO_DISPLAY_TEXT[status] as string;
 }
 
-export function createRepetitionKeyFromBoardState(boardState: BoardState): string {
+export function createRepetitionKeyFromBoardState(boardState: ChessBoardState): string {
     const fenString = createFEN(boardState);
     const [placementPart, activeColorPart, castlingPart, enPassantPart] = fenString.trim().split(/\s+/);
     return `${placementPart} ${activeColorPart} ${castlingPart} ${enPassantPart}`;
@@ -63,7 +63,7 @@ export function createRepetitionKeyFromBoardState(boardState: BoardState): strin
  *
  * https://support.chess.com/en/articles/8705277-what-does-insufficient-mating-material-mean
  */
-function hasInsufficientMatingMaterial(board: ChessBoardType): boolean {
+export function hasInsufficientMatingMaterial(board: ChessBoardType): boolean {
     const material: Record<PieceColor, MaterialSummary> = {
         white: { pawns: 0, rooks: 0, queens: 0, knights: 0, bishops: 0 },
         black: { pawns: 0, rooks: 0, queens: 0, knights: 0, bishops: 0 },

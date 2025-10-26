@@ -1,27 +1,31 @@
 import { useReducer, useContext, createContext, type ReactNode } from 'react';
 
-import { createInitialChessBoard } from '@grouchess/chess';
+import {
+    algebraicNotationToIndex,
+    computeAllLegalMoves,
+    computeEnPassantTargetIndex,
+    computeNextChessBoardFromMove,
+    createBoardFromFEN,
+    createInitialChessBoard,
+    getPiece,
+    isKingInCheck,
+    isPromotionSquare,
+} from '@grouchess/chess';
+import type {
+    CastleRightsByColor,
+    ChessBoardState,
+    ChessBoardType,
+    LegalMovesStore,
+    Move,
+    PawnPromotion,
+    Piece,
+    PieceColor,
+} from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import {
-    computeEnPassantTargetIndex,
-    isPromotionSquare,
-    type ChessBoardType,
-    createBoardFromFEN,
-    algebraicNotationToIndex,
-} from '../utils/board';
 import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from '../utils/draws';
-import {
-    computeAllLegalMoves,
-    computeCastleRightsChangesFromMove,
-    computeNextChessBoardFromMove,
-    isKingInCheck,
-    type CastleRightsByColor,
-    type LegalMovesStore,
-    type Move,
-} from '../utils/moves';
+import { computeCastleRightsChangesFromMove } from '../utils/moves';
 import { createAlgebraicNotation, isValidFEN, type MoveNotation } from '../utils/notations';
-import { type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
     piece: Piece;
@@ -45,22 +49,7 @@ export type GameStatus = {
 
 type EndGameReason = Extract<GameStatus['status'], 'draw-by-agreement' | 'resigned' | 'time-out'>;
 
-export type BoardState = {
-    // Array of 64 squares representing the chess board, each square can be empty (undefined) or a piece short alias
-    board: ChessBoardType;
-    // Color that has the turn to move
-    playerTurn: PieceColor;
-    // Castling rights for both colors
-    castleRightsByColor: CastleRightsByColor;
-    // index that was skipped by a pawn that moved two squares in the previous move
-    enPassantTargetIndex: number | null;
-    // Half-move clock (plies since last pawn move or capture)
-    halfmoveClock: number;
-    // Full-move number (increments after each black move)
-    fullmoveClock: number;
-};
-
-type State = BoardState & {
+type State = ChessBoardState & {
     // Indices of the squares involved in the previous move used for highlighting
     previousMoveIndices: number[];
     // Array of captured pieces
@@ -127,8 +116,8 @@ function computeGameStatusFromState({
 
 function createInitialCastleRights(): CastleRightsByColor {
     return {
-        white: { canShortCastle: true, canLongCastle: true },
-        black: { canShortCastle: true, canLongCastle: true },
+        white: { short: true, long: true },
+        black: { short: true, long: true },
     };
 }
 
@@ -167,23 +156,23 @@ function createChessGameFromFEN(fenString: string): State {
     invariant(parts.length === 6, 'FEN must have exactly 6 fields');
     const [placementPart, activeColorPart, castlingPart, enPassantPart, halfmovePart, fullmovePart] = parts;
 
-    const boardState: BoardState = {
+    const boardState: ChessBoardState = {
         board: createBoardFromFEN(placementPart),
         playerTurn: activeColorPart === 'w' ? 'white' : 'black',
         castleRightsByColor:
             castlingPart === '-'
                 ? {
-                      white: { canShortCastle: false, canLongCastle: false },
-                      black: { canShortCastle: false, canLongCastle: false },
+                      white: { short: false, long: false },
+                      black: { short: false, long: false },
                   }
                 : {
                       white: {
-                          canShortCastle: castlingPart.includes('K'),
-                          canLongCastle: castlingPart.includes('Q'),
+                          short: castlingPart.includes('K'),
+                          long: castlingPart.includes('Q'),
                       },
                       black: {
-                          canShortCastle: castlingPart.includes('k'),
-                          canLongCastle: castlingPart.includes('q'),
+                          short: castlingPart.includes('k'),
+                          long: castlingPart.includes('q'),
                       },
                   },
         enPassantTargetIndex: enPassantPart === '-' ? null : algebraicNotationToIndex(enPassantPart),
@@ -270,7 +259,7 @@ function reducer(state: State, action: Action): State {
                 black: { ...castleRightsByColor.black, ...(rightsDiff.black ?? {}) },
             };
 
-            const boardState: BoardState = {
+            const boardState: ChessBoardState = {
                 board: nextBoard,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 castleRightsByColor: nextCastleRights,
@@ -330,7 +319,7 @@ function reducer(state: State, action: Action): State {
                 nextCaptures = [...captures, { piece: capturedPiece, moveIndex: moveHistory.length }];
             }
 
-            const boardState: BoardState = {
+            const boardState: ChessBoardState = {
                 board: updatedBoard,
                 playerTurn: playerTurn === 'white' ? 'black' : 'white',
                 castleRightsByColor: state.castleRightsByColor,

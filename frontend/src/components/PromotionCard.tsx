@@ -1,7 +1,9 @@
 import { type CSSProperties } from 'react';
 
+import { type PawnPromotion } from '@grouchess/chess';
+
 import { useImages } from '../providers/ImagesProvider';
-import { getPiece, type PawnPromotion } from '../utils/pieces';
+import { aliasToPieceImageData } from '../utils/pieces';
 
 type Props = {
     onSelect: (option: PawnPromotion) => void;
@@ -26,7 +28,7 @@ function PromotionCard({ onSelect, options, squareSize, style }: Props) {
         >
             <div className="flex flex-col overflow-hidden shadow-lg shadow-black/40 bg-zinc-800">
                 {options.map((pieceAlias) => {
-                    const { imgSrc: origImgSrc, altText } = getPiece(pieceAlias);
+                    const { imgSrc: origImgSrc, altText } = aliasToPieceImageData[pieceAlias];
                     const imgSrc = imgSrcMap[origImgSrc] ?? origImgSrc;
                     return (
                         <button
