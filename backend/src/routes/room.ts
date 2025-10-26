@@ -1,9 +1,10 @@
+import { PieceColorEnum } from '@grouchess/chess';
 import { Router } from 'express';
 import * as z from 'zod';
 
 import { getTimeControlByAlias, isValidTimeControlAlias } from '../data/timeControl.js';
 import { GameRoomIsFullError } from '../utils/errors.js';
-import { RoomTypeEnum, PieceColorEnum, PlayerSchema } from '../utils/schemas.js';
+import { RoomTypeEnum, PlayerSchema } from '../utils/schemas.js';
 import { generateGameRoomToken } from '../utils/token.js';
 
 export const roomRouter: Router = Router();
