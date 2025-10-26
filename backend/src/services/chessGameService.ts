@@ -7,8 +7,8 @@ type GameRoomId = GameRoom['id'];
 
 function createInitialCastleRights(): CastleRightsByColor {
     return {
-        white: { canShortCastle: true, canLongCastle: true },
-        black: { canShortCastle: true, canLongCastle: true },
+        white: { short: true, long: true },
+        black: { short: true, long: true },
     };
 }
 
@@ -17,12 +17,14 @@ export class ChessGameService {
 
     createChessGameForRoom(roomId: GameRoomId): ChessGame {
         const chessGame: ChessGame = {
-            board: createInitialChessBoard(),
-            playerTurn: 'white',
-            castleRightsByColor: createInitialCastleRights(),
-            enPassantTargetIndex: null,
-            halfMoveClock: 0,
-            fullMoveNumber: 1,
+            boardState: {
+                board: createInitialChessBoard(),
+                playerTurn: 'white',
+                castleRightsByColor: createInitialCastleRights(),
+                enPassantTargetIndex: null,
+                halfmoveClock: 0,
+                fullmoveClock: 1,
+            },
             moveHistory: [],
         };
         this.gameRoomIdToChessGameMap.set(roomId, chessGame);
