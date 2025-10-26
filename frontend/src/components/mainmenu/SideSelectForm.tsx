@@ -7,14 +7,14 @@ const OPTIONS = [
     { label: 'Black', value: 'black' },
     { label: 'Random Side', value: 'random' },
 ];
-const DEFAULT_OPTION = OPTIONS[0].value;
 
 type Props = {
+    initialSide?: PieceColor | null;
     onSideSelect: (side: PieceColor | null) => void;
 };
 
-function SideSelectForm({ onSideSelect }: Props) {
-    const [selectedSide, setSelectedSide] = useState<string | null>(DEFAULT_OPTION);
+function SideSelectForm({ initialSide, onSideSelect }: Props) {
+    const [selectedSide, setSelectedSide] = useState<string | null>(initialSide ?? null);
 
     const handleSideSelect = (side: string | null) => {
         setSelectedSide(side);
