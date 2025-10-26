@@ -76,7 +76,7 @@ export function createGameRoomSocketHandler({ playerService, gameRoomService }: 
                         return;
                     }
                     const message = gameRoomService.addMessageToGameRoom(roomId, type, playerId, content);
-                    socket.to(`room:${roomId}`).emit('new_message', { message });
+                    io.to(`room:${roomId}`).emit('new_message', { message });
                 } catch (error) {
                     console.error('Error sending message:', error);
                     socket.emit('error', { message: 'Failed to send message' });
