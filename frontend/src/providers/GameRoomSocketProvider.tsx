@@ -5,18 +5,20 @@ import invariant from 'tiny-invariant';
 
 import { useGameRoom } from './GameRoomProvider';
 
-import { type GameRoom } from '../utils/types';
+import { type GameRoom, type Message } from '../utils/types';
 
 type GameRoomSocketContextType = {
     isConnected: boolean;
     isAuthenticated: boolean;
     connectToRoom: (token: string | null) => void;
+    sendMessage: (type: Message['type'], content?: string) => void;
 };
 
 const GameRoomSocketContext = createContext<GameRoomSocketContextType>({
     isConnected: false,
     isAuthenticated: false,
     connectToRoom: () => {},
+    sendMessage: () => {},
 });
 
 export function useGameRoomSocket(): GameRoomSocketContextType {
@@ -30,7 +32,7 @@ type Props = {
 };
 
 function GameRoomSocketProvider({ children }: Props) {
-    const { setRoom } = useGameRoom();
+    const { setRoom, addMessage } = useGameRoom();
 
     const [isConnected, setIsConnected] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -73,12 +75,33 @@ function GameRoomSocketProvider({ children }: Props) {
                 console.error('Socket error:', error);
             });
             newSocket.on('game_room_ready', ({ gameRoom }: { gameRoom: GameRoom }) => {
-                setRoom(gameRoom);
+                setRoom({
+                    ...gameRoom,
+                    messages: gameRoom.messages.map((msg) => ({
+                        ...msg,
+                        createdAt: new Date(msg.createdAt),
+                    })),
+                });
+            });
+            newSocket.on('new_message', ({ message }: { message: Message }) => {
+                addMessage({
+                    ...message,
+                    createdAt: new Date(message.createdAt),
+                });
             });
 
             socketRef.current = newSocket;
         },
-        [setRoom]
+        [setRoom, addMessage]
+    );
+
+    const sendMessage = useCallback(
+        (type: Message['type'], content?: string) => {
+            if (socketRef.current && isConnected && isAuthenticated) {
+                socketRef.current.emit('send_message', { type, content });
+            }
+        },
+        [isConnected, isAuthenticated]
     );
 
     // Cleanup on unmount
@@ -95,6 +118,7 @@ function GameRoomSocketProvider({ children }: Props) {
         isConnected,
         isAuthenticated,
         connectToRoom,
+        sendMessage,
     };
 
     return <GameRoomSocketContext.Provider value={contextValue}>{children}</GameRoomSocketContext.Provider>;

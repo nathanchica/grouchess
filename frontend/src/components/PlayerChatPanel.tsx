@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import { useGameRoom } from '../providers/GameRoomProvider';
+import { useGameRoomSocket } from '../providers/GameRoomSocketProvider';
 
 function formatTime(date: Date): string {
     const hours = date.getHours();
@@ -12,7 +13,8 @@ function formatTime(date: Date): string {
 }
 
 function PlayerChatPanel() {
-    const { room, currentPlayerId, addMessage } = useGameRoom();
+    const { room, currentPlayerId } = useGameRoom();
+    const { sendMessage } = useGameRoomSocket();
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [inputValue, setInputValue] = useState('');
 
@@ -21,15 +23,7 @@ function PlayerChatPanel() {
     const handleSubmit = () => {
         if (!inputValue.trim() || !currentPlayerId) return;
 
-        const message = {
-            id: `msg-${Date.now()}-${Math.random()}`,
-            type: 'standard' as const,
-            createdAt: new Date(),
-            authorId: currentPlayerId,
-            content: inputValue.trim(),
-        };
-
-        addMessage(message);
+        sendMessage('standard', inputValue.trim());
         setInputValue('');
     };
 
