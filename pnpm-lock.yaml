@@ -53,6 +53,9 @@ importers:
 
   backend:
     dependencies:
+      '@grouchess/chess':
+        specifier: workspace:*
+        version: link:../packages/chess
       base32-encode:
         specifier: ^2.0.0
         version: 2.0.0
@@ -102,6 +105,9 @@ importers:
       '@fontsource-variable/playfair-display':
         specifier: ^5.2.8
         version: 5.2.8
+      '@grouchess/chess':
+        specifier: workspace:*
+        version: link:../packages/chess
       '@tailwindcss/vite':
         specifier: ^4.1.14
         version: 4.1.14(vite@7.1.9(@types/node@24.9.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.6)(yaml@2.8.1))
@@ -145,6 +151,16 @@ importers:
       vite-plugin-svgr:
         specifier: ^4.5.0
         version: 4.5.0(rollup@4.52.4)(typescript@5.9.3)(vite@7.1.9(@types/node@24.9.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.6)(yaml@2.8.1))
+
+  packages/chess:
+    dependencies:
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 

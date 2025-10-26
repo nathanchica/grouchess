@@ -13,6 +13,6 @@
         "noEmit": true,
         "allowImportingTsExtensions": true
     },
-    "include": ["frontend/src/**/*", "backend/src/**/*"],
+    "include": ["frontend/src/**/*", "backend/src/**/*", "packages/*/src/**/*"],
     "exclude": ["node_modules", "**/dist", "**/build"]
 }

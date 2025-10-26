@@ -1,11 +1,11 @@
 import { useReducer, useContext, createContext, type ReactNode } from 'react';
 
+import { createInitialChessBoard } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
 import {
     computeEnPassantTargetIndex,
     isPromotionSquare,
-    NUM_SQUARES,
     type ChessBoardType,
     createBoardFromFEN,
     algebraicNotationToIndex,
@@ -21,7 +21,7 @@ import {
     type Move,
 } from '../utils/moves';
 import { createAlgebraicNotation, isValidFEN, type MoveNotation } from '../utils/notations';
-import { aliasToPieceData, type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
+import { type Piece, type PieceColor, type PawnPromotion, getPiece } from '../utils/pieces';
 
 type CaptureProps = {
     piece: Piece;
@@ -42,6 +42,8 @@ export type GameStatus = {
     winner?: PieceColor;
     check?: PieceColor;
 };
+
+type EndGameReason = Extract<GameStatus['status'], 'draw-by-agreement' | 'resigned' | 'time-out'>;
 
 export type BoardState = {
     // Array of 64 squares representing the chess board, each square can be empty (undefined) or a piece short alias
@@ -82,7 +84,8 @@ type Action =
     | { type: 'move-piece'; move: Move }
     | { type: 'promote-pawn'; pawnPromotion: PawnPromotion }
     | { type: 'cancel-promotion' }
-    | { type: 'load-fen'; fenString: string };
+    | { type: 'load-fen'; fenString: string }
+    | { type: 'end-game'; reason: EndGameReason; winner?: PieceColor };
 
 export type ChessGameContextType = State & {
     resetGame: () => void;
@@ -90,6 +93,7 @@ export type ChessGameContextType = State & {
     promotePawn: (pawnPromotion: PawnPromotion) => void;
     cancelPromotion: () => void;
     loadFEN: (fenString: string) => void;
+    endGame: (reason: EndGameReason, winner?: PieceColor) => void;
 };
 
 function computeGameStatusFromState({
@@ -121,33 +125,6 @@ function computeGameStatusFromState({
     return { status: 'in-progress' };
 }
 
-/**
- * r | n | b | q | k | b | n | r  (0 - 7)
- * ------------------------------
- * p | p | p | p | p | p | p | p  (8 - 15)
- * ------------------------------
- *   |   |   |   |   |   |   |    (16 - 23)
- * ------------------------------
- *   |   |   |   |   |   |   |    (24 - 31)
- * ------------------------------
- *   |   |   |   |   |   |   |    (32 - 39)
- * ------------------------------
- *   |   |   |   |   |   |   |    (40 - 47)
- * ------------------------------
- * P | P | P | P | P | P | P | P  (48 - 55)
- * ------------------------------
- * R | N | B | Q | K | B | N | R  (56 - 63)
- */
-function createInitialBoard(): ChessBoardType {
-    const board: ChessBoardType = Array(NUM_SQUARES).fill(undefined);
-    Object.values(aliasToPieceData).forEach(({ shortAlias, startingIndices }) => {
-        startingIndices.forEach((index) => {
-            board[index] = shortAlias;
-        });
-    });
-    return board;
-}
-
 function createInitialCastleRights(): CastleRightsByColor {
     return {
         white: { canShortCastle: true, canLongCastle: true },
@@ -157,7 +134,7 @@ function createInitialCastleRights(): CastleRightsByColor {
 
 function createInitialChessGame(): State {
     const boardState = {
-        board: createInitialBoard(),
+        board: createInitialChessBoard(),
         playerTurn: 'white' as PieceColor,
         castleRightsByColor: createInitialCastleRights(),
         enPassantTargetIndex: null,
@@ -237,6 +214,7 @@ const ChessGameContext = createContext<ChessGameContextType>({
     promotePawn: () => {},
     cancelPromotion: () => {},
     loadFEN: () => {},
+    endGame: () => {},
 });
 
 export function useChessGame(): ChessGameContextType {
@@ -415,6 +393,17 @@ function reducer(state: State, action: Action): State {
         case 'load-fen': {
             return { ...createChessGameFromFEN(action.fenString), timelineVersion: state.timelineVersion + 1 };
         }
+        case 'end-game': {
+            return {
+                ...state,
+                gameStatus: {
+                    status: action.reason,
+                    winner: action.winner,
+                    // Preserve checks
+                    check: state.gameStatus.check,
+                },
+            };
+        }
         default:
             return state;
     }
@@ -447,6 +436,10 @@ function ChessGameProvider({ children }: Props) {
         dispatch({ type: 'load-fen', fenString });
     }
 
+    function endGame(reason: EndGameReason, winner?: PieceColor) {
+        dispatch({ type: 'end-game', reason, winner });
+    }
+
     const contextValue = {
         ...state,
         resetGame,
@@ -454,6 +447,7 @@ function ChessGameProvider({ children }: Props) {
         promotePawn,
         cancelPromotion,
         loadFEN,
+        endGame,
     };
 
     return <ChessGameContext.Provider value={contextValue}>{children}</ChessGameContext.Provider>;
