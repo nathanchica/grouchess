@@ -4,7 +4,8 @@ import { indexToRowCol } from '@grouchess/chess';
 
 import { type GlowingSquareProps } from '../utils/types';
 
-const INDEX_TO_COL_LEGEND: Partial<Record<number, string>> = {
+// When not flipped (white's perspective): bottom row is row 7, left column is col 0
+const INDEX_TO_COL_LEGEND_NOT_FLIPPED: Partial<Record<number, string>> = {
     56: 'a',
     57: 'b',
     58: 'c',
@@ -14,7 +15,7 @@ const INDEX_TO_COL_LEGEND: Partial<Record<number, string>> = {
     62: 'g',
     63: 'h',
 };
-const INDEX_TO_ROW_LEGEND: Partial<Record<number, string>> = {
+const INDEX_TO_ROW_LEGEND_NOT_FLIPPED: Partial<Record<number, string>> = {
     0: '8',
     8: '7',
     16: '6',
@@ -23,6 +24,28 @@ const INDEX_TO_ROW_LEGEND: Partial<Record<number, string>> = {
     40: '3',
     48: '2',
     56: '1',
+};
+
+// When flipped (black's perspective): bottom row is row 0, left column is col 7
+const INDEX_TO_COL_LEGEND_FLIPPED: Partial<Record<number, string>> = {
+    0: 'a',
+    1: 'b',
+    2: 'c',
+    3: 'd',
+    4: 'e',
+    5: 'f',
+    6: 'g',
+    7: 'h',
+};
+const INDEX_TO_ROW_LEGEND_FLIPPED: Partial<Record<number, string>> = {
+    7: '8',
+    15: '7',
+    23: '6',
+    31: '5',
+    39: '4',
+    47: '3',
+    55: '2',
+    63: '1',
 };
 
 const CHESS_SQUARE_BASE_CLASSES =
@@ -34,9 +57,10 @@ type Props = {
     hideContent?: boolean;
     onClick: () => void;
     children: ReactNode;
+    isFlipped: boolean;
 };
 
-function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, children }: Props) {
+function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, children, isFlipped }: Props) {
     const { row, col } = indexToRowCol(index);
     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
     const { isPreviousMove, isSelected, isDraggingOver, isCheck, canCapture, canMove } = glowingSquareProps;
@@ -83,6 +107,10 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
 
     const legendFontColor = isDarkSquare ? 'text-zinc-100' : 'text-zinc-500';
     const legendBaseClasses = `absolute text-xs font-bold pointer-events-none ${legendFontColor}`;
+
+    const INDEX_TO_ROW_LEGEND = isFlipped ? INDEX_TO_ROW_LEGEND_FLIPPED : INDEX_TO_ROW_LEGEND_NOT_FLIPPED;
+    const INDEX_TO_COL_LEGEND = isFlipped ? INDEX_TO_COL_LEGEND_FLIPPED : INDEX_TO_COL_LEGEND_NOT_FLIPPED;
+
     const rowLegend = INDEX_TO_ROW_LEGEND[index];
     let rowLegendContent: ReactNode = null;
     if (rowLegend) {

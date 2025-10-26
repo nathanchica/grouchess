@@ -45,6 +45,8 @@ const ROOM_TYPE_TO_FORMS_MAP: Record<string, string[]> = {
     self: ['time-control'],
 };
 
+const DEFAULT_SIDE: PieceColor = 'white';
+
 type Props = {
     onRoomCreated: (waitingRoom: WaitingRoom) => void;
 };
@@ -56,7 +58,7 @@ function GameRoomForm({ onRoomCreated }: Props) {
     const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
     const [selectedTimeControlOption, setSelectedTimeControlOption] = useState<TimeControl | null>(null);
     const [selectedDisplayName, setSelectedDisplayName] = useState<string | null>(null);
-    const [selectedSide, setSelectedSide] = useState<PieceColor | null>(null);
+    const [selectedSide, setSelectedSide] = useState<PieceColor | null>(DEFAULT_SIDE);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const onDisplayNameChange = (name: string) => {
@@ -77,7 +79,7 @@ function GameRoomForm({ onRoomCreated }: Props) {
             case 'time-control':
                 return <TimeControlForm key="time-control-form" onTimeControlSelect={onTimeControlSelect} />;
             case 'side-select':
-                return <SideSelectForm key="side-select-form" onSideSelect={onSideSelect} />;
+                return <SideSelectForm key="side-select-form" initialSide={DEFAULT_SIDE} onSideSelect={onSideSelect} />;
             case 'display-name':
                 return <DisplayNameForm key="display-name-form" onDisplayNameChange={onDisplayNameChange} />;
             default:
