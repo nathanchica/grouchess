@@ -1,6 +1,14 @@
-import { createInitialChessBoard } from '@grouchess/chess';
-import type { ChessGame, CastleRightsByColor } from '@grouchess/chess';
+import {
+    computeAllLegalMoves,
+    computeCastleRightsChangesFromMove,
+    computeEnPassantTargetIndex,
+    computeNextChessBoardFromMove,
+    createInitialChessBoard,
+    isPromotionSquare,
+} from '@grouchess/chess';
+import type { ChessBoardState, ChessGame, CastleRightsByColor } from '@grouchess/chess';
 
+import { GameNotStartedError, IllegalMoveError, NotYetImplementedError } from '../utils/errors.js';
 import type { GameRoom } from '../utils/schemas.js';
 
 type GameRoomId = GameRoom['id'];
@@ -16,15 +24,17 @@ export class ChessGameService {
     gameRoomIdToChessGameMap: Map<GameRoomId, ChessGame> = new Map();
 
     createChessGameForRoom(roomId: GameRoomId): ChessGame {
+        const boardState: ChessBoardState = {
+            board: createInitialChessBoard(),
+            playerTurn: 'white',
+            castleRightsByColor: createInitialCastleRights(),
+            enPassantTargetIndex: null,
+            halfmoveClock: 0,
+            fullmoveClock: 1,
+        };
         const chessGame: ChessGame = {
-            boardState: {
-                board: createInitialChessBoard(),
-                playerTurn: 'white',
-                castleRightsByColor: createInitialCastleRights(),
-                enPassantTargetIndex: null,
-                halfmoveClock: 0,
-                fullmoveClock: 1,
-            },
+            boardState,
+            legalMovesStore: computeAllLegalMoves(boardState),
             moveHistory: [],
         };
         this.gameRoomIdToChessGameMap.set(roomId, chessGame);
@@ -39,13 +49,52 @@ export class ChessGameService {
         this.gameRoomIdToChessGameMap.delete(roomId);
     }
 
-    movePiece(roomId: GameRoomId, fromIndex: number, toIndex: number): boolean {
+    movePiece(roomId: GameRoomId, fromIndex: number, toIndex: number): ChessGame {
         const chessGame = this.getChessGameForRoom(roomId);
         if (!chessGame) {
-            return false;
+            throw new GameNotStartedError();
         }
-        // Implement move logic here. For now, just log the move.
-        console.log(`Moving piece in room ${roomId} from ${fromIndex} to ${toIndex}`);
-        throw new Error('Not yet implemented');
+        const { boardState: prevBoardState, legalMovesStore, moveHistory } = chessGame;
+        if (!(fromIndex in legalMovesStore.byStartIndex)) {
+            throw new IllegalMoveError();
+        }
+        const move = legalMovesStore.byStartIndex[fromIndex].find(({ endIndex }) => endIndex === toIndex);
+        if (!move) {
+            throw new IllegalMoveError();
+        }
+        const { board: prevBoard, playerTurn, castleRightsByColor, halfmoveClock, fullmoveClock } = prevBoardState;
+        const { startIndex, endIndex, type, piece } = move;
+        const { type: pieceType } = piece;
+
+        const nextBoard = computeNextChessBoardFromMove(prevBoard, move);
+
+        const isPawnMove = pieceType === 'pawn';
+        if (isPawnMove && isPromotionSquare(endIndex, playerTurn)) {
+            // TODO: Handle promotion selection flow
+            throw new NotYetImplementedError();
+        }
+
+        const rightsDiff = computeCastleRightsChangesFromMove(move);
+        const nextCastleRights: CastleRightsByColor = {
+            white: { ...castleRightsByColor.white, ...(rightsDiff.white ?? {}) },
+            black: { ...castleRightsByColor.black, ...(rightsDiff.black ?? {}) },
+        };
+
+        const nextBoardState: ChessBoardState = {
+            board: nextBoard,
+            playerTurn: playerTurn === 'white' ? 'black' : 'white',
+            castleRightsByColor: nextCastleRights,
+            enPassantTargetIndex: isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null,
+            halfmoveClock: pieceType === 'pawn' || type === 'capture' ? 0 : halfmoveClock + 1,
+            fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
+        };
+        const nextMoveHistory: ChessGame['moveHistory'] = moveHistory; // TODO: Update move history with notations
+        const nextChessGame: ChessGame = {
+            boardState: nextBoardState,
+            legalMovesStore: computeAllLegalMoves(nextBoardState),
+            moveHistory: nextMoveHistory,
+        };
+        this.gameRoomIdToChessGameMap.set(roomId, nextChessGame);
+        return nextChessGame;
     }
 }
