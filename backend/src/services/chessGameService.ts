@@ -1,35 +1,9 @@
-import { aliasToPieceData } from '../data/pieces.js';
-import { NUM_SQUARES } from '../utils/schemas.js';
-import type { ChessGame, ChessBoardType, GameRoom, CastleRightsByColor } from '../utils/schemas.js';
+import { createInitialChessBoard } from '@grouchess/chess';
+import type { ChessGame, CastleRightsByColor } from '@grouchess/chess';
+
+import type { GameRoom } from '../utils/schemas.js';
 
 type GameRoomId = GameRoom['id'];
-
-/**
- * r | n | b | q | k | b | n | r  (0 - 7)
- * ------------------------------
- * p | p | p | p | p | p | p | p  (8 - 15)
- * ------------------------------
- *   |   |   |   |   |   |   |    (16 - 23)
- * ------------------------------
- *   |   |   |   |   |   |   |    (24 - 31)
- * ------------------------------
- *   |   |   |   |   |   |   |    (32 - 39)
- * ------------------------------
- *   |   |   |   |   |   |   |    (40 - 47)
- * ------------------------------
- * P | P | P | P | P | P | P | P  (48 - 55)
- * ------------------------------
- * R | N | B | Q | K | B | N | R  (56 - 63)
- */
-function createInitialBoard(): ChessBoardType {
-    const board: ChessBoardType = Array(NUM_SQUARES).fill(undefined);
-    Object.values(aliasToPieceData).forEach(({ alias, startingIndices }) => {
-        startingIndices.forEach((index) => {
-            board[index] = alias;
-        });
-    });
-    return board;
-}
 
 function createInitialCastleRights(): CastleRightsByColor {
     return {
@@ -43,7 +17,7 @@ export class ChessGameService {
 
     createChessGameForRoom(roomId: GameRoomId): ChessGame {
         const chessGame: ChessGame = {
-            board: createInitialBoard(),
+            board: createInitialChessBoard(),
             playerTurn: 'white',
             castleRightsByColor: createInitialCastleRights(),
             enPassantTargetIndex: null,
