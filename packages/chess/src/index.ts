@@ -13,6 +13,7 @@ export { computeCastleRightsChangesFromMove, createInitialCastleRights } from '.
 export { computeAllLegalMoves, computeNextChessBoardFromMove, createMove, isKingInCheck } from './moves.js';
 export { getPiece, isValidPieceAlias } from './pieces.js';
 export {
+    BoardIndexSchema,
     CastleRightsSchema,
     CastleRightsByColorSchema,
     ChessBoardSchema,
@@ -20,6 +21,8 @@ export {
     ChessGameSchema,
     LegalMovesStoreSchema,
     MoveSchema,
+    MoveNotationSchema,
+    MoveRecordSchema,
     NUM_SQUARES,
     NUM_COLS,
     NUM_ROWS,
@@ -30,6 +33,7 @@ export {
 } from './schema.js';
 
 export type {
+    BoardIndex,
     CastleRights,
     CastleRightsByColor,
     ChessBoardState,
@@ -37,6 +41,8 @@ export type {
     ChessGame,
     LegalMovesStore,
     Move,
+    MoveNotation,
+    MoveRecord,
     MoveType,
     PawnPromotion,
     PieceAlias,

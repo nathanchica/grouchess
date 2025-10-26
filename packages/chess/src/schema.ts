@@ -81,12 +81,6 @@ export const ChessBoardStateSchema = z.object({
 });
 export type ChessBoardState = z.infer<typeof ChessBoardStateSchema>;
 
-export const ChessGameSchema = z.object({
-    boardState: ChessBoardStateSchema,
-    moveHistory: z.array(z.string()).describe('List of moves in UCI long algebraic notation e.g., e2e4'),
-});
-export type ChessGame = z.infer<typeof ChessGameSchema>;
-
 export const MoveTypeEnum = z.enum(['standard', 'capture', 'short-castle', 'long-castle', 'en-passant']);
 export type MoveType = z.infer<typeof MoveTypeEnum>;
 
@@ -101,6 +95,19 @@ export const MoveSchema = z.object({
 });
 export type Move = z.infer<typeof MoveSchema>;
 
+export const MoveNotationSchema = z.object({
+    san: z.string().describe('Standard Algebraic Notation for the move, e.g., e4, Nf3, O-O'),
+    figurine: z.string().describe('Figurine Algebraic Notation for the move, e.g., ♙e4, ♘f3, O-O'),
+    uci: z.string().optional().describe('UCI long algebraic notation for the move, e.g., e2e4, g1f3, e7e8q'),
+});
+export type MoveNotation = z.infer<typeof MoveNotationSchema>;
+
+export const MoveRecordSchema = z.object({
+    move: MoveSchema,
+    notation: MoveNotationSchema,
+});
+export type MoveRecord = z.infer<typeof MoveRecordSchema>;
+
 export const LegalMovesStoreSchema = z.object({
     allMoves: z.array(MoveSchema).describe('All legal moves for the current player for the current board state'),
     byStartIndex: z.record(BoardIndexSchema, z.array(MoveSchema)).describe('Legal moves indexed by their start index'),
@@ -112,3 +119,10 @@ export const LegalMovesStoreSchema = z.object({
         ),
 });
 export type LegalMovesStore = z.infer<typeof LegalMovesStoreSchema>;
+
+export const ChessGameSchema = z.object({
+    boardState: ChessBoardStateSchema,
+    legalMovesStore: LegalMovesStoreSchema,
+    moveHistory: z.array(z.string()).describe('List of moves in UCI long algebraic notation e.g., e2e4'),
+});
+export type ChessGame = z.infer<typeof ChessGameSchema>;
