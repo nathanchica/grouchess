@@ -3,9 +3,11 @@ import { useReducer, useContext, createContext, type ReactNode } from 'react';
 import {
     algebraicNotationToIndex,
     computeAllLegalMoves,
+    computeCastleRightsChangesFromMove,
     computeEnPassantTargetIndex,
     computeNextChessBoardFromMove,
     createBoardFromFEN,
+    createInitialCastleRights,
     createInitialChessBoard,
     getPiece,
     isKingInCheck,
@@ -24,7 +26,6 @@ import type {
 import invariant from 'tiny-invariant';
 
 import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from '../utils/draws';
-import { computeCastleRightsChangesFromMove } from '../utils/moves';
 import { createAlgebraicNotation, isValidFEN, type MoveNotation } from '../utils/notations';
 
 type CaptureProps = {
@@ -112,13 +113,6 @@ function computeGameStatusFromState({
     }
 
     return { status: 'in-progress' };
-}
-
-function createInitialCastleRights(): CastleRightsByColor {
-    return {
-        white: { short: true, long: true },
-        black: { short: true, long: true },
-    };
 }
 
 function createInitialChessGame(): State {

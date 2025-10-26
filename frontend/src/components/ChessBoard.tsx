@@ -18,7 +18,7 @@ import PawnPromotionPrompt from './PawnPromotionPrompt';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
-import { type GlowingSquareProps } from '../utils/board';
+import { type GlowingSquareProps } from '../utils/types';
 
 export type DragProps = {
     pointerId: number;

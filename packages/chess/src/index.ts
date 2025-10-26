@@ -9,6 +9,7 @@ export {
     isRowColInBounds,
     rowColToIndex,
 } from './board.js';
+export { computeCastleRightsChangesFromMove, createInitialCastleRights } from './castles.js';
 export { computeAllLegalMoves, computeNextChessBoardFromMove, createMove, isKingInCheck } from './moves.js';
 export { getPiece, isValidPieceAlias } from './pieces.js';
 export {

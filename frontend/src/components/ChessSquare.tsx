@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { indexToRowCol } from '@grouchess/chess';
 
-import { type GlowingSquareProps } from '../utils/board';
+import { type GlowingSquareProps } from '../utils/types';
 
 const INDEX_TO_COL_LEGEND: Partial<Record<number, string>> = {
     56: 'a',
