@@ -4,7 +4,7 @@ import { Server as SocketIOServer } from 'socket.io';
 
 import { createApp } from './app.js';
 import config from './config.js';
-import { gameRoomService, playerService } from './services/index.js';
+import { chessGameService, gameRoomService, playerService } from './services/index.js';
 import { createGameRoomSocketHandler } from './sockets/gameRoomSocket.js';
 
 const { PORT, HOST, CLIENT_URL } = config;
@@ -19,6 +19,7 @@ const io = new SocketIOServer(httpServer, {
 });
 
 const initializeGameRoomSocket = createGameRoomSocketHandler({
+    chessGameService,
     playerService,
     gameRoomService,
 });

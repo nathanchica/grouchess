@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 
 import { authenticateSocket, type AuthenticatedSocket } from '../middleware/authenticateSocket.js';
-import { GameRoomService, PlayerService } from '../services/index.js';
+import { ChessGameService, GameRoomService, PlayerService } from '../services/index.js';
 import type { Message } from '../utils/schemas.js';
 
 type SendMessageEventInput = {
@@ -14,13 +14,18 @@ type TypingEventInput = {
 };
 
 type GameRoomSocketDependencies = {
+    chessGameService: ChessGameService;
     playerService: PlayerService;
     gameRoomService: GameRoomService;
 };
 
 const MAX_PLAYERS_PER_ROOM = 2;
 
-export function createGameRoomSocketHandler({ playerService, gameRoomService }: GameRoomSocketDependencies) {
+export function createGameRoomSocketHandler({
+    chessGameService,
+    playerService,
+    gameRoomService,
+}: GameRoomSocketDependencies) {
     return function initializeGameRoomSocket(io: Server) {
         // Apply authentication middleware to all connections
         io.use(authenticateSocket);
@@ -58,9 +63,16 @@ export function createGameRoomSocketHandler({ playerService, gameRoomService }: 
                         return;
                     }
 
-                    const { players } = gameRoom;
+                    // Game in progress (player rejoining). Send current game room state to rejoining player
+                    if (chessGameService.getChessGameForRoom(roomId)) {
+                        io.to(`player:${playerId}`).emit('game_room_ready', { gameRoom });
+                        return;
+                    }
 
+                    // If room is now full, create chess game and notify all players
+                    const { players } = gameRoom;
                     if (players.length === MAX_PLAYERS_PER_ROOM) {
+                        chessGameService.createChessGameForRoom(roomId);
                         io.to(`room:${roomId}`).emit('game_room_ready', { gameRoom });
                     }
                 } catch (error) {
