@@ -1,11 +1,12 @@
 import { useCallback } from 'react';
 
+import { indexToRowCol, NUM_COLS, type PieceColor, type PawnPromotion } from '@grouchess/chess';
+
 import PromotionCard from './PromotionCard';
 
 import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
 import { useChessGame } from '../providers/ChessGameProvider';
-import { indexToRowCol, NUM_COLS } from '../utils/board';
-import { PAWN_PROMOTION_OPTIONS, type PieceColor, type PawnPromotion } from '../utils/pieces';
+import { PAWN_PROMOTION_OPTIONS } from '../utils/pieces';
 
 type Props = {
     boardRect: DOMRect;

@@ -29,11 +29,13 @@ export const CastleSideEnum = z.enum(['short', 'long']);
 export const PieceAliasEnum = z.enum(['p', 'r', 'n', 'b', 'q', 'k', 'P', 'R', 'N', 'B', 'Q', 'K']);
 export const PieceColorEnum = z.enum(['white', 'black']);
 export const PieceTypeEnum = z.enum(['pawn', 'rook', 'knight', 'bishop', 'queen', 'king']);
+export const PawnPromotionEnum = PieceAliasEnum.exclude(['p', 'P', 'k', 'K']);
 
 export type CastleSide = z.infer<typeof CastleSideEnum>;
 export type PieceAlias = z.infer<typeof PieceAliasEnum>;
 export type PieceColor = z.infer<typeof PieceColorEnum>;
 export type PieceType = z.infer<typeof PieceTypeEnum>;
+export type PawnPromotion = z.infer<typeof PawnPromotionEnum>;
 
 export const PieceSchema = z.object({
     alias: PieceAliasEnum,
@@ -87,7 +89,6 @@ export type ChessGame = z.infer<typeof ChessGameSchema>;
 
 export const MoveTypeEnum = z.enum(['standard', 'capture', 'short-castle', 'long-castle', 'en-passant']);
 export type MoveType = z.infer<typeof MoveTypeEnum>;
-export type PawnPromotion = Exclude<PieceAlias, 'p' | 'P' | 'k' | 'K'>;
 
 export const MoveSchema = z.object({
     startIndex: BoardIndexSchema,
@@ -96,7 +97,7 @@ export const MoveSchema = z.object({
     piece: PieceSchema,
     capturedPiece: PieceSchema.optional(),
     captureIndex: BoardIndexSchema.optional(),
-    promotion: PieceTypeEnum.optional(),
+    promotion: PawnPromotionEnum.optional(),
 });
 export type Move = z.infer<typeof MoveSchema>;
 

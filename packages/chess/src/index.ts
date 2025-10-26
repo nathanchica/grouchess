@@ -1,5 +1,16 @@
-export { createInitialChessBoard, indexToRowCol, rowColToIndex, isRowColInBounds } from './board.js';
+export {
+    algebraicNotationToIndex,
+    computeEnPassantTargetIndex,
+    createBoardFromFEN,
+    createInitialChessBoard,
+    getKingIndices,
+    indexToRowCol,
+    isPromotionSquare,
+    isRowColInBounds,
+    rowColToIndex,
+} from './board.js';
 export { computeAllLegalMoves, computeNextChessBoardFromMove, createMove, isKingInCheck } from './moves.js';
+export { getPiece, isValidPieceAlias } from './pieces.js';
 export {
     CastleRightsSchema,
     CastleRightsByColorSchema,
@@ -11,6 +22,7 @@ export {
     NUM_SQUARES,
     NUM_COLS,
     NUM_ROWS,
+    PawnPromotionEnum,
     PieceAliasEnum,
     PieceColorEnum,
     PieceSchema,
@@ -25,7 +37,9 @@ export type {
     LegalMovesStore,
     Move,
     MoveType,
+    PawnPromotion,
     PieceAlias,
     PieceColor,
     Piece,
+    RowCol,
 } from './schema.js';

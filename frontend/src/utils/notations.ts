@@ -1,10 +1,8 @@
+import { indexToRowCol, isValidPieceAlias, rowColToIndex, NUM_COLS, NUM_ROWS } from '@grouchess/chess';
+import type { ChessBoardState, LegalMovesStore, Move, PieceAlias } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import { indexToRowCol, rowColToIndex, NUM_COLS, NUM_ROWS } from './board';
-import { type LegalMovesStore, type Move } from './moves';
-import { isValidPieceShortAlias, type PieceShortAlias } from './pieces';
-
-import { type BoardState, type GameStatus } from '../providers/ChessGameProvider';
+import { type GameStatus } from '../providers/ChessGameProvider';
 
 export type MoveNotation = {
     // For display or common use. Standard (short-form) algebraic notation.
@@ -18,7 +16,7 @@ export type MoveNotation = {
 type Disambiguator = 'none' | 'file' | 'rank' | 'both';
 
 const LOWERCASE_A_CHARCODE = 'a'.charCodeAt(0);
-const SHORT_ALIAS_TO_FIGURINE_UNICODE: Partial<Record<PieceShortAlias, string>> = {
+const SHORT_ALIAS_TO_FIGURINE_UNICODE: Partial<Record<PieceAlias, string>> = {
     K: '\u265A',
     Q: '\u265B',
     R: '\u265C',
@@ -71,14 +69,14 @@ export function createAlgebraicNotation(
         return 'O-O-O';
     }
 
-    const { type: pieceType, shortAlias } = piece;
+    const { type: pieceType, alias } = piece;
     const isPawn = pieceType === 'pawn';
     const isCapture = captureIndex !== undefined;
 
     const { row, col } = indexToRowCol(startIndex);
     let prefix = '';
     if (!isPawn) {
-        const normalizedAlias = shortAlias.toUpperCase() as PieceShortAlias;
+        const normalizedAlias = alias.toUpperCase() as PieceAlias;
         const figurine = SHORT_ALIAS_TO_FIGURINE_UNICODE[normalizedAlias];
         prefix = useFigurine && figurine ? figurine : normalizedAlias;
     }
@@ -112,7 +110,7 @@ export function createFEN({
     enPassantTargetIndex,
     halfmoveClock,
     fullmoveClock,
-}: BoardState): string {
+}: ChessBoardState): string {
     // Piece placement (from 8th rank to 1st)
     let placementRows: string[] = [];
     for (let row = 0; row < NUM_ROWS; row++) {
@@ -141,10 +139,10 @@ export function createFEN({
 
     // Castling availability (rights, not immediate legality)
     let castling = '';
-    if (castleRightsByColor.white.canShortCastle) castling += 'K';
-    if (castleRightsByColor.white.canLongCastle) castling += 'Q';
-    if (castleRightsByColor.black.canShortCastle) castling += 'k';
-    if (castleRightsByColor.black.canLongCastle) castling += 'q';
+    if (castleRightsByColor.white.short) castling += 'K';
+    if (castleRightsByColor.white.long) castling += 'Q';
+    if (castleRightsByColor.black.short) castling += 'k';
+    if (castleRightsByColor.black.long) castling += 'q';
     if (castling.length === 0) castling = '-';
 
     // En passant target square
@@ -172,7 +170,7 @@ function isValidPiecePlacement(piecePlacement: string): boolean {
         for (const char of rank) {
             if (char >= '1' && char <= '8') {
                 fileCount += Number(char);
-            } else if (isValidPieceShortAlias(char)) {
+            } else if (isValidPieceAlias(char)) {
                 fileCount += 1;
                 if (char === 'K') whiteKingCount += 1;
                 if (char === 'k') blackKingCount += 1;

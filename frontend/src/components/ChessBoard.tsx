@@ -1,5 +1,16 @@
 import { useMemo, useRef, useState, type PointerEventHandler, type PointerEvent } from 'react';
 
+import {
+    getKingIndices,
+    getPiece,
+    isRowColInBounds,
+    NUM_COLS,
+    rowColToIndex,
+    type Move,
+    type PieceAlias,
+    type RowCol,
+} from '@grouchess/chess';
+
 import ChessPiece from './ChessPiece';
 import ChessSquare from './ChessSquare';
 import GhostPiece from './GhostPiece';
@@ -7,16 +18,7 @@ import PawnPromotionPrompt from './PawnPromotionPrompt';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
-import {
-    rowColToIndex,
-    isRowColInBounds,
-    getKingIndices,
-    NUM_COLS,
-    type RowCol,
-    type GlowingSquareProps,
-} from '../utils/board';
-import { type Move } from '../utils/moves';
-import { getPiece, type PieceShortAlias } from '../utils/pieces';
+import { type GlowingSquareProps } from '../utils/board';
 
 export type DragProps = {
     pointerId: number;
@@ -114,13 +116,13 @@ function ChessBoard() {
         });
 
         return {
-            selectedPiece: getPiece(board[selectedIndex] as PieceShortAlias),
+            selectedPiece: getPiece(board[selectedIndex] as PieceAlias),
             indexToMoveDataForSelectedPiece,
             glowingSquarePropsByIndex,
         };
     }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore]);
 
-    const createClickHandler = (pieceAliasAtSquare: PieceShortAlias | undefined, clickedIndex: number) => () => {
+    const createClickHandler = (pieceAliasAtSquare: PieceAlias | undefined, clickedIndex: number) => () => {
         if (boardInteractionIsDisabled) return;
 
         const isPossibleMoveSquare = clickedIndex in indexToMoveDataForSelectedPiece;
@@ -239,7 +241,7 @@ function ChessBoard() {
                 );
             })}
             {drag && !pendingPromotion && selectedPiece && (
-                <GhostPiece dragProps={drag} pieceImgSrc={selectedPiece.imgSrc} imgAltText={selectedPiece.altText} />
+                <GhostPiece dragProps={drag} pieceAlias={selectedPiece.alias} />
             )}
             {pendingPromotion && boardRef.current && (
                 <PawnPromotionPrompt

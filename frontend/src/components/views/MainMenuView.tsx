@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router';
 
 import { useImages } from '../../providers/ImagesProvider';
-import { getPiece } from '../../utils/pieces';
+import { aliasToPieceImageData } from '../../utils/pieces';
 import type { WaitingRoom } from '../../utils/types';
 import GameRoomForm from '../mainmenu/GameRoomForm';
 import WaitingRoomView from '../mainmenu/WaitingRoomView';
@@ -19,7 +19,7 @@ function MainMenuView() {
     const navigate = useNavigate();
     const [waitingRoomProps, setWaitingRoomProps] = useState<WaitingRoom | null>(null);
 
-    const { imgSrc: rookImgSrc, altText: rookAltText } = getPiece('white_rook');
+    const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
     const logoImgSrc = imgSrcMap[rookImgSrc] ?? rookImgSrc;
 
     const onRoomCreated = (newWaitingRoom: WaitingRoom) => {
