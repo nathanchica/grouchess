@@ -1,7 +1,9 @@
-import type { PieceAlias, Piece } from './schema.js';
+import type { PieceAlias, Piece, PieceColor } from './schema.js';
 
 export const WHITE_KING_START_INDEX = 60;
 export const BLACK_KING_START_INDEX = 4;
+
+const WHITE_PIECES = new Set<PieceAlias>(['P', 'R', 'N', 'B', 'K', 'Q']);
 
 export const aliasToPieceData: Record<PieceAlias, Piece> = {
     // White pieces
@@ -92,3 +94,15 @@ export const aliasToPieceData: Record<PieceAlias, Piece> = {
         value: 10,
     },
 };
+
+export function getPiece(alias: PieceAlias): Piece {
+    return aliasToPieceData[alias];
+}
+
+export function getColorFromAlias(alias: PieceAlias): PieceColor {
+    return WHITE_PIECES.has(alias) ? 'white' : 'black';
+}
+
+export function getEnemyColor(color: PieceColor): PieceColor {
+    return color === 'white' ? 'black' : 'white';
+}
