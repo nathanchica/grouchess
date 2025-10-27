@@ -19,6 +19,7 @@ import type {
     ChessBoardType,
     LegalMovesStore,
     Move,
+    MoveRecord,
     PawnPromotion,
     Piece,
     PieceColor,
@@ -26,7 +27,7 @@ import type {
 import invariant from 'tiny-invariant';
 
 import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from '../utils/draws';
-import { createAlgebraicNotation, isValidFEN, type MoveNotation } from '../utils/notations';
+import { createAlgebraicNotation, isValidFEN } from '../utils/notations';
 
 type CaptureProps = {
     piece: Piece;
@@ -55,8 +56,8 @@ type State = ChessBoardState & {
     previousMoveIndices: number[];
     // Array of captured pieces
     captures: CaptureProps[];
-    // History of moves in various notations
-    moveHistory: MoveNotation[];
+    // History of move records
+    moveHistory: MoveRecord[];
     // Version number to force re-renders when resetting/loading games
     timelineVersion: number;
     // Pending promotion info (if a pawn has reached the last rank and is awaiting promotion choice)
@@ -224,7 +225,7 @@ function reducer(state: State, action: Action): State {
                 legalMovesStore,
                 positionCounts,
             } = state;
-            const { startIndex, endIndex, type, capturedPiece, piece } = move;
+            const { startIndex, endIndex, type, capturedPiece, piece, promotion } = move;
             const { type: pieceType } = piece;
 
             let captureProps = null;
@@ -235,9 +236,9 @@ function reducer(state: State, action: Action): State {
 
             const nextBoard = computeNextChessBoardFromMove(board, move);
 
-            // If pawn reached last rank, pause for promotion selection.
+            // If pawn reached last rank, pause to await promotion choice
             const isPawnMove = pieceType === 'pawn';
-            if (isPawnMove && isPromotionSquare(endIndex, playerTurn)) {
+            if (isPawnMove && isPromotionSquare(endIndex, playerTurn) && !promotion) {
                 return {
                     ...state,
                     board: nextBoard,
@@ -282,15 +283,18 @@ function reducer(state: State, action: Action): State {
              * - post-move game state (effect of the move on the board, check/checkmate, etc.)
              * - pre-move legal moves store (for disambiguation of the move)
              */
-            const moveNotation: MoveNotation = {
-                algebraicNotation: createAlgebraicNotation(move, gameStatus, legalMovesStore),
-                figurineAlgebraicNotation: createAlgebraicNotation(move, gameStatus, legalMovesStore, true),
+            const moveRecord: MoveRecord = {
+                move,
+                notation: {
+                    san: createAlgebraicNotation(move, gameStatus, legalMovesStore),
+                    figurine: createAlgebraicNotation(move, gameStatus, legalMovesStore, true),
+                },
             };
 
             return {
                 ...nextState,
                 gameStatus,
-                moveHistory: [...moveHistory, moveNotation],
+                moveHistory: [...moveHistory, moveRecord],
             };
         }
         case 'promote-pawn': {
@@ -346,20 +350,18 @@ function reducer(state: State, action: Action): State {
              * - post-move game state (effect of the move on the board, check/checkmate, etc.)
              * - pre-move legal moves store (for disambiguation of the move)
              */
-            const moveNotation: MoveNotation = {
-                algebraicNotation: createAlgebraicNotation(moveWithPromotion, gameStatus, legalMovesStore),
-                figurineAlgebraicNotation: createAlgebraicNotation(
-                    moveWithPromotion,
-                    gameStatus,
-                    legalMovesStore,
-                    true
-                ),
+            const moveRecord: MoveRecord = {
+                move: moveWithPromotion,
+                notation: {
+                    san: createAlgebraicNotation(moveWithPromotion, gameStatus, legalMovesStore),
+                    figurine: createAlgebraicNotation(moveWithPromotion, gameStatus, legalMovesStore, true),
+                },
             };
 
             return {
                 ...nextState,
                 gameStatus,
-                moveHistory: [...moveHistory, moveNotation],
+                moveHistory: [...moveHistory, moveRecord],
             };
         }
         case 'cancel-promotion': {

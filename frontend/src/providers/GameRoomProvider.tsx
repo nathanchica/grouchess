@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
+import { type PieceColor } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
 import type { Player, Message, GameRoom, TimeControl } from '../utils/types';
@@ -9,6 +10,7 @@ type GameRoomContextType = {
     setRoom: (room: GameRoom | null) => void;
     currentPlayerId: Player['id'] | null;
     setCurrentPlayerId: (playerId: Player['id'] | null) => void;
+    currentPlayerColor: PieceColor | null;
     startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
     increasePlayerScore: (playerId: Player['id'], halfPoint?: boolean) => void;
     addMessage: (message: Message) => void;
@@ -21,6 +23,7 @@ const GameRoomContext = createContext<GameRoomContextType>({
     setRoom: () => {},
     currentPlayerId: null,
     setCurrentPlayerId: () => {},
+    currentPlayerColor: null,
     startSelfPlayRoom: () => {},
     increasePlayerScore: () => {},
     addMessage: () => {},
@@ -41,6 +44,18 @@ type Props = {
 function GameRoomProvider({ children }: Props) {
     const [roomState, setRoomState] = useState<GameRoom | null>(null);
     const [currentPlayerIdState, setCurrentPlayerIdState] = useState<Player['id'] | null>(null);
+
+    const colorToPlayerId = roomState?.colorToPlayerId;
+    const currentPlayerColor = useMemo<PieceColor | null>(() => {
+        if (!colorToPlayerId || !currentPlayerIdState) return null;
+        if (colorToPlayerId.white === currentPlayerIdState) {
+            return 'white';
+        } else if (colorToPlayerId.black === currentPlayerIdState) {
+            return 'black';
+        } else {
+            return null;
+        }
+    }, [colorToPlayerId, currentPlayerIdState]);
 
     const setRoom = useCallback((room: GameRoom | null) => {
         setRoomState(room);
@@ -139,6 +154,7 @@ function GameRoomProvider({ children }: Props) {
             setRoom,
             currentPlayerId: currentPlayerIdState,
             setCurrentPlayerId,
+            currentPlayerColor,
             startSelfPlayRoom,
             increasePlayerScore,
             addMessage,
@@ -150,6 +166,7 @@ function GameRoomProvider({ children }: Props) {
         setRoom,
         currentPlayerIdState,
         setCurrentPlayerId,
+        currentPlayerColor,
         startSelfPlayRoom,
         increasePlayerScore,
         addMessage,

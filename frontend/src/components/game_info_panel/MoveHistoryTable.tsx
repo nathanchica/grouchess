@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 
+import type { MoveNotation } from '@grouchess/chess';
+
 import { useChessGame } from '../../providers/ChessGameProvider';
 import { getDisplayTextForDrawStatus, isDrawStatus } from '../../utils/draws';
-import { type MoveNotation } from '../../utils/notations';
 
 function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
     if (allMoves.length === 0) return [];
@@ -23,7 +24,8 @@ function MoveHistoryTable() {
     const { moveHistory, gameStatus } = useChessGame();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-    const movePairs = createMovePairs(moveHistory);
+    const moveNotations = moveHistory.map(({ notation }) => notation);
+    const movePairs = createMovePairs(moveNotations);
     const isGameOver = gameStatus.status !== 'in-progress';
     const isDraw = isDrawStatus(gameStatus.status);
     const winnerLabel = isDraw ? 'Draw' : gameStatus.winner === 'white' ? 'White wins' : 'Black wins';
@@ -43,11 +45,11 @@ function MoveHistoryTable() {
 
     return (
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            <table className="table-fixed w-full xl:text-base 2xl:text-lg text-sm">
+            <table className="table-fixed w-full 2xl:text-base text-sm">
                 <colgroup>
-                    <col className="xl:w-[4ch] w-[2ch]" />
-                    <col className="xl:w-[12ch] w-[7ch]" />
-                    <col className="xl:w-[12ch] w-[7ch]" />
+                    <col className="xl:w-[4ch] lg:w-[3ch] w-[2ch]" />
+                    <col className="xl:w-[12ch] lg:w-[9ch] w-[7ch]" />
+                    <col className="xl:w-[12ch] lg:w-[9ch] w-[7ch]" />
                 </colgroup>
                 <tbody>
                     {movePairs.map(([whiteMove, blackMove], index) => {
@@ -68,14 +70,14 @@ function MoveHistoryTable() {
                                     </span>
                                 </td>
                                 <td className={MOVE_CELL_CLASSES}>
-                                    <span className={whiteClasses} aria-label={whiteMove.algebraicNotation}>
-                                        {whiteMove.figurineAlgebraicNotation}
+                                    <span className={whiteClasses} aria-label={whiteMove.san}>
+                                        {whiteMove.figurine}
                                     </span>
                                 </td>
                                 <td {...(blackMove ? { className: MOVE_CELL_CLASSES } : {})}>
                                     {blackMove ? (
-                                        <span className={blackClasses} aria-label={blackMove.algebraicNotation}>
-                                            {blackMove.figurineAlgebraicNotation}
+                                        <span className={blackClasses} aria-label={blackMove.san}>
+                                            {blackMove.figurine}
                                         </span>
                                     ) : (
                                         <span className={`${MOVE_HISTORY_BASE_CLASSES} invisible`}>—</span>
