@@ -19,7 +19,7 @@ import IconButton, { type IconButtonProps } from '../common/IconButton';
 const ICON_CLASSES = 'w-4 h-4 2xl:w-5 2xl:h-5';
 
 type Views = 'history' | 'settings';
-type IconButtonPropsWithKey = IconButtonProps & { key: string };
+type IconButtonPropsWithKey = IconButtonProps & { key: string; skip?: boolean };
 
 function GameInfoPanel() {
     const { room, incrementGameCount } = useGameRoom();
@@ -63,6 +63,7 @@ function GameInfoPanel() {
     const iconButtons: IconButtonPropsWithKey[] = [
         {
             key: 'reset-game-button',
+            skip: type !== 'self',
             icon: <RotateLeftIcon className={ICON_CLASSES} aria-hidden="true" />,
             onClick: onResetButtonClick,
             ariaProps: {
@@ -72,6 +73,7 @@ function GameInfoPanel() {
         },
         {
             key: 'load-board-button',
+            skip: type !== 'self',
             icon: <FileImportIcon className={ICON_CLASSES} aria-hidden="true" />,
             onClick: () => setLoadBoardModalIsShowing(true),
             ariaProps: {
@@ -134,17 +136,22 @@ function GameInfoPanel() {
                         </>
                     )}
 
-                    <section className="flex justify-between" aria-label="Game actions">
-                        {iconButtons.map(({ key, icon, onClick, ariaProps, isActive, tooltipText }) => (
-                            <IconButton
-                                key={key}
-                                icon={icon}
-                                onClick={onClick}
-                                ariaProps={ariaProps}
-                                isActive={isActive}
-                                tooltipText={tooltipText}
-                            />
-                        ))}
+                    <section
+                        className={`flex ${type === 'self' ? 'justify-between' : 'justify-end md:gap-12 gap-8'}`}
+                        aria-label="Game actions"
+                    >
+                        {iconButtons.map(({ key, skip, icon, onClick, ariaProps, isActive, tooltipText }) =>
+                            !skip ? (
+                                <IconButton
+                                    key={key}
+                                    icon={icon}
+                                    onClick={onClick}
+                                    ariaProps={ariaProps}
+                                    isActive={isActive}
+                                    tooltipText={tooltipText}
+                                />
+                            ) : null
+                        )}
                     </section>
                 </div>
             </InfoCard>
