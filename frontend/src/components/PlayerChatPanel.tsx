@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useGameRoom } from '../providers/GameRoomProvider';
 import { useGameRoomSocket } from '../providers/GameRoomSocketProvider';
 
+const MAX_MESSAGE_LENGTH = 140;
+
 function formatTime(date: Date): string {
     const hours = date.getHours();
     const minutes = date.getMinutes();
@@ -67,12 +69,18 @@ function PlayerChatPanel() {
                 <div ref={messagesEndRef} />
             </div>
             <div className="border-gray-300 p-3">
+                {inputValue && (
+                    <div className="text-xs text-zinc-400 text-right mb-1">
+                        {inputValue.length}/{MAX_MESSAGE_LENGTH}
+                    </div>
+                )}
                 <input
                     type="text"
                     value={inputValue}
                     onChange={(event) => setInputValue(event.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Message"
+                    maxLength={MAX_MESSAGE_LENGTH}
                     className="w-full bg-zinc-700 px-3 py-2 rounded-lg focus:outline-none placeholder:text-zinc-400 text-zinc-200"
                 />
             </div>
