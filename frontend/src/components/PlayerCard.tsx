@@ -4,7 +4,6 @@ import InfoCard from './InfoCard';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';
-import { getDisplayTextForDrawStatus, isDrawStatus } from '../utils/draws';
 import { aliasToPieceImageData } from '../utils/pieces';
 
 type Props = {
@@ -20,19 +19,10 @@ function PlayerCard({ color, displayName }: Props) {
         .sort((a, b) => b.piece.value - a.piece.value);
     const isPlayersTurn = playerTurn === color;
 
-    const { status, winner } = gameStatus;
+    const { status } = gameStatus;
 
     const isGameOver = status !== 'in-progress';
     const isActive = isPlayersTurn || isGameOver;
-
-    let statusText;
-    if (winner === color) {
-        statusText = 'Winner by checkmate';
-    } else if (status === 'draw-by-agreement') {
-        statusText = 'Draw by agreement';
-    } else if (isDrawStatus(status)) {
-        statusText = `Draw by ${getDisplayTextForDrawStatus(status)}`;
-    }
 
     return (
         <InfoCard
@@ -56,9 +46,6 @@ function PlayerCard({ color, displayName }: Props) {
                         5:00
                     </span>
                 </section>
-                {statusText && (
-                    <span className="text-xs font-semibold tracking-widest uppercase text-zinc-400">{statusText}</span>
-                )}
 
                 <div className="flex flex-row flex-wrap min-h-[3rem]">
                     {isImagesLoaded &&

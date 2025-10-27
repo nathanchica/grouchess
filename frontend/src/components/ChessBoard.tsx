@@ -10,7 +10,6 @@ import {
     rowColToIndex,
     type Move,
     type PieceAlias,
-    type PieceColor,
     type RowCol,
 } from '@grouchess/chess';
 
@@ -64,7 +63,7 @@ function ChessBoard() {
     const { isReady: isFinishedLoadingImages } = useImages();
     const { board, playerTurn, previousMoveIndices, movePiece, pendingPromotion, gameStatus, legalMovesStore } =
         useChessGame();
-    const { room, currentPlayerId } = useGameRoom();
+    const { room, currentPlayerColor } = useGameRoom();
 
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
     const boardRef = useRef<HTMLDivElement | null>(null);
@@ -73,23 +72,8 @@ function ChessBoard() {
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-    function clearSelection() {
-        setSelectedIndex(null);
-    }
-
-    let currentPlayerColor: PieceColor | null = null;
-    let boardIsFlipped = false;
-    let isCurrentPlayerTurn = true;
-    if (room) {
-        const { colorToPlayerId } = room;
-        if (colorToPlayerId.white === currentPlayerId) {
-            currentPlayerColor = 'white';
-        } else if (colorToPlayerId.black === currentPlayerId) {
-            currentPlayerColor = 'black';
-        }
-        boardIsFlipped = colorToPlayerId.black === currentPlayerId;
-        isCurrentPlayerTurn = room.type === 'self' || currentPlayerColor === playerTurn;
-    }
+    const boardIsFlipped = currentPlayerColor === 'black';
+    const isCurrentPlayerTurn = room?.type === 'self' || currentPlayerColor === playerTurn;
     const boardToRender = boardIsFlipped ? [...board].reverse() : board;
 
     const { status, check: checkedColor } = gameStatus;
@@ -140,6 +124,10 @@ function ChessBoard() {
             glowingSquarePropsByIndex,
         };
     }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore]);
+
+    function clearSelection() {
+        setSelectedIndex(null);
+    }
 
     const createClickHandler = (pieceAliasAtSquare: PieceAlias | undefined, clickedIndex: number) => () => {
         if (boardInteractionIsDisabled) return;
@@ -269,6 +257,7 @@ function ChessBoard() {
                     boardRect={boardRef.current.getBoundingClientRect()}
                     promotionIndex={pendingPromotion.move.endIndex}
                     color={pendingPromotion.move.piece.color}
+                    isFlipped={boardIsFlipped}
                     onDismiss={clearSelection}
                 />
             )}
