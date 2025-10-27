@@ -4,11 +4,12 @@ import {
     computeEnPassantTargetIndex,
     computeNextChessBoardFromMove,
     createInitialChessBoard,
+    getColorFromAlias,
     isPromotionSquare,
 } from '@grouchess/chess';
-import type { ChessBoardState, ChessGame, CastleRightsByColor } from '@grouchess/chess';
+import type { ChessBoardState, ChessGame, CastleRightsByColor, PawnPromotion } from '@grouchess/chess';
 
-import { GameNotStartedError, IllegalMoveError, NotYetImplementedError } from '../utils/errors.js';
+import { GameNotStartedError, IllegalMoveError, InvalidInputError } from '../utils/errors.js';
 import type { GameRoom } from '../utils/schemas.js';
 
 type GameRoomId = GameRoom['id'];
@@ -49,7 +50,7 @@ export class ChessGameService {
         this.gameRoomIdToChessGameMap.delete(roomId);
     }
 
-    movePiece(roomId: GameRoomId, fromIndex: number, toIndex: number): ChessGame {
+    movePiece(roomId: GameRoomId, fromIndex: number, toIndex: number, promotion?: PawnPromotion): ChessGame {
         const chessGame = this.getChessGameForRoom(roomId);
         if (!chessGame) {
             throw new GameNotStartedError();
@@ -58,21 +59,29 @@ export class ChessGameService {
         if (!(fromIndex in legalMovesStore.byStartIndex)) {
             throw new IllegalMoveError();
         }
-        const move = legalMovesStore.byStartIndex[fromIndex].find(({ endIndex }) => endIndex === toIndex);
-        if (!move) {
+        const legalMove = legalMovesStore.byStartIndex[fromIndex].find(({ endIndex }) => endIndex === toIndex);
+        if (!legalMove) {
             throw new IllegalMoveError();
         }
+        const move = { ...legalMove };
         const { board: prevBoard, playerTurn, castleRightsByColor, halfmoveClock, fullmoveClock } = prevBoardState;
         const { startIndex, endIndex, type, piece } = move;
-        const { type: pieceType } = piece;
-
-        const nextBoard = computeNextChessBoardFromMove(prevBoard, move);
+        const { type: pieceType, color } = piece;
 
         const isPawnMove = pieceType === 'pawn';
+
+        // Attach promotion info if applicable
         if (isPawnMove && isPromotionSquare(endIndex, playerTurn)) {
-            // TODO: Handle promotion selection flow
-            throw new NotYetImplementedError();
+            if (!promotion) {
+                throw new InvalidInputError('Promotion piece not specified');
+            }
+            if (getColorFromAlias(promotion) !== color) {
+                throw new InvalidInputError('Promotion piece color does not match pawn color');
+            }
+            move.promotion = promotion;
         }
+
+        const nextBoard = computeNextChessBoardFromMove(prevBoard, move);
 
         const rightsDiff = computeCastleRightsChangesFromMove(move);
         const nextCastleRights: CastleRightsByColor = {

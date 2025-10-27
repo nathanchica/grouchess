@@ -103,7 +103,7 @@ export function createGameRoomSocketHandler({
                     return;
                 }
                 try {
-                    chessGameService.movePiece(roomId, fromIndex, toIndex);
+                    chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
                     socket.to(`room:${roomId}`).emit('piece_moved', {
                         fromIndex,
                         toIndex,

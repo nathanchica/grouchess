@@ -161,7 +161,7 @@ export function isKingInCheck(board: ChessBoardType, color: PieceColor): boolean
  * Computes the next chess board state after applying the given move. Assumes the move is legal.
  */
 export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move): ChessBoardType {
-    const { startIndex, endIndex, type, captureIndex, piece } = move;
+    const { startIndex, endIndex, type, captureIndex, piece, promotion } = move;
     const nextBoard = [...board];
     const { alias, color } = piece;
     const isWhite = color === 'white';
@@ -184,7 +184,7 @@ export function computeNextChessBoardFromMove(board: ChessBoardType, move: Move)
     }
 
     nextBoard[startIndex] = undefined;
-    nextBoard[endIndex] = alias;
+    nextBoard[endIndex] = promotion ?? alias;
     return nextBoard;
 }
 
