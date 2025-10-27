@@ -1,10 +1,10 @@
 import { computeNextChessGameAfterMove, createInitialChessGame } from '@grouchess/chess';
 import type { ChessGame, PawnPromotion } from '@grouchess/chess';
+import type { ChessGameRoom } from '@grouchess/game-room';
 
 import { GameNotStartedError, IllegalMoveError } from '../utils/errors.js';
-import type { GameRoom } from '../utils/schemas.js';
 
-type GameRoomId = GameRoom['id'];
+type GameRoomId = ChessGameRoom['id'];
 
 export class ChessGameService {
     gameRoomIdToChessGameMap: Map<GameRoomId, ChessGame> = new Map();

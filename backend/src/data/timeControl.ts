@@ -1,4 +1,4 @@
-import type { TimeControl } from '../utils/schemas.js';
+import type { TimeControl } from '@grouchess/game-room';
 
 export const SUPPORTED_TIME_CONTROLS: TimeControl[] = [
     { alias: '1|0', minutes: 1, increment: 0, displayText: '1 min' },
