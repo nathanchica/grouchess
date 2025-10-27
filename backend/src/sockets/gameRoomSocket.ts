@@ -1,17 +1,10 @@
 import { Server } from 'socket.io';
 
+import { sendAuthenticatedEvent, sendErrorEvent } from './gameRoomSocket.events.js';
+import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from './gameRoomSocket.schemas.js';
+
 import { authenticateSocket, type AuthenticatedSocket } from '../middleware/authenticateSocket.js';
 import { ChessGameService, GameRoomService, PlayerService } from '../services/index.js';
-import type { Message } from '../utils/schemas.js';
-
-type SendMessageEventInput = {
-    type: Message['type'];
-    content?: string;
-};
-
-type TypingEventInput = {
-    isTyping: boolean;
-};
 
 type GameRoomSocketDependencies = {
     chessGameService: ChessGameService;
@@ -42,24 +35,23 @@ export function createGameRoomSocketHandler({
 
             const player = playerService.getPlayerById(playerId);
             if (!player) {
-                socket.emit('error', { message: 'Player not found' });
+                sendErrorEvent(socket, 'Player not found');
                 socket.disconnect();
                 return;
             }
 
             socket.join(`player:${playerId}`);
-            socket.emit('authenticated', { success: true });
+            sendAuthenticatedEvent(socket, true);
 
             socket.on('join_game_room', () => {
                 try {
                     gameRoomService.joinGameRoom(roomId, player);
                     playerService.updateStatus(playerId, true);
                     socket.join(`room:${roomId}`);
-                    socket.to(`room:${roomId}`).emit('player_joined_room', { playerId });
 
                     const gameRoom = gameRoomService.getGameRoomById(roomId);
                     if (!gameRoom) {
-                        socket.emit('error', { message: 'Game room not found' });
+                        sendErrorEvent(socket, 'Game room not found');
                         return;
                     }
 
@@ -77,25 +69,81 @@ export function createGameRoomSocketHandler({
                     }
                 } catch (error) {
                     console.error('Error joining room:', error);
-                    socket.emit('error', { message: 'Failed to join room' });
+                    sendErrorEvent(socket, 'Failed to join room');
                 }
             });
 
-            socket.on('send_message', ({ type, content }: SendMessageEventInput) => {
+            socket.on('move_piece', (input) => {
+                const parseResult = MovePieceInputSchema.safeParse(input);
+                if (!parseResult.success) {
+                    sendErrorEvent(socket, 'Invalid move_piece input');
+                    return;
+                }
+                const { fromIndex, toIndex, promotion } = parseResult.data;
+
+                const chessGame = chessGameService.getChessGameForRoom(roomId);
+                if (!chessGame) {
+                    sendErrorEvent(socket, 'Game has not started yet');
+                    return;
+                }
+                const gameRoom = gameRoomService.getGameRoomById(roomId);
+                if (!gameRoom) {
+                    sendErrorEvent(socket, 'Game room not found');
+                    return;
+                }
+                const { colorToPlayerId } = gameRoom;
+                const playerColor =
+                    colorToPlayerId.white === playerId ? 'white' : colorToPlayerId.black === playerId ? 'black' : null;
+                if (!playerColor) {
+                    sendErrorEvent(socket, 'Player not part of this game room');
+                    return;
+                }
+                if (chessGame.boardState.playerTurn !== playerColor) {
+                    sendErrorEvent(socket, "It's not your turn");
+                    return;
+                }
+                try {
+                    chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
+                    socket.to(`room:${roomId}`).emit('piece_moved', {
+                        fromIndex,
+                        toIndex,
+                        promotion,
+                    });
+                } catch (error) {
+                    console.error('Error moving piece:', error);
+                    sendErrorEvent(socket, 'Failed to move piece');
+                }
+            });
+
+            socket.on('send_message', (input) => {
+                const parseResult = SendMessageInputSchema.safeParse(input);
+                if (!parseResult.success) {
+                    sendErrorEvent(socket, 'Invalid send_message input');
+                    return;
+                }
+                const { type, content } = parseResult.data;
+
                 try {
                     if (type === 'standard' && !content?.trim()) {
-                        socket.emit('error', { message: 'Message content cannot be empty' });
+                        sendErrorEvent(socket, 'Message content cannot be empty');
                         return;
                     }
                     const message = gameRoomService.addMessageToGameRoom(roomId, type, playerId, content);
                     io.to(`room:${roomId}`).emit('new_message', { message });
                 } catch (error) {
                     console.error('Error sending message:', error);
-                    socket.emit('error', { message: 'Failed to send message' });
+                    sendErrorEvent(socket, 'Failed to send message');
                 }
             });
 
-            socket.on('typing', ({ isTyping }: TypingEventInput) => {
+            socket.on('typing', (input) => {
+                const parseResult = TypingEventInputSchema.safeParse(input);
+                if (!parseResult.success) {
+                    sendErrorEvent(socket, 'Invalid typing input');
+                    return;
+                }
+                const { isTyping } = parseResult.data;
+
                 try {
                     socket.to(`room:${roomId}`).emit('user_typing', { playerId, isTyping });
                 } catch (error) {
@@ -105,7 +153,6 @@ export function createGameRoomSocketHandler({
 
             socket.on('disconnect', () => {
                 playerService.updateStatus(playerId, false);
-                socket.to(`room:${roomId}`).emit('player_left_room', { playerId });
             });
         });
     };
