@@ -12,14 +12,14 @@ type Props = {
 };
 
 function PlayerCard({ color, displayName }: Props) {
-    const { captures, playerTurn, gameStatus } = useChessGame();
+    const { captures, playerTurn, gameState } = useChessGame();
     const { isReady: isImagesLoaded, imgSrcMap } = useImages();
     const ownCaptures = captures
         .filter(({ piece }) => piece.color !== color)
         .sort((a, b) => b.piece.value - a.piece.value);
     const isPlayersTurn = playerTurn === color;
 
-    const { status } = gameStatus;
+    const { status } = gameState;
 
     const isGameOver = status !== 'in-progress';
     const isActive = isPlayersTurn || isGameOver;

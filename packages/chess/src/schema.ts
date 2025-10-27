@@ -120,9 +120,47 @@ export const LegalMovesStoreSchema = z.object({
 });
 export type LegalMovesStore = z.infer<typeof LegalMovesStoreSchema>;
 
+export const ChessGameStatusEnum = z.enum([
+    'in-progress',
+    'checkmate',
+    'stalemate',
+    '50-move-draw',
+    'threefold-repetition',
+    'insufficient-material',
+    'draw-by-agreement',
+    'resigned',
+    'time-out',
+]);
+export type ChessGameStatus = z.infer<typeof ChessGameStatusEnum>;
+
+export const EndGameReasonEnum = ChessGameStatusEnum.extract(['draw-by-agreement', 'resigned', 'time-out']);
+export type EndGameReason = z.infer<typeof EndGameReasonEnum>;
+
+export const ChessGameStateSchema = z.object({
+    status: ChessGameStatusEnum,
+    winner: PieceColorEnum.optional().describe('Color of the winning player, if applicable'),
+    check: PieceColorEnum.optional().describe('Color of the player currently in check, if applicable'),
+});
+export type ChessGameState = z.infer<typeof ChessGameStateSchema>;
+
+export const PieceCaptureSchema = z.object({
+    piece: PieceSchema,
+    moveIndex: z
+        .number()
+        .int()
+        .nonnegative()
+        .describe('Index of the move in the move history when the piece was captured'),
+});
+export type PieceCapture = z.infer<typeof PieceCaptureSchema>;
+
 export const ChessGameSchema = z.object({
     boardState: ChessBoardStateSchema,
+    gameState: ChessGameStateSchema,
     legalMovesStore: LegalMovesStoreSchema,
-    moveHistory: z.array(z.string()).describe('List of moves in UCI long algebraic notation e.g., e2e4'),
+    moveHistory: z.array(MoveRecordSchema).describe('Ordered history of moves made in the game'),
+    captures: z.array(PieceCaptureSchema).describe('List of captured pieces with their capture move indices'),
+    positionCounts: z
+        .record(z.string(), z.number().int().positive())
+        .describe('Counts of positions (FEN strings) for threefold repetition detection'),
 });
 export type ChessGame = z.infer<typeof ChessGameSchema>;

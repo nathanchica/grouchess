@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 
+import { isDrawStatus, type ChessGameStatus } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import { useChessGame, type GameStatus } from '../providers/ChessGameProvider';
+import { useChessGame } from '../providers/ChessGameProvider';
 import { useSound, type SoundName } from '../providers/SoundProvider';
-import { isDrawStatus } from '../utils/draws';
 
 const CHECK_DELAY_MS = 120;
 
@@ -15,7 +15,7 @@ const getMoveSoundName = (san: string, isCapture: boolean): SoundName => {
     return 'move';
 };
 
-const getGameEndSoundName = (status: GameStatus['status'], winner?: 'white' | 'black'): SoundName | null => {
+const getGameEndSoundName = (status: ChessGameStatus, winner?: 'white' | 'black'): SoundName | null => {
     if (status === 'checkmate' || status === 'resigned' || status === 'time-out') {
         invariant(winner, 'Winner must be defined for checkmate, resignation, or time-out');
         return winner === 'white' ? 'victory' : 'defeat';
@@ -29,8 +29,8 @@ const getGameEndSoundName = (status: GameStatus['status'], winner?: 'white' | 'b
 };
 
 function SoundEffects() {
-    const { moveHistory, captures, gameStatus } = useChessGame();
-    const { status, winner } = gameStatus;
+    const { moveHistory, captures, gameState } = useChessGame();
+    const { status, winner } = gameState;
     const { play } = useSound();
 
     const prevMoveCountRef = useRef<number>(moveHistory.length);

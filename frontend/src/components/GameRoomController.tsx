@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
 
-import type { PawnPromotion } from '@grouchess/chess';
+import { isDrawStatus, type PawnPromotion } from '@grouchess/chess';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useGameRoom } from '../providers/GameRoomProvider';
 import { useGameRoomSocket } from '../providers/GameRoomSocketProvider';
-import { isDrawStatus } from '../utils/draws';
 
 type SendMovePieceInput = { fromIndex: number; toIndex: number; promotion?: PawnPromotion };
 
@@ -14,13 +13,13 @@ type SendMovePieceInput = { fromIndex: number; toIndex: number; promotion?: Pawn
  */
 function GameRoomController() {
     const { room, increasePlayerScore, currentPlayerColor } = useGameRoom();
-    const { gameStatus, moveHistory, legalMovesStore, movePiece } = useChessGame();
+    const { gameState, moveHistory, legalMovesStore, movePiece } = useChessGame();
     const { sendMovePiece, lastPieceMovedPayload } = useGameRoomSocket();
     const prevGameCount = useRef<number | null>(null);
     const prevLastPieceMovedPayload = useRef<typeof lastPieceMovedPayload>(null);
     const prevSendMovePieceInput = useRef<SendMovePieceInput | null>(null);
 
-    const { status, winner } = gameStatus;
+    const { status, winner } = gameState;
 
     /**
      * Handle end of game
