@@ -1,17 +1,9 @@
-import { indexToRowCol, isValidPieceAlias, rowColToIndex, NUM_COLS, NUM_ROWS } from '@grouchess/chess';
-import type { ChessBoardState, LegalMovesStore, Move, PieceAlias } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import { type GameStatus } from '../providers/ChessGameProvider';
-
-export type MoveNotation = {
-    // For display or common use. Standard (short-form) algebraic notation.
-    algebraicNotation: string;
-    // For international display or common use. Uses unicode symbols for pieces (e.g. ♞c6 instead of Nc6)
-    figurineAlgebraicNotation?: string;
-    // For Universal Chess Interface (UCI). Variant of long-form algebraic notation.
-    longAlgebraicNotation?: string;
-};
+import { indexToRowCol, rowColToIndex } from './board.js';
+import { isValidPieceAlias } from './pieces.js';
+import { NUM_COLS, NUM_ROWS } from './schema.js';
+import type { ChessBoardState, ChessGameState, LegalMovesStore, Move, PieceAlias } from './schema.js';
 
 type Disambiguator = 'none' | 'file' | 'rank' | 'both';
 
@@ -58,7 +50,7 @@ function disambiguatorForMove({ startIndex, endIndex, piece }: Move, legalMovesS
  */
 export function createAlgebraicNotation(
     move: Move,
-    gameStatus: GameStatus,
+    gameStatus: ChessGameState,
     legalMovesStore: LegalMovesStore,
     useFigurine: boolean = false
 ): string {

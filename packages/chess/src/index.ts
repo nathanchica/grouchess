@@ -10,7 +10,9 @@ export {
     rowColToIndex,
 } from './board.js';
 export { computeCastleRightsChangesFromMove, createInitialCastleRights } from './castles.js';
+export { isDrawStatus } from './draws.js';
 export { computeAllLegalMoves, computeNextChessBoardFromMove, createMove, isKingInCheck } from './moves.js';
+export { createFEN, isValidFEN } from './notations.js';
 export { getColorFromAlias, getPiece, isValidPieceAlias } from './pieces.js';
 export {
     BoardIndexSchema,
@@ -19,6 +21,9 @@ export {
     ChessBoardSchema,
     ChessBoardStateSchema,
     ChessGameSchema,
+    ChessGameStateSchema,
+    ChessGameStatusEnum,
+    EndGameReasonEnum,
     LegalMovesStoreSchema,
     MoveSchema,
     MoveNotationSchema,
@@ -39,6 +44,9 @@ export type {
     ChessBoardState,
     ChessBoardType,
     ChessGame,
+    ChessGameState,
+    ChessGameStatus,
+    EndGameReason,
     LegalMovesStore,
     Move,
     MoveNotation,
@@ -50,3 +58,11 @@ export type {
     Piece,
     RowCol,
 } from './schema.js';
+
+export {
+    computeGameStatus,
+    computeNextChessGameAfterMove,
+    createChessGameFromFEN,
+    createInitialBoardState,
+    createInitialChessGame,
+} from './state.js';

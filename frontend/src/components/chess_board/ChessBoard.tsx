@@ -61,7 +61,7 @@ function xyFromPointerEvent(
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
-    const { board, playerTurn, previousMoveIndices, movePiece, pendingPromotion, gameStatus, legalMovesStore } =
+    const { board, playerTurn, previousMoveIndices, movePiece, pendingPromotion, gameState, legalMovesStore } =
         useChessGame();
     const { room, currentPlayerColor } = useGameRoom();
 
@@ -76,7 +76,7 @@ function ChessBoard() {
     const isCurrentPlayerTurn = room?.type === 'self' || currentPlayerColor === playerTurn;
     const boardToRender = boardIsFlipped ? [...board].reverse() : board;
 
-    const { status, check: checkedColor } = gameStatus;
+    const { status, check: checkedColor } = gameState;
     const isGameOver = status !== 'in-progress';
     const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver || !isCurrentPlayerTurn;
 

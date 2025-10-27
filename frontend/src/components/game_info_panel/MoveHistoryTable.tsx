@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 
-import type { MoveNotation } from '@grouchess/chess';
+import { isDrawStatus, type MoveNotation } from '@grouchess/chess';
 
 import { useChessGame } from '../../providers/ChessGameProvider';
-import { getDisplayTextForDrawStatus, isDrawStatus } from '../../utils/draws';
+import { getDisplayTextForDrawStatus } from '../../utils/draws';
 
 function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
     if (allMoves.length === 0) return [];
@@ -21,18 +21,18 @@ const ACTIVE_MOVE_CLASSES = 'font-bold text-zinc-100';
 const MOVE_CELL_CLASSES = 'hover:bg-white/10 cursor-pointer px-2 py-0.5 rounded-md';
 
 function MoveHistoryTable() {
-    const { moveHistory, gameStatus } = useChessGame();
+    const { moveHistory, gameState } = useChessGame();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
     const moveNotations = moveHistory.map(({ notation }) => notation);
     const movePairs = createMovePairs(moveNotations);
-    const isGameOver = gameStatus.status !== 'in-progress';
-    const isDraw = isDrawStatus(gameStatus.status);
-    const winnerLabel = isDraw ? 'Draw' : gameStatus.winner === 'white' ? 'White wins' : 'Black wins';
-    const resultScore = gameStatus.winner === 'white' ? '1-0' : gameStatus.winner === 'black' ? '0-1' : '1/2-1/2';
+    const isGameOver = gameState.status !== 'in-progress';
+    const isDraw = isDrawStatus(gameState.status);
+    const winnerLabel = isDraw ? 'Draw' : gameState.winner === 'white' ? 'White wins' : 'Black wins';
+    const resultScore = gameState.winner === 'white' ? '1-0' : gameState.winner === 'black' ? '0-1' : '1/2-1/2';
     const statusLabel = (() => {
-        if (isDraw) return getDisplayTextForDrawStatus(gameStatus.status);
-        const label = gameStatus.status.replace(/-/g, ' ');
+        if (isDraw) return getDisplayTextForDrawStatus(gameState.status);
+        const label = gameState.status.replace(/-/g, ' ');
         return label.charAt(0).toUpperCase() + label.slice(1);
     })();
 

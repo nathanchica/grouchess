@@ -1,7 +1,8 @@
+import { createFEN } from '@grouchess/chess';
+
 import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useChessGame } from '../../providers/ChessGameProvider';
-import { createFEN } from '../../utils/notations';
 import CopyableTextField from '../common/CopyableTextField';
 import InfoCard from '../common/InfoCard';
 

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
+import { isValidFEN } from '@grouchess/chess';
+
 import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useChessGame } from '../../providers/ChessGameProvider';
-import { isValidFEN } from '../../utils/notations';
 import InfoCard from '../common/InfoCard';
 
 type Props = {
