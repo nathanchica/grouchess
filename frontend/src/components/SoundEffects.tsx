@@ -49,7 +49,7 @@ function SoundEffects() {
         if (currentCount > previousCount) {
             const latestIndex = currentCount - 1;
             const lastMove = moveHistory[latestIndex];
-            const san = lastMove?.algebraicNotation ?? '';
+            const { san } = lastMove?.notation ?? { san: '' };
             const didCapture = captures.some(({ moveIndex }) => moveIndex === latestIndex);
 
             play(getMoveSoundName(san, didCapture));
