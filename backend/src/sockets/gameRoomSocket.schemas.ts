@@ -1,7 +1,6 @@
 import { BoardIndexSchema, PawnPromotionEnum } from '@grouchess/chess';
 import * as z from 'zod';
 
-
 import { GameRoomSchema, MessageTypeEnum, MessageSchema } from '../utils/schemas.js';
 
 export const AuthenticatedPayloadSchema = z.object({
@@ -21,7 +20,7 @@ export type GameRoomReadyPayload = z.infer<typeof GameRoomReadyPayloadSchema>;
 
 export const SendMessageInputSchema = z.object({
     type: MessageTypeEnum,
-    content: z.string().optional(),
+    content: z.string().max(140).optional(),
 });
 export type SendMessageInput = z.infer<typeof SendMessageInputSchema>;
 
