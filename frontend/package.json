@@ -4,9 +4,9 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "pnpm --filter @grouchess/chess build && vite",
+        "dev": "pnpm -w build:packages && vite",
         "dev:skip-packages-build": "vite",
-        "build": "pnpm --filter @grouchess/chess build && tsc -b && vite build",
+        "build": "pnpm -w build:packages && tsc -b && vite build",
         "build:skip-packages-build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview",

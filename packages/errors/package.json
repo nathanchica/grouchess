@@ -1,7 +1,7 @@
 {
-    "name": "@grouchess/chess",
+    "name": "@grouchess/errors",
     "version": "1.0.0",
-    "description": "Chess game logic and utilities",
+    "description": "Custom error classes for grouchess",
     "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -16,16 +16,11 @@
         "typecheck": "tsc --noEmit"
     },
     "keywords": [
-        "chess"
+        "errors"
     ],
     "author": "",
     "license": "ISC",
     "devDependencies": {
         "typescript": "^5.9.3"
-    },
-    "dependencies": {
-        "@grouchess/errors": "workspace:*",
-        "tiny-invariant": "^1.3.3",
-        "zod": "^4.1.12"
     }
 }
