@@ -1,4 +1,4 @@
-import { useSound } from '../providers/SoundProvider';
+import { useSound } from '../../providers/SoundProvider';
 
 function SoundControls() {
     const { enabled, toggleEnabled, volume, setVolume } = useSound();

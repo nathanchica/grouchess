@@ -2,8 +2,8 @@ import type { PieceAlias } from '@grouchess/chess';
 
 import type { DragProps } from './ChessBoard';
 
-import { useImages } from '../providers/ImagesProvider';
-import { aliasToPieceImageData } from '../utils/pieces';
+import { useImages } from '../../providers/ImagesProvider';
+import { aliasToPieceImageData } from '../../utils/pieces';
 
 type Props = {
     dragProps: DragProps;

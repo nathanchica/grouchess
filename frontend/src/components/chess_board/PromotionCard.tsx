@@ -2,8 +2,8 @@ import { type CSSProperties } from 'react';
 
 import { type PawnPromotion } from '@grouchess/chess';
 
-import { useImages } from '../providers/ImagesProvider';
-import { aliasToPieceImageData } from '../utils/pieces';
+import { useImages } from '../../providers/ImagesProvider';
+import { aliasToPieceImageData } from '../../utils/pieces';
 
 type Props = {
     onSelect: (option: PawnPromotion) => void;

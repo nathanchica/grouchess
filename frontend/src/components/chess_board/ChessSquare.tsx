@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { indexToRowCol } from '@grouchess/chess';
 
-import { type GlowingSquareProps } from '../utils/types';
+import { type GlowingSquareProps } from '../../utils/types';
 
 // When not flipped (white's perspective): bottom row is row 7, left column is col 0
 const INDEX_TO_COL_LEGEND_NOT_FLIPPED: Partial<Record<number, string>> = {

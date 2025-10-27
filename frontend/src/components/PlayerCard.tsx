@@ -1,6 +1,6 @@
 import type { PieceColor } from '@grouchess/chess';
 
-import InfoCard from './InfoCard';
+import InfoCard from './common/InfoCard';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 import { useImages } from '../providers/ImagesProvider';

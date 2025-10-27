@@ -4,9 +4,9 @@ import { indexToRowCol, NUM_COLS, NUM_ROWS, type PieceColor, type PawnPromotion 
 
 import PromotionCard from './PromotionCard';
 
-import { useDismissOnEscape } from '../hooks/useDismissOnEscape';
-import { useChessGame } from '../providers/ChessGameProvider';
-import { PAWN_PROMOTION_OPTIONS } from '../utils/pieces';
+import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
+import { useChessGame } from '../../providers/ChessGameProvider';
+import { PAWN_PROMOTION_OPTIONS } from '../../utils/pieces';
 
 type Props = {
     boardRect: DOMRect;

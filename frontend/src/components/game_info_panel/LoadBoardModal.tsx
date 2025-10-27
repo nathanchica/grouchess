@@ -4,7 +4,7 @@ import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useChessGame } from '../../providers/ChessGameProvider';
 import { isValidFEN } from '../../utils/notations';
-import InfoCard from '../InfoCard';
+import InfoCard from '../common/InfoCard';
 
 type Props = {
     onDismiss: () => void;

@@ -2,8 +2,8 @@ import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useChessGame } from '../../providers/ChessGameProvider';
 import { createFEN } from '../../utils/notations';
-import InfoCard from '../InfoCard';
 import CopyableTextField from '../common/CopyableTextField';
+import InfoCard from '../common/InfoCard';
 
 type Props = {
     onDismiss: () => void;

@@ -18,10 +18,10 @@ import ChessSquare from './ChessSquare';
 import GhostPiece from './GhostPiece';
 import PawnPromotionPrompt from './PawnPromotionPrompt';
 
-import { useChessGame } from '../providers/ChessGameProvider';
-import { useGameRoom } from '../providers/GameRoomProvider';
-import { useImages } from '../providers/ImagesProvider';
-import { type GlowingSquareProps } from '../utils/types';
+import { useChessGame } from '../../providers/ChessGameProvider';
+import { useGameRoom } from '../../providers/GameRoomProvider';
+import { useImages } from '../../providers/ImagesProvider';
+import { type GlowingSquareProps } from '../../utils/types';
 
 export type DragProps = {
     pointerId: number;
