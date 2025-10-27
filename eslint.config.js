@@ -25,7 +25,7 @@ export default [
     },
 
     {
-        files: ['**/*.ts', '**/*.tsx'],
+        files: ['**/*.ts', '**/*.tsx', '**/*.js'],
         languageOptions: {
             parser: tsParser,
             parserOptions: {
@@ -118,7 +118,7 @@ export default [
         },
     },
     {
-        files: ['backend/**/*.ts'],
+        files: ['backend/**/*.ts', 'scripts/**/*.js'],
         rules: {
             'no-console': 'off',
         },

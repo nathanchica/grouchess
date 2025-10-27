@@ -28,6 +28,7 @@
         "typecheck:frontend": "pnpm --filter frontend typecheck",
         "typecheck:packages": "pnpm --filter \"./packages/*\" typecheck",
         "typecheck:chess": "pnpm --filter @grouchess/chess typecheck",
+        "scaffold-package": "node scripts/scaffold-package.js",
         "prepare": "husky || true"
     },
     "keywords": [],
