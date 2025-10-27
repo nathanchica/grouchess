@@ -1,13 +1,17 @@
 import { PieceColorEnum } from '@grouchess/chess';
 import * as z from 'zod';
 
-
 export const MAX_MESSAGES_PER_ROOM = 100;
 export const MAX_MESSAGE_LENGTH = 140;
 export const MAX_PLAYER_DISPLAY_NAME_LENGTH = 20;
 
 export const MessageTypeEnum = z.enum(['standard', 'rematch', 'draw-offer']);
+export const PlayerStatusEnum = z.enum(['online', 'offline', 'away']);
 export const RoomTypeEnum = z.enum(['self', 'player-vs-cpu', 'player-vs-player']);
+
+export type MessageType = z.infer<typeof MessageTypeEnum>;
+export type PlayerStatus = z.infer<typeof PlayerStatusEnum>;
+export type RoomType = z.infer<typeof RoomTypeEnum>;
 
 export const PlayerSchema = z.object({
     id: z.string(),
@@ -19,7 +23,6 @@ export const PlayerSchema = z.object({
             MAX_PLAYER_DISPLAY_NAME_LENGTH,
             `Display name is too long. Max ${MAX_PLAYER_DISPLAY_NAME_LENGTH} characters`
         ),
-    isOnline: z.boolean().default(false),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
@@ -49,13 +52,11 @@ export const GameRoomSchema = z.object({
     playerIdToScore: z.record(PlayerSchema.shape.id, z.number().nonnegative()),
     messages: z.array(MessageSchema).max(MAX_MESSAGES_PER_ROOM),
     gameCount: z.number().int().nonnegative(),
-    rematchOfferedByPlayerId: PlayerSchema.shape.id.nullable(),
 });
 export type GameRoom = z.infer<typeof GameRoomSchema>;
 
 export const ChessGameRoomSchema = GameRoomSchema.extend({
     timeControl: TimeControlSchema.nullable(),
     colorToPlayerId: z.record(PieceColorEnum, PlayerSchema.shape.id.nullable()),
-    drawOfferedByPlayerId: PlayerSchema.shape.id.nullable(),
 });
 export type ChessGameRoom = z.infer<typeof ChessGameRoomSchema>;

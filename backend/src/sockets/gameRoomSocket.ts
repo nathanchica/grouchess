@@ -143,12 +143,12 @@ export function createGameRoomSocketHandler({
             });
 
             socket.on('offer_rematch', () => {
-                const gameRoom = gameRoomService.getGameRoomById(roomId);
-                if (!gameRoom) {
+                const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
+                if (!gameRoomOffers) {
                     sendErrorEvent(socket, 'Game room not found');
                     return;
                 }
-                const { rematchOfferedByPlayerId } = gameRoom;
+                const { rematchOfferedByPlayerId } = gameRoomOffers;
                 if (!rematchOfferedByPlayerId) {
                     gameRoomService.offerRematch(roomId, playerId);
                     return;
@@ -160,14 +160,14 @@ export function createGameRoomSocketHandler({
                 gameRoomService.startNewGameInRoom(roomId);
                 gameRoomService.swapPlayerColors(roomId);
 
-                const updatedGameRoom = gameRoomService.getGameRoomById(roomId);
-                if (!updatedGameRoom) {
+                const gameRoom = gameRoomService.getGameRoomById(roomId);
+                if (!gameRoom) {
                     sendErrorEvent(socket, 'Game room not found after starting rematch');
                     return;
                 }
                 const { boardState } = chessGameService.createChessGameForRoom(roomId);
                 const fen = createFEN(boardState);
-                sendLoadGameEvent(io, `room:${roomId}`, updatedGameRoom, fen);
+                sendLoadGameEvent(io, `room:${roomId}`, gameRoom, fen);
             });
 
             socket.on('typing', (input) => {
