@@ -1,5 +1,6 @@
+import type { Player } from '@grouchess/game-room';
+
 import { generateId } from '../utils/generateId.js';
-import type { Player } from '../utils/schemas.js';
 
 export class PlayerService {
     playerIdToPlayer: Map<string, Player> = new Map();

@@ -1,6 +1,7 @@
+import { createFEN } from '@grouchess/chess';
 import { Server } from 'socket.io';
 
-import { sendAuthenticatedEvent, sendErrorEvent } from './gameRoomSocket.events.js';
+import { sendAuthenticatedEvent, sendErrorEvent, sendLoadGameEvent } from './gameRoomSocket.events.js';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from './gameRoomSocket.schemas.js';
 
 import { authenticateSocket, type AuthenticatedSocket } from '../middleware/authenticateSocket.js';
@@ -56,16 +57,21 @@ export function createGameRoomSocketHandler({
                     }
 
                     // Game in progress (player rejoining). Send current game room state to rejoining player
-                    if (chessGameService.getChessGameForRoom(roomId)) {
-                        io.to(`player:${playerId}`).emit('game_room_ready', { gameRoom });
+                    const currentChessGame = chessGameService.getChessGameForRoom(roomId);
+                    if (currentChessGame) {
+                        const { boardState } = currentChessGame;
+                        const fen = createFEN(boardState);
+                        sendLoadGameEvent(io, `player:${playerId}`, gameRoom, fen);
                         return;
                     }
 
                     // If room is now full, create chess game and notify all players
                     const { players } = gameRoom;
                     if (players.length === MAX_PLAYERS_PER_ROOM) {
-                        chessGameService.createChessGameForRoom(roomId);
-                        io.to(`room:${roomId}`).emit('game_room_ready', { gameRoom });
+                        const { boardState } = chessGameService.createChessGameForRoom(roomId);
+                        const fen = createFEN(boardState);
+                        gameRoomService.startNewGameInRoom(roomId);
+                        sendLoadGameEvent(io, `room:${roomId}`, gameRoom, fen);
                     }
                 } catch (error) {
                     console.error('Error joining room:', error);
@@ -134,6 +140,34 @@ export function createGameRoomSocketHandler({
                     console.error('Error sending message:', error);
                     sendErrorEvent(socket, 'Failed to send message');
                 }
+            });
+
+            socket.on('offer_rematch', () => {
+                const gameRoom = gameRoomService.getGameRoomById(roomId);
+                if (!gameRoom) {
+                    sendErrorEvent(socket, 'Game room not found');
+                    return;
+                }
+                const { rematchOfferedByPlayerId } = gameRoom;
+                if (!rematchOfferedByPlayerId) {
+                    gameRoomService.offerRematch(roomId, playerId);
+                    return;
+                }
+                if (rematchOfferedByPlayerId === playerId) {
+                    return; // Player has already offered rematch
+                }
+
+                gameRoomService.startNewGameInRoom(roomId);
+                gameRoomService.swapPlayerColors(roomId);
+
+                const updatedGameRoom = gameRoomService.getGameRoomById(roomId);
+                if (!updatedGameRoom) {
+                    sendErrorEvent(socket, 'Game room not found after starting rematch');
+                    return;
+                }
+                const { boardState } = chessGameService.createChessGameForRoom(roomId);
+                const fen = createFEN(boardState);
+                sendLoadGameEvent(io, `room:${roomId}`, updatedGameRoom, fen);
             });
 
             socket.on('typing', (input) => {

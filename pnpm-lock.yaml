@@ -56,6 +56,9 @@ importers:
       '@grouchess/chess':
         specifier: workspace:*
         version: link:../packages/chess
+      '@grouchess/game-room':
+        specifier: workspace:*
+        version: link:../packages/game-room
       base32-encode:
         specifier: ^2.0.0
         version: 2.0.0
@@ -108,6 +111,9 @@ importers:
       '@grouchess/chess':
         specifier: workspace:*
         version: link:../packages/chess
+      '@grouchess/game-room':
+        specifier: workspace:*
+        version: link:../packages/game-room
       '@tailwindcss/vite':
         specifier: ^4.1.14
         version: 4.1.14(vite@7.1.9(@types/node@24.9.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.6)(yaml@2.8.1))
@@ -169,6 +175,22 @@ importers:
         version: 5.9.3
 
   packages/errors:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/game-room:
+    dependencies:
+      '@grouchess/chess':
+        specifier: workspace:*
+        version: link:../chess
+      '@grouchess/errors':
+        specifier: workspace:*
+        version: link:../errors
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       typescript:
         specifier: ^5.9.3

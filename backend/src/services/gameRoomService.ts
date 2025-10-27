@@ -1,24 +1,25 @@
+import { MAX_MESSAGES_PER_ROOM } from '@grouchess/game-room';
+import type { ChessGameRoom, Message, Player } from '@grouchess/game-room';
+
 import { CreateGameRoomInput } from './gameRoomService.schemas.js';
 
 import { GameRoomIsFullError } from '../utils/errors.js';
 import { generateId } from '../utils/generateId.js';
-import { type GameRoom, type Message, type Player } from '../utils/schemas.js';
 
 const MESSAGE_ID_LENGTH = 12;
 const MAX_ID_GEN_RETRIES = 10;
-const MAX_MESSAGES = 100;
 
 export class GameRoomService {
-    gameRoomIdToGameRoom: Map<GameRoom['id'], GameRoom> = new Map();
+    gameRoomIdToGameRoom: Map<ChessGameRoom['id'], ChessGameRoom> = new Map();
 
-    createGameRoom({ timeControl, roomType, creator, creatorColorInput }: CreateGameRoomInput): GameRoom {
+    createGameRoom({ timeControl, roomType, creator, creatorColorInput }: CreateGameRoomInput): ChessGameRoom {
         let id = generateId();
         while (this.gameRoomIdToGameRoom.has(id)) {
             id = generateId();
         }
 
         const creatorColor = creatorColorInput ?? (Math.random() < 0.5 ? 'white' : 'black');
-        const gameRoom: GameRoom = {
+        const gameRoom: ChessGameRoom = {
             id,
             timeControl,
             players: [creator],
@@ -27,16 +28,18 @@ export class GameRoomService {
             colorToPlayerId: {
                 [creatorColor]: creator.id,
                 [creatorColor === 'white' ? 'black' : 'white']: null,
-            } as GameRoom['colorToPlayerId'],
+            } as ChessGameRoom['colorToPlayerId'],
             messages: [],
             gameCount: 0,
             type: roomType,
+            rematchOfferedByPlayerId: null,
+            drawOfferedByPlayerId: null,
         };
         this.gameRoomIdToGameRoom.set(id, gameRoom);
         return gameRoom;
     }
 
-    getGameRoomById(roomId: string): GameRoom | null {
+    getGameRoomById(roomId: string): ChessGameRoom | null {
         return this.gameRoomIdToGameRoom.get(roomId) || null;
     }
 
@@ -68,7 +71,7 @@ export class GameRoomService {
             content,
             createdAt: new Date(),
         };
-        gameRoom.messages = [...gameRoom.messages, message].slice(-MAX_MESSAGES);
+        gameRoom.messages = [...gameRoom.messages, message].slice(-MAX_MESSAGES_PER_ROOM);
         return message;
     }
 
@@ -97,6 +100,8 @@ export class GameRoomService {
             throw new Error('Game room not found');
         }
         gameRoom.gameCount += 1;
+        gameRoom.rematchOfferedByPlayerId = null;
+        gameRoom.drawOfferedByPlayerId = null;
     }
 
     incrementPlayerScore(roomId: string, playerId: string, isDraw: boolean = false): void {
@@ -108,5 +113,32 @@ export class GameRoomService {
             throw new Error('Player not found in game room');
         }
         gameRoom.playerIdToScore[playerId] += isDraw ? 0.5 : 1;
+    }
+
+    swapPlayerColors(roomId: string): void {
+        const gameRoom = this.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new Error('Game room not found');
+        }
+        const { colorToPlayerId } = gameRoom;
+        const temp = colorToPlayerId.white;
+        colorToPlayerId.white = colorToPlayerId.black;
+        colorToPlayerId.black = temp;
+    }
+
+    offerRematch(roomId: string, playerId: string): void {
+        const gameRoom = this.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new Error('Game room not found');
+        }
+        gameRoom.rematchOfferedByPlayerId = playerId;
+    }
+
+    offerDraw(roomId: string, playerId: string): void {
+        const gameRoom = this.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new Error('Game room not found');
+        }
+        gameRoom.drawOfferedByPlayerId = playerId;
     }
 }
