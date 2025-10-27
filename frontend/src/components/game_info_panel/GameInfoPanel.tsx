@@ -4,6 +4,7 @@ import ExitGameRoomModal from './ExitGameRoomModal';
 import LoadBoardModal from './LoadBoardModal';
 import MoveHistoryTable from './MoveHistoryTable';
 import ShareBoardStateModal from './ShareBoardStateModal';
+import SoundControls from './SoundControls';
 
 import ArrowRightFromBracketIcon from '../../assets/icons/arrow-right-from-bracket.svg?react';
 import FileImportIcon from '../../assets/icons/file-import.svg?react';
@@ -12,9 +13,8 @@ import RotateLeftIcon from '../../assets/icons/rotate-left.svg?react';
 import ShareNodesIcon from '../../assets/icons/share-nodes.svg?react';
 import { useChessGame } from '../../providers/ChessGameProvider';
 import { useGameRoom } from '../../providers/GameRoomProvider';
-import InfoCard from '../InfoCard';
-import SoundControls from '../SoundControls';
 import IconButton, { type IconButtonProps } from '../common/IconButton';
+import InfoCard from '../common/InfoCard';
 
 const ICON_CLASSES = 'w-4 h-4 2xl:w-5 2xl:h-5';
 

@@ -2,8 +2,8 @@ import type { PointerEventHandler } from 'react';
 
 import type { Piece } from '@grouchess/chess';
 
-import { useImages } from '../providers/ImagesProvider';
-import { aliasToPieceImageData } from '../utils/pieces';
+import { useImages } from '../../providers/ImagesProvider';
+import { aliasToPieceImageData } from '../../utils/pieces';
 
 type Props = {
     piece: Piece;

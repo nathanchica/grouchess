@@ -1,4 +1,4 @@
-import ChessBoard from './ChessBoard';
+import ChessBoard from './chess_board/ChessBoard';
 
 import { useChessGame } from '../providers/ChessGameProvider';
 
