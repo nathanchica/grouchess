@@ -9,8 +9,23 @@ import { generateId } from '../utils/generateId.js';
 const MESSAGE_ID_LENGTH = 12;
 const MAX_ID_GEN_RETRIES = 10;
 
+type PlayerOffers = {
+    rematchOfferedByPlayerId: Player['id'] | null;
+    drawOfferedByPlayerId: Player['id'] | null;
+};
+
 export class GameRoomService {
     gameRoomIdToGameRoom: Map<ChessGameRoom['id'], ChessGameRoom> = new Map();
+    gameRoomIdToPlayerOffers: Map<ChessGameRoom['id'], PlayerOffers> = new Map();
+
+    private getGameRoomWithOffers(roomId: string): { gameRoom: ChessGameRoom; offers: PlayerOffers } | null {
+        const gameRoom = this.getGameRoomById(roomId);
+        const offers = this.gameRoomIdToPlayerOffers.get(roomId);
+        if (!gameRoom || !offers) {
+            return null;
+        }
+        return { gameRoom, offers };
+    }
 
     createGameRoom({ timeControl, roomType, creator, creatorColorInput }: CreateGameRoomInput): ChessGameRoom {
         let id = generateId();
@@ -32,15 +47,18 @@ export class GameRoomService {
             messages: [],
             gameCount: 0,
             type: roomType,
-            rematchOfferedByPlayerId: null,
-            drawOfferedByPlayerId: null,
         };
         this.gameRoomIdToGameRoom.set(id, gameRoom);
+        this.gameRoomIdToPlayerOffers.set(id, { rematchOfferedByPlayerId: null, drawOfferedByPlayerId: null });
         return gameRoom;
     }
 
     getGameRoomById(roomId: string): ChessGameRoom | null {
         return this.gameRoomIdToGameRoom.get(roomId) || null;
+    }
+
+    getOffersForGameRoom(roomId: string): PlayerOffers | null {
+        return this.gameRoomIdToPlayerOffers.get(roomId) || null;
     }
 
     addMessageToGameRoom(
@@ -95,13 +113,14 @@ export class GameRoomService {
     }
 
     startNewGameInRoom(roomId: string): void {
-        const gameRoom = this.getGameRoomById(roomId);
-        if (!gameRoom) {
+        const gameRoomWithOffers = this.getGameRoomWithOffers(roomId);
+        if (!gameRoomWithOffers) {
             throw new Error('Game room not found');
         }
+        const { gameRoom, offers } = gameRoomWithOffers;
         gameRoom.gameCount += 1;
-        gameRoom.rematchOfferedByPlayerId = null;
-        gameRoom.drawOfferedByPlayerId = null;
+        offers.rematchOfferedByPlayerId = null;
+        offers.drawOfferedByPlayerId = null;
     }
 
     incrementPlayerScore(roomId: string, playerId: string, isDraw: boolean = false): void {
@@ -127,18 +146,24 @@ export class GameRoomService {
     }
 
     offerRematch(roomId: string, playerId: string): void {
-        const gameRoom = this.getGameRoomById(roomId);
-        if (!gameRoom) {
+        const gameRoomOffers = this.gameRoomIdToPlayerOffers.get(roomId);
+        if (!gameRoomOffers) {
             throw new Error('Game room not found');
         }
-        gameRoom.rematchOfferedByPlayerId = playerId;
+        gameRoomOffers.rematchOfferedByPlayerId = playerId;
     }
 
     offerDraw(roomId: string, playerId: string): void {
-        const gameRoom = this.getGameRoomById(roomId);
-        if (!gameRoom) {
+        const gameRoomOffers = this.gameRoomIdToPlayerOffers.get(roomId);
+        if (!gameRoomOffers) {
             throw new Error('Game room not found');
         }
-        gameRoom.drawOfferedByPlayerId = playerId;
+        gameRoomOffers.drawOfferedByPlayerId = playerId;
+    }
+
+    deleteGameRoom(roomId: string): boolean {
+        const deletedFromOffers = this.gameRoomIdToPlayerOffers.delete(roomId);
+        const deletedFromGameRooms = this.gameRoomIdToGameRoom.delete(roomId);
+        return deletedFromOffers || deletedFromGameRooms;
     }
 }
