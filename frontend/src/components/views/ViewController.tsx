@@ -1,12 +1,13 @@
 import ChessGameView from './ChessGameView';
 import MainMenuView from './MainMenuView';
 
-import { useGameRoom } from '../../providers/GameRoomProvider';
+import { useGameRoom, useChessGame } from '../../providers/ChessGameRoomProvider';
 
 function ViewController() {
-    const { room } = useGameRoom();
+    const { gameRoom } = useGameRoom();
+    const { chessGame } = useChessGame();
 
-    return <>{room ? <ChessGameView /> : <MainMenuView />}</>;
+    return <>{gameRoom && chessGame ? <ChessGameView /> : <MainMenuView />}</>;
 }
 
 export default ViewController;

@@ -2,12 +2,11 @@ import GameRoomController from '../../components/GameRoomController';
 import MainSection from '../../components/MainSection';
 import PlayersInfoSection from '../../components/PlayersInfoSection';
 import SoundEffects from '../../components/SoundEffects';
-import ChessGameProvider from '../../providers/ChessGameProvider';
 import GameInfoPanel from '../game_info_panel/GameInfoPanel';
 
 function ChessGameView() {
     return (
-        <ChessGameProvider>
+        <>
             <SoundEffects />
             <GameRoomController />
 
@@ -32,7 +31,7 @@ function ChessGameView() {
                     <GameInfoPanel />
                 </section>
             </main>
-        </ChessGameProvider>
+        </>
     );
 }
 

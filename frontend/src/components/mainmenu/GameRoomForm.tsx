@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
 import type { PieceColor } from '@grouchess/chess';
+import type { RoomType, TimeControl } from '@grouchess/game-room';
 
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
-import { useGameRoom } from '../../providers/GameRoomProvider';
-import type { RoomType, TimeControl, WaitingRoom } from '../../utils/types';
+import { useGameRoom } from '../../providers/ChessGameRoomProvider';
+import type { WaitingRoom } from '../../utils/types';
 import Spinner from '../common/Spinner';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';
 import SideSelectForm from '../mainmenu/SideSelectForm';
@@ -52,7 +53,7 @@ type Props = {
 };
 
 function GameRoomForm({ onRoomCreated }: Props) {
-    const { startSelfPlayRoom, setCurrentPlayerId } = useGameRoom();
+    const { startSelfPlayRoom, loadCurrentPlayerId } = useGameRoom();
     const { createGameRoom, loading } = useCreateGameRoom();
 
     const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
@@ -102,7 +103,7 @@ function GameRoomForm({ onRoomCreated }: Props) {
             roomType: selectedRoomType,
             onSuccess: (data) => {
                 onRoomCreated({ ...data, isCreator: true });
-                setCurrentPlayerId(data.playerId);
+                loadCurrentPlayerId(data.playerId);
             },
             onError: ({ message }) => {
                 setErrorMessage(message);
@@ -143,7 +144,7 @@ function GameRoomForm({ onRoomCreated }: Props) {
                         onClick={handleStartClick}
                     >
                         {loading ? (
-                            <div className="flex items-center justify-center">
+                            <div className="flex gap-2.5 items-center justify-center">
                                 <Spinner />
                                 Creating game room...
                             </div>

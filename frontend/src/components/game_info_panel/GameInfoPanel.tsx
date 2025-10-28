@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import invariant from 'tiny-invariant';
+
 import ExitGameRoomModal from './ExitGameRoomModal';
 import LoadBoardModal from './LoadBoardModal';
 import MoveHistoryTable from './MoveHistoryTable';
@@ -11,8 +13,7 @@ import FileImportIcon from '../../assets/icons/file-import.svg?react';
 import GearIcon from '../../assets/icons/gear.svg?react';
 import RotateLeftIcon from '../../assets/icons/rotate-left.svg?react';
 import ShareNodesIcon from '../../assets/icons/share-nodes.svg?react';
-import { useChessGame } from '../../providers/ChessGameProvider';
-import { useGameRoom } from '../../providers/GameRoomProvider';
+import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
 import IconButton, { type IconButtonProps } from '../common/IconButton';
 import InfoCard from '../common/InfoCard';
 
@@ -22,16 +23,20 @@ type Views = 'history' | 'settings';
 type IconButtonPropsWithKey = IconButtonProps & { key: string; skip?: boolean };
 
 function GameInfoPanel() {
-    const { room, incrementGameCount } = useGameRoom();
-    const { resetGame } = useChessGame();
+    const { chessGame, loadFEN } = useChessGame();
+    const { gameRoom } = useGameRoom();
+    invariant(gameRoom && chessGame, 'Game room and chess game are required');
+    const { players, playerIdToScore, type } = gameRoom;
+    const { timelineVersion } = chessGame;
 
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
     const [loadBoardModalIsShowing, setLoadBoardModalIsShowing] = useState(false);
     const [exitModalIsShowing, setExitModalIsShowing] = useState(false);
     const [currentView, setCurrentView] = useState<Views>('history');
 
-    if (!room) return null;
-    const { players, playerIdToScore, type } = room;
+    const showExitModal = () => {
+        setExitModalIsShowing(true);
+    };
 
     const onShareModalDismiss = () => {
         setShareModalIsShowing(false);
@@ -46,8 +51,7 @@ function GameInfoPanel() {
     };
 
     const onResetButtonClick = () => {
-        resetGame();
-        incrementGameCount();
+        loadFEN();
     };
 
     let headerText = '';
@@ -107,7 +111,7 @@ function GameInfoPanel() {
         {
             key: 'exit-game-room-button',
             icon: <ArrowRightFromBracketIcon className={ICON_CLASSES} aria-hidden="true" />,
-            onClick: () => setExitModalIsShowing(true),
+            onClick: showExitModal,
             ariaProps: {
                 'aria-label': 'Exit Game',
                 'aria-haspopup': 'dialog',
@@ -128,7 +132,9 @@ function GameInfoPanel() {
                         </span>
                     </section>
 
-                    {currentView === 'history' && <MoveHistoryTable />}
+                    {currentView === 'history' && (
+                        <MoveHistoryTable key={`move-history-table-${timelineVersion}`} onExitClick={showExitModal} />
+                    )}
                     {currentView === 'settings' && (
                         <>
                             <SoundControls />

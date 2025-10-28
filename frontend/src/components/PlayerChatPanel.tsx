@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-import { useGameRoom } from '../providers/GameRoomProvider';
+import invariant from 'tiny-invariant';
+
+import { useGameRoom } from '../providers/ChessGameRoomProvider';
 import { useGameRoomSocket } from '../providers/GameRoomSocketProvider';
 
 const MAX_MESSAGE_LENGTH = 140;
@@ -15,12 +17,14 @@ function formatTime(date: Date): string {
 }
 
 function PlayerChatPanel() {
-    const { room, currentPlayerId } = useGameRoom();
+    const { gameRoom, currentPlayerId } = useGameRoom();
+    invariant(gameRoom, 'gameRoom is required for PlayerChatPanel component');
+
     const { sendMessage } = useGameRoomSocket();
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [inputValue, setInputValue] = useState('');
 
-    const standardMessages = room?.messages.filter(({ type }) => type === 'standard') ?? [];
+    const standardMessages = gameRoom.messages.filter(({ type }) => type === 'standard');
 
     const handleSubmit = () => {
         if (!inputValue.trim() || !currentPlayerId) return;
@@ -38,8 +42,6 @@ function PlayerChatPanel() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [standardMessages.length]);
-
-    if (!room) return null;
 
     return (
         <div className="flex flex-col h-full border border-gray-400 rounded-lg overflow-hidden">

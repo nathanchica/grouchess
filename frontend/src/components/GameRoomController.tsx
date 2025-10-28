@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-import { isDrawStatus, type PawnPromotion } from '@grouchess/chess';
+import { type PawnPromotion } from '@grouchess/chess';
 
-import { useChessGame } from '../providers/ChessGameProvider';
-import { useGameRoom } from '../providers/GameRoomProvider';
+import { useChessGame, useGameRoom } from '../providers/ChessGameRoomProvider';
 import { useGameRoomSocket } from '../providers/GameRoomSocketProvider';
 
 type SendMovePieceInput = { fromIndex: number; toIndex: number; promotion?: PawnPromotion };
@@ -12,43 +11,32 @@ type SendMovePieceInput = { fromIndex: number; toIndex: number; promotion?: Pawn
  * Synchronizes game room and chess game state and socket events
  */
 function GameRoomController() {
-    const { room, increasePlayerScore, currentPlayerColor } = useGameRoom();
-    const { gameState, moveHistory, legalMovesStore, movePiece } = useChessGame();
-    const { sendMovePiece, lastPieceMovedPayload } = useGameRoomSocket();
-    const prevGameCount = useRef<number | null>(null);
-    const prevLastPieceMovedPayload = useRef<typeof lastPieceMovedPayload>(null);
-    const prevSendMovePieceInput = useRef<SendMovePieceInput | null>(null);
+    const { chessGame } = useChessGame();
+    const { gameRoom, currentPlayerColor } = useGameRoom();
+    const { sendMovePiece } = useGameRoomSocket();
 
-    const { status, winner } = gameState;
+    const prevMoveHistoryLength = useRef<number | null>(null);
+    const prevSendMovePieceInput = useRef<SendMovePieceInput | null>(null);
+    const prevTimelineVersion = useRef<number | null>(chessGame?.timelineVersion ?? null);
 
     /**
-     * Handle end of game
+     * Reset previous move history length when timeline version changes
      */
     useEffect(() => {
-        if (!room) return;
-        if (prevGameCount.current === room.gameCount) return;
-
-        // Increase player scores when current game is over
-        // TODO: Move this logic to backend
-        if (winner) {
-            const playerId = room.colorToPlayerId[winner];
-            increasePlayerScore(playerId);
-            prevGameCount.current = room.gameCount;
-        } else if (isDrawStatus(status)) {
-            room.players.map(({ id }) => id).forEach((playerId) => increasePlayerScore(playerId, true));
-            prevGameCount.current = room.gameCount;
+        if (chessGame?.timelineVersion !== prevTimelineVersion.current) {
+            prevMoveHistoryLength.current = null;
+            prevSendMovePieceInput.current = null;
         }
-
-        // Reset prevLastPieceMovedPayload and prevSendMovePieceInput for new game
-        prevLastPieceMovedPayload.current = null;
-        prevSendMovePieceInput.current = null;
-    }, [status, winner, room, increasePlayerScore]);
+        prevTimelineVersion.current = chessGame?.timelineVersion ?? null;
+    }, [chessGame?.timelineVersion]);
 
     /**
      * Send last move by current player to the server
      */
     useEffect(() => {
-        if (!room) return;
+        if (!gameRoom || !chessGame) return;
+        const { moveHistory } = chessGame;
+        if (prevMoveHistoryLength.current === moveHistory.length) return;
         const lastMove = moveHistory[moveHistory.length - 1];
         if (!lastMove) return;
 
@@ -64,27 +52,12 @@ function GameRoomController() {
                 return; // Already sent this move
             }
             if (sendMovePiece(fromIndex, toIndex, promotion)) {
+                prevMoveHistoryLength.current = moveHistory.length;
                 prevSendMovePieceInput.current = { fromIndex, toIndex, promotion };
+                prevTimelineVersion.current = chessGame.timelineVersion;
             }
         }
-    }, [moveHistory, currentPlayerColor, sendMovePiece, room]);
-
-    /**
-     * Apply move received from server
-     */
-    useEffect(() => {
-        if (!room) return;
-        if (!lastPieceMovedPayload || lastPieceMovedPayload === prevLastPieceMovedPayload.current) return;
-
-        const { fromIndex, toIndex, promotion } = lastPieceMovedPayload;
-        const move = legalMovesStore.byStartIndex[fromIndex]?.find(({ endIndex }) => endIndex === toIndex);
-        if (move) {
-            movePiece({ ...move, promotion });
-            prevLastPieceMovedPayload.current = lastPieceMovedPayload;
-        } else {
-            console.warn('Received illegal move from server:', { fromIndex, toIndex, promotion });
-        }
-    }, [lastPieceMovedPayload, legalMovesStore, movePiece, room]);
+    }, [chessGame, currentPlayerColor, sendMovePiece, gameRoom]);
 
     return null;
 }

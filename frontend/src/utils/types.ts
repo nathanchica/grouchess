@@ -1,56 +1,20 @@
-import { type PieceColor } from '@grouchess/chess';
-
-export interface Player {
-    id: string;
-    displayName: string;
-}
-
-export type MessageType = 'standard' | 'rematch' | 'draw-offer';
-
-export interface Message {
-    id: string;
-    type: MessageType;
-    createdAt: Date;
-    authorId: Player['id'];
-    content?: string;
-}
-
-export type TimeControl = {
-    alias: string;
-    minutes: number;
-    increment: number;
-    displayText: string;
-    mode?: 'fischer';
-};
-
-export type RoomType = 'self' | 'player-vs-cpu' | 'player-vs-player';
-
-export type GameRoom = {
-    // room id
-    id: string;
-    // room type
-    type: RoomType;
-    // time control for the room. if null, then unlimited time mode. correspondence is not supported.
-    timeControl: TimeControl | null;
-    // list of players in the game room
-    players: Player[];
-    // mapping of player id to display name for convenience
-    playerIdToDisplayName: Record<Player['id'], Player['displayName']>;
-    // mapping of player id to score
-    playerIdToScore: Record<Player['id'], number>;
-    // mapping of 'white' or 'black' to player id
-    colorToPlayerId: Record<PieceColor, Player['id']>;
-    // list of messages in the room
-    messages: Message[];
-    // number of games played in the room
-    gameCount: number;
-};
+import type { BoardIndex, ChessGame, Move } from '@grouchess/chess';
+import type { ChessGameRoom, Player } from '@grouchess/game-room';
 
 export type WaitingRoom = {
-    roomId: GameRoom['id'];
+    roomId: ChessGameRoom['id'];
     playerId: Player['id'];
     token: string;
     isCreator: boolean;
+};
+
+export type ChessGameUI = ChessGame & {
+    // Indices of the squares involved in the previous move used for highlighting
+    previousMoveIndices: BoardIndex[];
+    // Version number to force re-renders when resetting/loading games
+    timelineVersion: number;
+    // Pending promotion info (if a pawn has reached the last rank and is awaiting promotion choice)
+    pendingPromotion: { move: Move; preChessGame: ChessGame; prePreviousMoveIndices: BoardIndex[] } | null;
 };
 
 export type GlowingSquareProps = {

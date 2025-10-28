@@ -1,5 +1,5 @@
 import ViewController from './components/views/ViewController';
-import GameRoomProvider from './providers/GameRoomProvider';
+import ChessGameRoomProvider from './providers/ChessGameRoomProvider';
 import GameRoomSocketProvider from './providers/GameRoomSocketProvider';
 import ImagesProvider from './providers/ImagesProvider';
 import SoundProvider from './providers/SoundProvider';
@@ -9,11 +9,11 @@ function App() {
     return (
         <ImagesProvider imgSrcs={uniquePieceImgSrcs}>
             <SoundProvider>
-                <GameRoomProvider>
+                <ChessGameRoomProvider>
                     <GameRoomSocketProvider>
                         <ViewController />
                     </GameRoomSocketProvider>
-                </GameRoomProvider>
+                </ChessGameRoomProvider>
             </SoundProvider>
         </ImagesProvider>
     );
