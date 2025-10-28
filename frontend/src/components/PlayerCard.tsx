@@ -1,9 +1,10 @@
 import { type PieceColor } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
+import ChessClock from './ChessClock';
 import InfoCard from './common/InfoCard';
 
-import { useChessGame } from '../providers/ChessGameRoomProvider';
+import { useChessGame, useGameRoom } from '../providers/ChessGameRoomProvider';
 import { useImages } from '../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../utils/pieces';
 
@@ -15,7 +16,9 @@ type Props = {
 function PlayerCard({ color, displayName }: Props) {
     const { isReady: isImagesLoaded, imgSrcMap } = useImages();
     const { chessGame } = useChessGame();
-    invariant(chessGame, 'chessGame is required for PlayerCard component');
+    const { gameRoom } = useGameRoom();
+    invariant(chessGame && gameRoom, 'chessGame and gameRoom are required for PlayerCard component');
+    const { timeControl } = gameRoom;
     const { captures, boardState, gameState } = chessGame;
     const { playerTurn } = boardState;
 
@@ -45,11 +48,7 @@ function PlayerCard({ color, displayName }: Props) {
                         {displayName}
                     </h1>
 
-                    <span
-                        className={`col-span-3 cursor-default text-zinc-300 text-center text-2xl font-bold tracking-widest py-1 rounded-lg ${isActive && 'bg-zinc-600'}`}
-                    >
-                        00:00<span className="text-xs">.00</span>
-                    </span>
+                    {timeControl && <ChessClock isActive={isActive} color={color} />}
                 </section>
 
                 <div className="flex flex-row flex-wrap min-h-[3rem]">

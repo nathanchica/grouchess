@@ -55,6 +55,9 @@ export default [
                 KeyboardEvent: 'readonly',
                 sessionStorage: 'readonly',
                 localStorage: 'readonly',
+                performance: 'readonly',
+                requestAnimationFrame: 'readonly',
+                cancelAnimationFrame: 'readonly',
             },
         },
         plugins: {
