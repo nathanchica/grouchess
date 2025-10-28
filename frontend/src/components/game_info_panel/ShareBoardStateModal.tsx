@@ -1,8 +1,9 @@
 import { createFEN } from '@grouchess/chess';
+import invariant from 'tiny-invariant';
 
 import DismissIcon from '../../assets/icons/xmark.svg?react';
 import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
-import { useChessGame } from '../../providers/ChessGameProvider';
+import { useChessGame } from '../../providers/ChessGameRoomProvider';
 import CopyableTextField from '../common/CopyableTextField';
 import InfoCard from '../common/InfoCard';
 
@@ -11,18 +12,12 @@ type Props = {
 };
 
 function ShareBoardStateModal({ onDismiss }: Props) {
-    const { board, playerTurn, castleRightsByColor, enPassantTargetIndex, halfmoveClock, fullmoveClock } =
-        useChessGame();
     useDismissOnEscape(onDismiss);
+    const { chessGame } = useChessGame();
+    invariant(chessGame, 'chessGame is required to share board state');
+    const { boardState } = chessGame;
 
-    const fenString = createFEN({
-        board,
-        playerTurn,
-        castleRightsByColor,
-        enPassantTargetIndex,
-        halfmoveClock,
-        fullmoveClock,
-    });
+    const fenString = createFEN(boardState);
 
     return (
         <div

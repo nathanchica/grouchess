@@ -1,20 +1,26 @@
 type Props = {
     variant?: 'light' | 'dark';
+    size?: 'sm' | 'md' | 'lg';
 };
 
 /**
  * From https://flowbite.com/docs/components/spinner/
  */
-function Spinner({ variant = 'light' }: Props) {
+function Spinner({ variant = 'light', size = 'sm' }: Props) {
     const colorVariants = {
         light: 'text-zinc-100 fill-zinc-300',
         dark: 'text-zinc-800 fill-zinc-600',
+    };
+    const sizeVariants = {
+        sm: 'size-4',
+        md: 'size-5',
+        lg: 'size-6',
     };
     return (
         <svg
             aria-hidden="true"
             role="status"
-            className={`inline w-4 h-4 me-3 ${colorVariants[variant]} animate-spin`}
+            className={`inline ${sizeVariants[size]} ${colorVariants[variant]} animate-spin`}
             viewBox="0 0 100 101"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"

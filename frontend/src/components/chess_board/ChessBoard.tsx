@@ -12,14 +12,14 @@ import {
     type PieceAlias,
     type RowCol,
 } from '@grouchess/chess';
+import invariant from 'tiny-invariant';
 
 import ChessPiece from './ChessPiece';
 import ChessSquare from './ChessSquare';
 import GhostPiece from './GhostPiece';
 import PawnPromotionPrompt from './PawnPromotionPrompt';
 
-import { useChessGame } from '../../providers/ChessGameProvider';
-import { useGameRoom } from '../../providers/GameRoomProvider';
+import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
 import { type GlowingSquareProps } from '../../utils/types';
 
@@ -61,9 +61,13 @@ function xyFromPointerEvent(
 function ChessBoard() {
     // Preload and decode piece images; hide until ready to avoid flicker
     const { isReady: isFinishedLoadingImages } = useImages();
-    const { board, playerTurn, previousMoveIndices, movePiece, pendingPromotion, gameState, legalMovesStore } =
-        useChessGame();
-    const { room, currentPlayerColor } = useGameRoom();
+    const { chessGame, movePiece } = useChessGame();
+    const { gameRoom, currentPlayerColor } = useGameRoom();
+    invariant(gameRoom && chessGame, 'Game room and chess game are required');
+
+    const { boardState, previousMoveIndices, pendingPromotion, gameState, legalMovesStore } = chessGame;
+    const { board, playerTurn } = boardState;
+    const { type: roomType } = gameRoom;
 
     const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
     const boardRef = useRef<HTMLDivElement | null>(null);
@@ -73,7 +77,7 @@ function ChessBoard() {
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
     const boardIsFlipped = currentPlayerColor === 'black';
-    const isCurrentPlayerTurn = room?.type === 'self' || currentPlayerColor === playerTurn;
+    const isCurrentPlayerTurn = roomType === 'self' || currentPlayerColor === playerTurn;
     const boardToRender = boardIsFlipped ? [...board].reverse() : board;
 
     const { status, check: checkedColor } = gameState;

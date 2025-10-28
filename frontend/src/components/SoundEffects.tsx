@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { isDrawStatus, type ChessGameStatus } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import { useChessGame } from '../providers/ChessGameProvider';
+import { useChessGame } from '../providers/ChessGameRoomProvider';
 import { useSound, type SoundName } from '../providers/SoundProvider';
 
 const CHECK_DELAY_MS = 120;
@@ -29,7 +29,10 @@ const getGameEndSoundName = (status: ChessGameStatus, winner?: 'white' | 'black'
 };
 
 function SoundEffects() {
-    const { moveHistory, captures, gameState } = useChessGame();
+    const { chessGame } = useChessGame();
+    invariant(chessGame, 'chessGame is required for SoundEffects component');
+
+    const { moveHistory, captures, gameState } = chessGame;
     const { status, winner } = gameState;
     const { play } = useSound();
 

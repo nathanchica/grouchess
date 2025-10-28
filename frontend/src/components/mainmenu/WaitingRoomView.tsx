@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 
+import type { TimeControl } from '@grouchess/game-room';
 import { useNavigate, useParams } from 'react-router';
 import invariant from 'tiny-invariant';
 
 import DisplayNameForm from './DisplayNameForm';
 
 import { useJoinGameRoom } from '../../hooks/useJoinGameRoom';
-import { useGameRoom } from '../../providers/GameRoomProvider';
+import { useGameRoom } from '../../providers/ChessGameRoomProvider';
 import { useGameRoomSocket } from '../../providers/GameRoomSocketProvider';
-import { type WaitingRoom, type TimeControl } from '../../utils/types';
+import type { WaitingRoom } from '../../utils/types';
 import CopyableTextField from '../common/CopyableTextField';
 
 type RoomInfoResponse = {
@@ -31,7 +32,7 @@ function WaitingRoomView({ roomToken, isCreator }: Props) {
     const navigate = useNavigate();
     const { connectToRoom } = useGameRoomSocket();
     const { joinGameRoom, loading: isJoining } = useJoinGameRoom(roomId);
-    const { setCurrentPlayerId } = useGameRoom();
+    const { loadCurrentPlayerId } = useGameRoom();
 
     const [isCreatorState, setIsCreatorState] = useState(isCreator);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -94,7 +95,7 @@ function WaitingRoomView({ roomToken, isCreator }: Props) {
             displayName,
             onSuccess: ({ token, playerId }) => {
                 connectToRoom(token);
-                setCurrentPlayerId(playerId);
+                loadCurrentPlayerId(playerId);
             },
             onError: ({ message }) => {
                 setErrorMessage(message);

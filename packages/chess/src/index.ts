@@ -5,6 +5,7 @@ export {
     createInitialChessBoard,
     getKingIndices,
     indexToRowCol,
+    INITIAL_CHESS_BOARD_FEN,
     isPromotionSquare,
     isRowColInBounds,
     rowColToIndex,

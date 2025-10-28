@@ -4,6 +4,9 @@ import { aliasToPieceData, isValidPieceAlias } from './pieces.js';
 import type { ChessBoardType, PieceAlias, PieceColor, RowCol } from './schema.js';
 import { NUM_SQUARES, NUM_COLS, NUM_ROWS } from './schema.js';
 
+// Standard initial FEN string for a new chess game
+export const INITIAL_CHESS_BOARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
  * ------------------------------
