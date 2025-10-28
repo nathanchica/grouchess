@@ -3,8 +3,8 @@ import type { Player, PlayerStatus } from '@grouchess/game-room';
 import { generateId } from '../utils/generateId.js';
 
 export class PlayerService {
-    playerIdToPlayer: Map<Player['id'], Player> = new Map();
-    playerIdToStatus: Map<Player['id'], PlayerStatus> = new Map();
+    private playerIdToPlayer: Map<Player['id'], Player> = new Map();
+    private playerIdToStatus: Map<Player['id'], PlayerStatus> = new Map();
 
     private getPlayerWithStatus(playerId: string): { player: Player; status: PlayerStatus } | null {
         const player = this.getPlayerById(playerId);

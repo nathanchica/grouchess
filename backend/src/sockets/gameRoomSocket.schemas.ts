@@ -2,6 +2,8 @@ import { BoardIndexSchema, PawnPromotionEnum } from '@grouchess/chess';
 import { ChessGameRoomSchema, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
 import * as z from 'zod';
 
+import { ChessClockStateSchema } from '../services/chessClockService.schemas.js';
+
 export const AuthenticatedPayloadSchema = z.object({
     success: z.boolean(),
 });
@@ -15,6 +17,7 @@ export type ErrorPayload = z.infer<typeof ErrorPayloadSchema>;
 export const LoadGamePayloadSchema = z.object({
     fen: z.string(),
     gameRoom: ChessGameRoomSchema,
+    clockState: ChessClockStateSchema.nullable(),
 });
 export type LoadGamePayload = z.infer<typeof LoadGamePayloadSchema>;
 

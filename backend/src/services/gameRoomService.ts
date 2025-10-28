@@ -15,8 +15,8 @@ type PlayerOffers = {
 };
 
 export class GameRoomService {
-    gameRoomIdToGameRoom: Map<ChessGameRoom['id'], ChessGameRoom> = new Map();
-    gameRoomIdToPlayerOffers: Map<ChessGameRoom['id'], PlayerOffers> = new Map();
+    private gameRoomIdToGameRoom: Map<ChessGameRoom['id'], ChessGameRoom> = new Map();
+    private gameRoomIdToPlayerOffers: Map<ChessGameRoom['id'], PlayerOffers> = new Map();
 
     private getGameRoomWithOffers(roomId: string): { gameRoom: ChessGameRoom; offers: PlayerOffers } | null {
         const gameRoom = this.getGameRoomById(roomId);

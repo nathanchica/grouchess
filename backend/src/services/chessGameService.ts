@@ -7,7 +7,7 @@ import { GameNotStartedError, IllegalMoveError } from '../utils/errors.js';
 type GameRoomId = ChessGameRoom['id'];
 
 export class ChessGameService {
-    gameRoomIdToChessGameMap: Map<GameRoomId, ChessGame> = new Map();
+    private gameRoomIdToChessGameMap: Map<GameRoomId, ChessGame> = new Map();
 
     createChessGameForRoom(roomId: GameRoomId): ChessGame {
         const chessGame = createInitialChessGame();
