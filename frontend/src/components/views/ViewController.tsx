@@ -7,7 +7,7 @@ function ViewController() {
     const { gameRoom } = useGameRoom();
     const { chessGame } = useChessGame();
 
-    return <>{gameRoom && chessGame ? <ChessGameView /> : <MainMenuView />}</>;
+    return <>{gameRoom && chessGame ? <ChessGameView timeControl={gameRoom.timeControl} /> : <MainMenuView />}</>;
 }
 
 export default ViewController;

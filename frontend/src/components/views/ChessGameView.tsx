@@ -1,12 +1,19 @@
+import type { TimeControl } from '@grouchess/game-room';
+
 import GameRoomController from '../../components/GameRoomController';
 import MainSection from '../../components/MainSection';
 import PlayersInfoSection from '../../components/PlayersInfoSection';
 import SoundEffects from '../../components/SoundEffects';
+import ChessClockProvider from '../../providers/ChessClockProvider';
 import GameInfoPanel from '../game_info_panel/GameInfoPanel';
 
-function ChessGameView() {
+type Props = {
+    timeControl: TimeControl | null;
+};
+
+function ChessGameView({ timeControl }: Props) {
     return (
-        <>
+        <ChessClockProvider timeControl={timeControl}>
             <SoundEffects />
             <GameRoomController />
 
@@ -31,7 +38,7 @@ function ChessGameView() {
                     <GameInfoPanel />
                 </section>
             </main>
-        </>
+        </ChessClockProvider>
     );
 }
 
