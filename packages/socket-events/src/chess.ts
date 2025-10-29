@@ -1,11 +1,5 @@
 import { BoardIndexSchema, ChessClockStateSchema, PawnPromotionEnum } from '@grouchess/chess';
-import {
-    ChessGameRoomSchema,
-    MAX_MESSAGE_LENGTH,
-    MAX_MESSAGES_PER_ROOM,
-    MessageTypeEnum,
-    MessageSchema,
-} from '@grouchess/game-room';
+import { ChessGameRoomSchema, MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
 import * as z from 'zod';
 
 import { AuthenticatedPayload, ErrorEventPayload } from './common.js';
@@ -52,11 +46,6 @@ export const ClockUpdatePayloadSchema = z.object({
 });
 export type ClockUpdatePayload = z.infer<typeof ClockUpdatePayloadSchema>;
 
-export const MessageHistoryPayloadSchema = z.object({
-    messages: z.array(MessageSchema).max(MAX_MESSAGES_PER_ROOM),
-});
-export type MessageHistoryPayload = z.infer<typeof MessageHistoryPayloadSchema>;
-
 /**
  * EVENTS INTERFACE DEFINITIONS
  */
@@ -65,8 +54,8 @@ export interface ChessServerToClientEvents {
     authenticated: (payload: AuthenticatedPayload) => void;
     error: (payload: ErrorEventPayload) => void;
     load_game: (payload: LoadGamePayload) => void;
-    clock_updated: (payload: ClockUpdatePayload) => void;
-    message_history: (payload: MessageHistoryPayload) => void;
+    game_room_ready: () => void;
+    clock_update: (payload: ClockUpdatePayload) => void;
     piece_moved: (payload: PieceMovedPayload) => void;
     new_message: (payload: NewMessagePayload) => void;
     user_typing: (payload: UserTypingPayload) => void;
