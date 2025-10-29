@@ -4,6 +4,7 @@ import { Router } from 'express';
 import * as z from 'zod';
 
 import { getTimeControlByAlias, isValidTimeControlAlias } from '../data/timeControl.js';
+import { authenticateRequest } from '../middleware/authenticateRequest.js';
 import { GameRoomIsFullError } from '../utils/errors.js';
 import { generateGameRoomToken } from '../utils/token.js';
 
@@ -25,6 +26,59 @@ roomRouter.get('/:roomId', (req, res) => {
     res.json({
         roomId: room.id,
         timeControl: room.timeControl,
+    });
+});
+
+/**
+ * Endpoint to get move history for a game room.
+ * Requires authentication via Bearer token.
+ */
+roomRouter.get('/:roomId/move-history', authenticateRequest, (req, res) => {
+    const { roomId } = req.params;
+    const { chessGameService } = req.services;
+
+    const chessGame = chessGameService.getChessGameForRoom(roomId);
+    if (!chessGame) {
+        res.status(404).json({ error: 'Game not found for this room' });
+        return;
+    }
+
+    res.json({
+        moveHistory: chessGame.moveHistory,
+    });
+});
+
+/**
+ * Endpoint to get message history for a game room.
+ * Requires authentication via Bearer token.
+ */
+roomRouter.get('/:roomId/messages', authenticateRequest, (req, res) => {
+    const { roomId } = req.params;
+    const { gameRoomService } = req.services;
+
+    const gameRoom = gameRoomService.getGameRoomById(roomId);
+    if (!gameRoom) {
+        res.status(404).json({ error: 'Room not found' });
+        return;
+    }
+
+    res.json({
+        messages: gameRoom.messages,
+    });
+});
+
+/**
+ * Endpoint to get clock state for a game room.
+ * Requires authentication via Bearer token.
+ */
+roomRouter.get('/:roomId/clock-state', authenticateRequest, (req, res) => {
+    const { roomId } = req.params;
+    const { chessClockService } = req.services;
+
+    const clockState = chessClockService.getClockStateForRoom(roomId) || null;
+
+    res.json({
+        clockState,
     });
 });
 
