@@ -9,6 +9,9 @@ declare global {
                 playerService: PlayerService;
                 gameRoomService: GameRoomService;
             };
+            // Authentication data (populated by authenticateRequest middleware)
+            playerId?: string;
+            roomId?: string;
         }
     }
 }
