@@ -8,19 +8,18 @@ export class ChessClockService {
     private gameRoomIdToClockStateMap: Map<string, ChessClockState> = new Map();
 
     private computeUpdatedClockState(clockState: ChessClockState, switchTo?: PieceColor): ChessClockState {
-        if (clockState.isPaused || !clockState.lastUpdatedTime) {
-            return clockState;
-        }
+        if (clockState.isPaused) return clockState;
+        if (clockState.lastUpdatedTimeMs === null) return clockState;
 
-        const now = new Date();
+        const now = Date.now();
         const newClockState = {
             ...clockState,
             white: { ...clockState.white },
             black: { ...clockState.black },
-            lastUpdatedTime: now,
+            lastUpdatedTimeMs: now,
         };
 
-        const elapsedMs = now.getTime() - clockState.lastUpdatedTime.getTime();
+        const elapsedMs = now - clockState.lastUpdatedTimeMs;
         const activeColor = clockState.white.isActive ? 'white' : 'black';
 
         let newTimeRemaining = newClockState[activeColor].timeRemainingMs - elapsedMs;
@@ -46,7 +45,7 @@ export class ChessClockService {
                 timeRemainingMs: baseTimeMs,
                 isActive: false,
             },
-            lastUpdatedTime: null,
+            lastUpdatedTimeMs: null,
             baseTimeMs,
             incrementMs: timeControl.increment * MS_PER_SECOND,
             isPaused: true,
@@ -108,7 +107,7 @@ export class ChessClockService {
         }
 
         clockState.isPaused = true;
-        clockState.lastUpdatedTime = null;
+        clockState.lastUpdatedTimeMs = null;
 
         this.gameRoomIdToClockStateMap.set(roomId, clockState);
 
@@ -122,7 +121,7 @@ export class ChessClockService {
         }
 
         clockState.isPaused = false;
-        clockState.lastUpdatedTime = new Date();
+        clockState.lastUpdatedTimeMs = Date.now();
 
         if (activeColor) {
             clockState.white.isActive = activeColor === 'white';
@@ -144,7 +143,7 @@ export class ChessClockService {
         clockState.black.timeRemainingMs = clockState.baseTimeMs;
         clockState.white.isActive = false;
         clockState.black.isActive = false;
-        clockState.lastUpdatedTime = null;
+        clockState.lastUpdatedTimeMs = null;
         clockState.isPaused = true;
         this.gameRoomIdToClockStateMap.set(roomId, clockState);
 

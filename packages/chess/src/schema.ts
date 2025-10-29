@@ -174,7 +174,7 @@ export const ChessClockStateSchema = z.object({
         timeRemainingMs: z.number(),
         isActive: z.boolean(),
     }),
-    lastUpdatedTime: z.date().nullable(),
+    lastUpdatedTimeMs: z.number().nullable(),
     baseTimeMs: z.number(),
     incrementMs: z.number(),
     isPaused: z.boolean(),
