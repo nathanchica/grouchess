@@ -54,10 +54,10 @@ export class ChessClockService {
         return initialState;
     }
 
-    getClockStateForRoom(roomId: string): ChessClockState | undefined {
+    getClockStateForRoom(roomId: string): ChessClockState | null {
         const clockState = this.gameRoomIdToClockStateMap.get(roomId);
         if (!clockState) {
-            return undefined;
+            return null;
         }
         const updatedClockState = this.computeUpdatedClockState(clockState);
         this.gameRoomIdToClockStateMap.set(roomId, updatedClockState);

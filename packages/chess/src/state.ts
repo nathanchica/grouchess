@@ -1,7 +1,6 @@
 import { IllegalMoveError, InvalidInputError } from '@grouchess/errors';
 import invariant from 'tiny-invariant';
 
-
 import {
     algebraicNotationToIndex,
     computeEnPassantTargetIndex,

@@ -17,6 +17,8 @@
         "@fontsource-variable/playfair-display": "^5.2.8",
         "@grouchess/chess": "workspace:*",
         "@grouchess/game-room": "workspace:*",
+        "@grouchess/http-schemas": "workspace:*",
+        "@grouchess/socket-events": "workspace:*",
         "@tailwindcss/vite": "^4.1.14",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",

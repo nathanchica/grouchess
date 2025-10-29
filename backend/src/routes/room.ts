@@ -1,9 +1,14 @@
-import { PieceColorEnum } from '@grouchess/chess';
-import { RoomTypeEnum, PlayerSchema } from '@grouchess/game-room';
+import { getTimeControlByAlias } from '@grouchess/game-room';
+import {
+    CreateGameRoomRequestSchema,
+    CreateGameRoomResponseSchema,
+    GetChessGameResponseSchema,
+    JoinGameRoomResponseSchema,
+    PlayerDisplayNameInput,
+} from '@grouchess/http-schemas';
 import { Router } from 'express';
 import * as z from 'zod';
 
-import { getTimeControlByAlias, isValidTimeControlAlias } from '../data/timeControl.js';
 import { authenticateRequest } from '../middleware/authenticateRequest.js';
 import { GameRoomIsFullError } from '../utils/errors.js';
 import { generateGameRoomToken } from '../utils/token.js';
@@ -30,76 +35,48 @@ roomRouter.get('/:roomId', (req, res) => {
 });
 
 /**
- * Endpoint to get move history for a game room.
+ * Endpoint to get chess game state for a game room.
  * Requires authentication via Bearer token.
  */
-roomRouter.get('/:roomId/move-history', authenticateRequest, (req, res) => {
+roomRouter.get('/:roomId/chess-game', authenticateRequest, (req, res) => {
     const { roomId } = req.params;
-    const { chessGameService } = req.services;
+    const { chessGameService, gameRoomService, chessClockService } = req.services;
 
-    const chessGame = chessGameService.getChessGameForRoom(roomId);
-    if (!chessGame) {
-        res.status(404).json({ error: 'Game not found for this room' });
+    const { playerId } = req;
+    // Should be guaranteed by authenticateRequest middleware
+    if (!playerId) {
+        res.status(500).json({ error: 'Internal server error' });
         return;
     }
-
-    res.json({
-        moveHistory: chessGame.moveHistory,
-    });
-});
-
-/**
- * Endpoint to get message history for a game room.
- * Requires authentication via Bearer token.
- */
-roomRouter.get('/:roomId/messages', authenticateRequest, (req, res) => {
-    const { roomId } = req.params;
-    const { gameRoomService } = req.services;
 
     const gameRoom = gameRoomService.getGameRoomById(roomId);
     if (!gameRoom) {
-        res.status(404).json({ error: 'Room not found' });
+        res.status(404).json({ error: 'Game room not found' });
         return;
     }
 
-    res.json({
-        messages: gameRoom.messages,
-    });
-});
+    const chessGame = chessGameService.getChessGameForRoom(roomId);
+    if (!chessGame) {
+        res.status(404).json({ error: 'Chess game not found for this room' });
+        return;
+    }
 
-/**
- * Endpoint to get clock state for a game room.
- * Requires authentication via Bearer token.
- */
-roomRouter.get('/:roomId/clock-state', authenticateRequest, (req, res) => {
-    const { roomId } = req.params;
-    const { chessClockService } = req.services;
+    const clockState = chessClockService.getClockStateForRoom(roomId);
 
-    const clockState = chessClockService.getClockStateForRoom(roomId) || null;
-
-    res.json({
+    const parsedResponse = GetChessGameResponseSchema.safeParse({
+        gameRoom,
+        chessGame,
         clockState,
+        playerId,
     });
-});
 
-const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
-const CreateGameRoomRequestSchema = z.object({
-    displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 1').describe(
-        'The display name of the player creating the room. Defaults to "Player 1" if not provided.'
-    ),
-    color: PieceColorEnum.nullish().describe(
-        'The preferred color for the creator. If not provided, a random color will be assigned.'
-    ),
-    timeControlAlias: z
-        .string()
-        .refine((alias) => isValidTimeControlAlias(alias), {
-            error: 'Invalid time control alias',
-        })
-        .nullish()
-        .describe(
-            'The time control setting for the room. If not provided, there will be no time control (unlimited time).'
-        ),
-    roomType: RoomTypeEnum.describe('The type of room to create.'),
+    if (!parsedResponse.success) {
+        console.error('Validation error getting chess game state:', parsedResponse.error.issues);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+    }
+
+    res.json(parsedResponse.data);
 });
 
 /**
@@ -122,14 +99,22 @@ roomRouter.post('/', (req, res) => {
         });
         const token = generateGameRoomToken({ playerId: player.id, roomId });
 
-        res.json({
+        const parsedResponse = CreateGameRoomResponseSchema.safeParse({
             roomId,
             playerId: player.id,
             token,
         });
+
+        if (!parsedResponse.success) {
+            console.error('Validation error creating game room response:', parsedResponse.error.issues);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+        }
+
+        res.json(parsedResponse.data);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            console.error('Validation error creating game room:', error.issues);
+            console.error('Validation error creating game room request:', error.issues);
             res.status(400).json({ error: 'Invalid request data', details: error.issues });
             return;
         }
@@ -159,11 +144,19 @@ roomRouter.post('/join/:roomId', (req, res) => {
         gameRoomService.joinGameRoom(roomId, player);
         const token = generateGameRoomToken({ playerId: player.id, roomId });
 
-        res.json({
+        const parsedResponse = JoinGameRoomResponseSchema.safeParse({
             roomId,
             playerId: player.id,
             token,
         });
+
+        if (!parsedResponse.success) {
+            console.error('Validation error joining game room response:', parsedResponse.error.issues);
+            res.status(500).json({ error: 'Internal server error' });
+            return;
+        }
+
+        res.json(parsedResponse.data);
     } catch (error) {
         if (error instanceof z.ZodError) {
             console.error('Validation error joining game room:', error.issues);
