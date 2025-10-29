@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type JoinGameRoomResponse = {
-    roomId: string;
-    playerId: string;
-    token: string;
-};
+import type { JoinGameRoomResponse } from '@grouchess/http-schemas';
 
 type JoinGameRoomParams = {
     displayName?: string;

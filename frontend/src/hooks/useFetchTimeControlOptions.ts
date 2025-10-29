@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { TimeControl } from '@grouchess/game-room';
-
-type TimeControlResponse = {
-    supportedTimeControls: TimeControl[];
-};
+import type { GetTimeControlOptionsResponse } from '@grouchess/http-schemas';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const TIME_CONTROL_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/time-control` : null;
@@ -42,7 +39,7 @@ export function useFetchTimeControlOptions(): UseFetchTimeControlOptionsResult {
                     throw new Error('Unable to load time controls right now.');
                 }
 
-                const data = (await response.json()) as TimeControlResponse;
+                const data = (await response.json()) as GetTimeControlOptionsResponse;
                 if (!isMounted) return;
 
                 setTimeControlOptions(data.supportedTimeControls);
