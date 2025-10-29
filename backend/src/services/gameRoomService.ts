@@ -1,9 +1,10 @@
+import { type ChessGameState, isDrawStatus } from '@grouchess/chess';
 import { MAX_MESSAGES_PER_ROOM } from '@grouchess/game-room';
 import type { ChessGameRoom, Message, Player } from '@grouchess/game-room';
 
 import { CreateGameRoomInput } from './gameRoomService.schemas.js';
 
-import { GameRoomIsFullError } from '../utils/errors.js';
+import { GameRoomIsFullError, InvalidInputError } from '../utils/errors.js';
 import { generateId } from '../utils/generateId.js';
 
 const MESSAGE_ID_LENGTH = 12;
@@ -132,6 +133,27 @@ export class GameRoomService {
             throw new Error('Player not found in game room');
         }
         gameRoom.playerIdToScore[playerId] += isDraw ? 0.5 : 1;
+    }
+
+    updatePlayerScores(roomId: string, gameState: ChessGameState): void {
+        const gameRoom = this.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new InvalidInputError('Game room not found');
+        }
+        const { colorToPlayerId, players } = gameRoom;
+        const { winner, status } = gameState;
+        if (winner) {
+            const winnerId = colorToPlayerId[winner];
+            if (!winnerId) {
+                throw new Error('Expected winner to have a valid player ID');
+            }
+            this.incrementPlayerScore(roomId, winnerId);
+        } else if (isDrawStatus(status)) {
+            // Increment both players' scores by 0.5 for a draw
+            players.forEach(({ id }) => {
+                this.incrementPlayerScore(roomId, id, true);
+            });
+        }
     }
 
     swapPlayerColors(roomId: string): void {

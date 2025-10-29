@@ -67,7 +67,9 @@ export function createGameRoomSocketHandler({
                         const clockState: ChessClockState | null =
                             chessClockService.getClockStateForRoom(roomId) || null;
 
-                        sendLoadGameEvent(io, `player:${playerId}`, gameRoom, fen, clockState);
+                        const target = `player:${playerId}`;
+                        sendLoadGameEvent(io, target, gameRoom, fen);
+                        io.to(target).emit('clock_updated', { clockState });
                         return;
                     }
 
@@ -82,7 +84,9 @@ export function createGameRoomSocketHandler({
                             ? chessClockService.initializeClockForRoom(roomId, timeControl)
                             : null;
 
-                        sendLoadGameEvent(io, `room:${roomId}`, gameRoom, fen, clockState);
+                        const target = `room:${roomId}`;
+                        sendLoadGameEvent(io, target, gameRoom, fen);
+                        io.to(target).emit('clock_updated', { clockState });
                     }
                 } catch (error) {
                     console.error('Error joining room:', error);
@@ -120,9 +124,26 @@ export function createGameRoomSocketHandler({
                     return;
                 }
                 try {
-                    chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
+                    const { gameState } = chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
+                    const isGameOver = gameState.status !== 'in-progress';
+
+                    socket.to(`room:${roomId}`).emit('piece_moved', {
+                        fromIndex,
+                        toIndex,
+                        promotion,
+                    });
 
                     let clockState = chessClockService.getClockStateForRoom(roomId);
+
+                    if (isGameOver) {
+                        if (clockState) {
+                            clockState = chessClockService.pauseClock(roomId);
+                            io.to(`room:${roomId}`).emit('clock_updated', { clockState });
+                        }
+                        gameRoomService.updatePlayerScores(roomId, gameState);
+                        return;
+                    }
+
                     if (clockState) {
                         const nextActiveColor = playerColor === 'white' ? 'black' : 'white';
                         if (clockState.isPaused) {
@@ -132,12 +153,6 @@ export function createGameRoomSocketHandler({
                         }
                         io.to(`room:${roomId}`).emit('clock_updated', { clockState });
                     }
-
-                    socket.to(`room:${roomId}`).emit('piece_moved', {
-                        fromIndex,
-                        toIndex,
-                        promotion,
-                    });
                 } catch (error) {
                     console.error('Error moving piece:', error);
                     sendErrorEvent(socket, 'Failed to move piece');
@@ -192,7 +207,8 @@ export function createGameRoomSocketHandler({
                 const { boardState } = chessGameService.createChessGameForRoom(roomId);
                 const fen = createFEN(boardState);
                 const clockState = timeControl ? chessClockService.resetClock(roomId) : null;
-                sendLoadGameEvent(io, `room:${roomId}`, gameRoom, fen, clockState);
+                sendLoadGameEvent(io, `room:${roomId}`, gameRoom, fen);
+                io.to(`room:${roomId}`).emit('clock_updated', { clockState });
             });
 
             socket.on('typing', (input) => {
