@@ -196,6 +196,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/socket-events:
+    dependencies:
+      '@grouchess/chess':
+        specifier: workspace:*
+        version: link:../chess
+      '@grouchess/game-room':
+        specifier: workspace:*
+        version: link:../game-room
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
 packages:
 
   '@babel/code-frame@7.27.1':
