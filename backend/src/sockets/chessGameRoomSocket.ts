@@ -1,24 +1,23 @@
-import { createFEN } from '@grouchess/chess';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from '@grouchess/socket-events';
 
 import { authenticateSocket } from '../middleware/authenticateSocket.js';
 import type { ChessSocketServer } from '../servers/chess.js';
 import { ChessClockService, ChessGameService, GameRoomService, PlayerService } from '../services/index.js';
 
-type GameRoomSocketDependencies = {
+type ChessGameRoomSocketDependencies = {
     chessClockService: ChessClockService;
     chessGameService: ChessGameService;
     playerService: PlayerService;
     gameRoomService: GameRoomService;
 };
 
-export function createGameRoomSocketHandler({
+export function createChessGameRoomSocketHandler({
     chessClockService,
     chessGameService,
     playerService,
     gameRoomService,
-}: GameRoomSocketDependencies) {
-    return function initializeGameRoomSocket(io: ChessSocketServer) {
+}: ChessGameRoomSocketDependencies) {
+    return function initializeChessGameRoomSocket(io: ChessSocketServer) {
         // Apply authentication middleware to all connections
         io.use(authenticateSocket);
 
@@ -54,33 +53,24 @@ export function createGameRoomSocketHandler({
                         return;
                     }
 
-                    const { colorToPlayerId, timeControl, messages } = gameRoom;
+                    const { colorToPlayerId, timeControl } = gameRoom;
 
                     // Game in progress (player rejoining)
-                    // Send current game room state, clock state, and messages to rejoining player
                     const currentChessGame = chessGameService.getChessGameForRoom(roomId);
                     if (currentChessGame) {
-                        const { boardState } = currentChessGame;
-                        const fen = createFEN(boardState);
-                        const clockState = chessClockService.getClockStateForRoom(roomId) || null;
-
-                        socket.emit('load_game', { gameRoom, fen });
-                        socket.emit('clock_updated', { clockState });
-                        socket.emit('message_history', { messages });
+                        socket.emit('game_room_ready');
                         return;
                     }
 
                     // If room is now full: create chess game, initialize clock, and notify all players
                     if (colorToPlayerId.white && colorToPlayerId.black) {
-                        const { boardState } = chessGameService.createChessGameForRoom(roomId);
-                        const fen = createFEN(boardState);
+                        chessGameService.createChessGameForRoom(roomId);
                         gameRoomService.startNewGameInRoom(roomId);
-                        const clockState = timeControl
-                            ? chessClockService.initializeClockForRoom(roomId, timeControl)
-                            : null;
+                        if (timeControl) {
+                            chessClockService.initializeClockForRoom(roomId, timeControl);
+                        }
 
-                        io.to(gameRoomTarget).emit('load_game', { gameRoom, fen });
-                        io.to(gameRoomTarget).emit('clock_updated', { clockState });
+                        io.to(gameRoomTarget).emit('game_room_ready');
                     }
                 } catch (error) {
                     console.error('Error joining room:', error);
@@ -123,7 +113,7 @@ export function createGameRoomSocketHandler({
                     if (isGameOver) {
                         if (clockState) {
                             clockState = chessClockService.pauseClock(roomId);
-                            io.to(gameRoomTarget).emit('clock_updated', { clockState });
+                            io.to(gameRoomTarget).emit('clock_update', { clockState });
                         }
                         gameRoomService.updatePlayerScores(roomId, gameState);
                         return;
@@ -136,7 +126,7 @@ export function createGameRoomSocketHandler({
                         } else {
                             clockState = chessClockService.switchClock(roomId, nextActiveColor);
                         }
-                        io.to(gameRoomTarget).emit('clock_updated', { clockState });
+                        io.to(gameRoomTarget).emit('clock_update', { clockState });
                     }
                 } catch (error) {
                     console.error('Error moving piece:', error);
@@ -189,12 +179,12 @@ export function createGameRoomSocketHandler({
                     return;
                 }
                 const { timeControl } = gameRoom;
-                const { boardState } = chessGameService.createChessGameForRoom(roomId);
-                const fen = createFEN(boardState);
-                const clockState = timeControl ? chessClockService.resetClock(roomId) : null;
+                chessGameService.createChessGameForRoom(roomId);
+                if (timeControl) {
+                    chessClockService.resetClock(roomId);
+                }
 
-                io.to(gameRoomTarget).emit('load_game', { gameRoom, fen });
-                io.to(gameRoomTarget).emit('clock_updated', { clockState });
+                io.to(gameRoomTarget).emit('game_room_ready');
             });
 
             socket.on('typing', (input) => {
