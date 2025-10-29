@@ -1,4 +1,4 @@
-import { type ChessGameState, isDrawStatus } from '@grouchess/chess';
+import { type ChessGameState, isDrawStatus, PieceColor } from '@grouchess/chess';
 import { MAX_MESSAGES_PER_ROOM } from '@grouchess/game-room';
 import type { ChessGameRoom, Message, Player } from '@grouchess/game-room';
 
@@ -60,6 +60,21 @@ export class GameRoomService {
 
     getOffersForGameRoom(roomId: string): PlayerOffers | null {
         return this.gameRoomIdToPlayerOffers.get(roomId) || null;
+    }
+
+    getPlayerColor(roomId: string, playerId: string): PieceColor {
+        const gameRoom = this.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new Error('Game room not found');
+        }
+        const { colorToPlayerId } = gameRoom;
+        if (colorToPlayerId.white === playerId) {
+            return 'white';
+        } else if (colorToPlayerId.black === playerId) {
+            return 'black';
+        } else {
+            throw new Error('Player not found in game room');
+        }
     }
 
     addMessageToGameRoom(

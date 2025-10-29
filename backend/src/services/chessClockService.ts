@@ -1,7 +1,5 @@
-import type { PieceColor } from '@grouchess/chess';
+import type { ChessClockState, PieceColor } from '@grouchess/chess';
 import type { TimeControl } from '@grouchess/game-room';
-
-import type { ChessClockState } from './chessClockService.schemas.js';
 
 const MS_PER_SECOND = 1000;
 const MS_PER_MINUTE = 60 * MS_PER_SECOND;

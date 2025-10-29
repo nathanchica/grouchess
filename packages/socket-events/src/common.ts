@@ -1,7 +1,8 @@
+import { PlayerSchema } from '@grouchess/game-room';
 import * as z from 'zod';
 
 export const AuthenticatedPayloadSchema = z.object({
-    success: z.boolean(),
+    playerId: PlayerSchema.shape.id,
 });
 export type AuthenticatedPayload = z.infer<typeof AuthenticatedPayloadSchema>;
 

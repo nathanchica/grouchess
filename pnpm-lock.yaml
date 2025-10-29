@@ -59,6 +59,9 @@ importers:
       '@grouchess/game-room':
         specifier: workspace:*
         version: link:../packages/game-room
+      '@grouchess/socket-events':
+        specifier: workspace:*
+        version: link:../packages/socket-events
       base32-encode:
         specifier: ^2.0.0
         version: 2.0.0

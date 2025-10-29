@@ -64,21 +64,21 @@ export type MessageHistoryPayload = z.infer<typeof MessageHistoryPayloadSchema>;
 export interface ChessServerToClientEvents {
     authenticated: (payload: AuthenticatedPayload) => void;
     error: (payload: ErrorEventPayload) => void;
-    loadGame: (payload: LoadGamePayload) => void;
-    clockUpdated: (payload: ClockUpdatePayload) => void;
-    messageHistory: (payload: MessageHistoryPayload) => void;
-    pieceMoved: (payload: PieceMovedPayload) => void;
-    newMessage: (payload: NewMessagePayload) => void;
-    userTyping: (payload: UserTypingPayload) => void;
+    load_game: (payload: LoadGamePayload) => void;
+    clock_updated: (payload: ClockUpdatePayload) => void;
+    message_history: (payload: MessageHistoryPayload) => void;
+    piece_moved: (payload: PieceMovedPayload) => void;
+    new_message: (payload: NewMessagePayload) => void;
+    user_typing: (payload: UserTypingPayload) => void;
 }
 
 export interface ChessClientToServerEvents {
-    waitForGame: () => void;
-    movePiece: (input: MovePieceInput) => void;
-    sendMessage: (input: SendMessageInput) => void;
+    wait_for_game: () => void;
+    move_piece: (input: MovePieceInput) => void;
+    send_message: (input: SendMessageInput) => void;
     typing: (input: TypingEventInput) => void;
-    offerRematch: () => void;
-    offerDraw: () => void;
+    offer_rematch: () => void;
+    offer_draw: () => void;
 }
 
 export interface ChessSocketData {
