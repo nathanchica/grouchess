@@ -4,7 +4,7 @@ import { createApp } from './app.js';
 import config from './config.js';
 import { chessIO } from './servers/chess.js';
 import { chessClockService, chessGameService, gameRoomService, playerService } from './services/index.js';
-import { createGameRoomSocketHandler } from './sockets/gameRoomSocket.js';
+import { createChessGameRoomSocketHandler } from './sockets/chessGameRoomSocket.js';
 
 const { PORT, HOST, CLIENT_URL } = config;
 
@@ -17,13 +17,13 @@ chessIO.attach(httpServer, {
     },
 });
 
-const initializeGameRoomSocket = createGameRoomSocketHandler({
+const initializeChessGameRoomSocket = createChessGameRoomSocketHandler({
     chessClockService,
     chessGameService,
     playerService,
     gameRoomService,
 });
-initializeGameRoomSocket(chessIO);
+initializeChessGameRoomSocket(chessIO);
 
 httpServer.listen(PORT, HOST, () => {
     console.log(`Backend listening on http://${HOST}:${PORT}`);
