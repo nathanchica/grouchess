@@ -1,21 +1,21 @@
 import ViewController from './components/views/ViewController';
-import ChessGameRoomProvider from './providers/ChessGameRoomProvider';
-import GameRoomSocketProvider from './providers/GameRoomSocketProvider';
+import AuthProvider from './providers/AuthProvider';
 import ImagesProvider from './providers/ImagesProvider';
+import SocketProvider from './providers/SocketProvider';
 import SoundProvider from './providers/SoundProvider';
 import { uniquePieceImgSrcs } from './utils/pieces';
 
 function App() {
     return (
-        <ImagesProvider imgSrcs={uniquePieceImgSrcs}>
-            <SoundProvider>
-                <ChessGameRoomProvider>
-                    <GameRoomSocketProvider>
+        <AuthProvider>
+            <SocketProvider>
+                <ImagesProvider imgSrcs={uniquePieceImgSrcs}>
+                    <SoundProvider>
                         <ViewController />
-                    </GameRoomSocketProvider>
-                </ChessGameRoomProvider>
-            </SoundProvider>
-        </ImagesProvider>
+                    </SoundProvider>
+                </ImagesProvider>
+            </SocketProvider>
+        </AuthProvider>
     );
 }
 

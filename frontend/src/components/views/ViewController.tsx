@@ -1,13 +1,86 @@
+import { useCallback, useEffect, useState } from 'react';
+
+import type { TimeControl } from '@grouchess/game-room';
+import type { GetChessGameResponse } from '@grouchess/http-schemas';
+
 import ChessGameView from './ChessGameView';
 import MainMenuView from './MainMenuView';
 
-import { useGameRoom, useChessGame } from '../../providers/ChessGameRoomProvider';
+import { useFetchChessGame } from '../../hooks/useFetchChessGame';
+import { useAuth } from '../../providers/AuthProvider';
+import { createInitialChessClockState } from '../../providers/ChessClockSocketProvider';
+import { createSelfPlayChessGameRoomState, type ChessGameRoomState } from '../../providers/ChessGameRoomProvider';
+import { useSocket } from '../../providers/SocketProvider';
 
+/**
+ * Controls which main view to show based on whether the chess game data has been loaded.
+ * Listens for 'game_room_ready' socket event to trigger fetching the chess game data.
+ */
 function ViewController() {
-    const { gameRoom } = useGameRoom();
-    const { chessGame } = useChessGame();
+    const { socket } = useSocket();
+    const { fetchChessGameData } = useFetchChessGame();
+    const { token, roomId } = useAuth();
 
-    return <>{gameRoom && chessGame ? <ChessGameView timeControl={gameRoom.timeControl} /> : <MainMenuView />}</>;
+    const [initialChessGameData, setInitialChessGameData] = useState<GetChessGameResponse | null>(null);
+    const initialChessGameRoomData: ChessGameRoomState | null = initialChessGameData
+        ? {
+              chessGame: {
+                  ...initialChessGameData.chessGame,
+                  previousMoveIndices: [],
+                  timelineVersion: 0,
+                  pendingPromotion: null,
+              },
+              gameRoom: initialChessGameData.gameRoom,
+              currentPlayerId: initialChessGameData.playerId,
+          }
+        : null;
+    const initialClockState = initialChessGameData?.clockState || null;
+
+    const onSelfPlayStart = useCallback((timeControl: TimeControl | null) => {
+        const selfPlayGameRoomState: ChessGameRoomState = createSelfPlayChessGameRoomState(timeControl);
+        setInitialChessGameData({
+            chessGame: selfPlayGameRoomState.chessGame,
+            gameRoom: selfPlayGameRoomState.gameRoom,
+            playerId: selfPlayGameRoomState.currentPlayerId,
+            clockState: createInitialChessClockState(timeControl ?? undefined),
+        });
+    }, []);
+
+    const fetchChessGameRoom = useCallback(() => {
+        if (token && roomId) {
+            fetchChessGameData({
+                roomId,
+                token,
+                onSuccess: (data: GetChessGameResponse) => {
+                    setInitialChessGameData(data);
+                },
+                onError: (error) => {
+                    console.error('Failed to fetch chess game data:', error);
+                },
+            });
+        }
+    }, [token, roomId, fetchChessGameData]);
+
+    useEffect(() => {
+        socket.on('game_room_ready', fetchChessGameRoom);
+        return () => {
+            socket.off('game_room_ready', fetchChessGameRoom);
+        };
+    }, [fetchChessGameRoom, socket]);
+
+    return (
+        <>
+            {initialChessGameRoomData ? (
+                <ChessGameView
+                    key={`${initialChessGameRoomData.gameRoom.id}-${initialChessGameRoomData.gameRoom.gameCount}`}
+                    initialChessGameRoomData={initialChessGameRoomData}
+                    initialClockState={initialClockState}
+                />
+            ) : (
+                <MainMenuView onSelfPlayStart={onSelfPlayStart} />
+            )}
+        </>
+    );
 }
 
 export default ViewController;
