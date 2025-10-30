@@ -1,3 +1,4 @@
+import { computeGameStateBasedOnClock } from '@grouchess/chess';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from '@grouchess/socket-events';
 
 import { authenticateSocket } from '../middleware/authenticateSocket.js';
@@ -93,10 +94,34 @@ export function createChessGameRoomSocketHandler({
                         return;
                     }
 
+                    if (chessGame.gameState.status !== 'in-progress') {
+                        sendErrorEvent('Game is already over');
+                        return;
+                    }
+
                     const playerColor = gameRoomService.getPlayerColor(roomId, playerId);
                     if (chessGame.boardState.playerTurn !== playerColor) {
                         sendErrorEvent("It's not your turn");
                         return;
+                    }
+
+                    let clockState = chessClockService.getClockStateForRoom(roomId);
+
+                    // early check if clock expired
+                    if (clockState) {
+                        const expiredClockGameState = computeGameStateBasedOnClock(
+                            clockState,
+                            chessGame.boardState.board
+                        );
+                        if (expiredClockGameState) {
+                            clockState = chessClockService.pauseClock(roomId);
+                            chessGameService.endGameForRoom(roomId, expiredClockGameState);
+                            gameRoomService.updatePlayerScores(roomId, expiredClockGameState);
+
+                            // TODO: emit a end_game event
+                            io.to(gameRoomTarget).emit('clock_update', { clockState });
+                            return;
+                        }
                     }
 
                     const { gameState } = chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
@@ -108,8 +133,6 @@ export function createChessGameRoomSocketHandler({
                         promotion,
                     });
 
-                    let clockState = chessClockService.getClockStateForRoom(roomId);
-
                     if (isGameOver) {
                         if (clockState) {
                             clockState = chessClockService.pauseClock(roomId);
@@ -120,6 +143,7 @@ export function createChessGameRoomSocketHandler({
                     }
 
                     if (clockState) {
+                        // update clock for move
                         const nextActiveColor = playerColor === 'white' ? 'black' : 'white';
                         if (clockState.isPaused) {
                             clockState = chessClockService.startClock(roomId, nextActiveColor);

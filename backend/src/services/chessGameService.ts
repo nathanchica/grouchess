@@ -1,5 +1,5 @@
 import { computeNextChessGameAfterMove, createInitialChessGame } from '@grouchess/chess';
-import type { ChessGame, PawnPromotion } from '@grouchess/chess';
+import type { ChessGame, ChessGameState, PawnPromotion } from '@grouchess/chess';
 import type { ChessGameRoom } from '@grouchess/game-room';
 
 import { GameNotStartedError, IllegalMoveError } from '../utils/errors.js';
@@ -41,5 +41,15 @@ export class ChessGameService {
 
         this.gameRoomIdToChessGameMap.set(roomId, nextChessGame);
         return nextChessGame;
+    }
+
+    endGameForRoom(roomId: GameRoomId, gameState: ChessGameState): ChessGame {
+        const chessGame = this.getChessGameForRoom(roomId);
+        if (!chessGame) {
+            throw new GameNotStartedError();
+        }
+
+        chessGame.gameState = gameState;
+        return chessGame;
     }
 }

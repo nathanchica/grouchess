@@ -1,37 +1,20 @@
 import { useCallback, useContext, useMemo, useReducer, createContext, type ReactNode } from 'react';
 
-import {
-    computeNextChessBoardFromMove,
-    computeNextChessGameAfterMove,
-    createChessGameFromFEN,
-    createInitialChessGame,
-    getPiece,
-    INITIAL_CHESS_BOARD_FEN,
-    isPromotionSquare,
-} from '@grouchess/chess';
-import type { EndGameReason, Move, PawnPromotion, PieceColor } from '@grouchess/chess';
-import { computePlayerScores } from '@grouchess/game-room';
+import { INITIAL_CHESS_BOARD_FEN } from '@grouchess/chess';
+import type { ChessClockState, EndGameReason, Move, PawnPromotion, PieceColor } from '@grouchess/chess';
 import type { ChessGameRoom, Message, Player, TimeControl } from '@grouchess/game-room';
 import invariant from 'tiny-invariant';
 
+import { chessGameRoomReducer } from './chessGameRoom/reducer';
+import type { ChessGameRoomState } from './chessGameRoom/types';
+
 import type { ChessGameUI } from '../utils/types';
 
-export type ChessGameRoomState = {
-    chessGame: ChessGameUI;
-    gameRoom: ChessGameRoom;
-    currentPlayerId: Player['id'];
+export type ChessClockContextType = {
+    clockState: ChessClockState | null;
+    setClocks: (clockState: ChessClockState | null) => void;
+    resetClocks: () => void;
 };
-
-type Action =
-    | { type: 'move-piece'; move: Move }
-    | { type: 'promote-pawn'; pawnPromotion: PawnPromotion }
-    | { type: 'cancel-promotion' }
-    | { type: 'load-fen'; fenString: string }
-    | { type: 'end-game'; reason: EndGameReason; winner?: PieceColor }
-    | { type: 'start-self-play-room'; timeControlOption: TimeControl | null }
-    | { type: 'load-room'; gameRoom: ChessGameRoom; fen?: string }
-    | { type: 'add-message'; message: Message }
-    | { type: 'load-current-player-id'; playerId: Player['id'] };
 
 export type ChessGameContextType = {
     chessGame: ChessGameUI;
@@ -52,13 +35,13 @@ export type GameRoomContextType = {
     startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
 };
 
+const ChessClockContext = createContext<ChessClockContextType | null>(null);
 const ChessGameContext = createContext<ChessGameContextType | null>(null);
-
 const GameRoomContext = createContext<GameRoomContextType | null>(null);
 
-export function useGameRoom(): GameRoomContextType {
-    const context = useContext(GameRoomContext);
-    invariant(context, 'useGameRoom must be used within ChessGameRoomProvider');
+export function useChessClock(): ChessClockContextType {
+    const context = useContext(ChessClockContext);
+    invariant(context, 'useChessClock must be used within ChessGameRoomProvider');
     return context;
 }
 
@@ -68,238 +51,10 @@ export function useChessGame(): ChessGameContextType {
     return context;
 }
 
-export function createSelfPlayChessGameRoomState(timeControlOption: TimeControl | null): ChessGameRoomState {
-    const player1: Player = {
-        id: 'player-1',
-        displayName: 'White',
-    };
-    const player2: Player = {
-        id: 'player-2',
-        displayName: 'Black',
-    };
-    const players = [player1, player2];
-
-    let playerIdToDisplayName: ChessGameRoom['playerIdToDisplayName'] = {};
-    let playerIdToScore: ChessGameRoom['playerIdToScore'] = {};
-    players.forEach(({ id, displayName }) => {
-        playerIdToDisplayName[id] = displayName;
-        playerIdToScore[id] = 0;
-    });
-
-    const gameRoom: ChessGameRoom = {
-        id: 'game-room',
-        type: 'self',
-        timeControl: timeControlOption,
-        players,
-        playerIdToDisplayName,
-        playerIdToScore,
-        colorToPlayerId: {
-            white: player1.id,
-            black: player2.id,
-        },
-        messages: [],
-        gameCount: 1,
-    };
-
-    return {
-        chessGame: {
-            ...createInitialChessGame(),
-            timelineVersion: 1,
-            previousMoveIndices: [],
-            pendingPromotion: null,
-        },
-        gameRoom,
-        currentPlayerId: player1.id,
-    };
-}
-
-function reducer(state: ChessGameRoomState, action: Action): ChessGameRoomState {
-    switch (action.type) {
-        case 'move-piece': {
-            const { move } = action;
-            const { chessGame, gameRoom } = state;
-            const { boardState, previousMoveIndices } = chessGame;
-            const { board, playerTurn } = boardState;
-            const { startIndex, endIndex, piece, promotion } = move;
-            const { type: pieceType } = piece;
-
-            const nextBoard = computeNextChessBoardFromMove(board, move);
-            const nextPreviousMoveIndices = [startIndex, endIndex];
-
-            // If pawn reached last rank, pause to await promotion choice
-            const isPawnMove = pieceType === 'pawn';
-            if (isPawnMove && isPromotionSquare(endIndex, playerTurn) && !promotion) {
-                // Do not update captures/moveHistory/playerTurn yet; finalize after promotion
-                return {
-                    ...state,
-                    chessGame: {
-                        ...chessGame,
-                        boardState: {
-                            ...boardState,
-                            board: nextBoard,
-                        },
-                        previousMoveIndices: nextPreviousMoveIndices,
-                        pendingPromotion: {
-                            move,
-                            preChessGame: chessGame,
-                            prePreviousMoveIndices: previousMoveIndices,
-                        },
-                    },
-                };
-            }
-
-            const nextChessGame = computeNextChessGameAfterMove(chessGame, move);
-
-            return {
-                ...state,
-                chessGame: {
-                    ...chessGame,
-                    ...nextChessGame,
-                    previousMoveIndices: nextPreviousMoveIndices,
-                },
-                gameRoom: {
-                    ...gameRoom,
-                    playerIdToScore: computePlayerScores(gameRoom, nextChessGame.gameState),
-                },
-            };
-        }
-        case 'promote-pawn': {
-            const { pawnPromotion } = action;
-            const { chessGame, gameRoom } = state;
-            const { pendingPromotion } = chessGame;
-            invariant(pendingPromotion, 'No pending promotion to apply');
-
-            const { move, preChessGame } = pendingPromotion;
-            const {
-                piece: { type: pieceType, color: pieceColor },
-            } = move;
-            invariant(pieceType === 'pawn', 'Pending promotion move must be a pawn move');
-            invariant(pieceColor === getPiece(pawnPromotion).color, 'Promotion piece color must match pawn color');
-
-            const moveWithPromotion: Move = { ...move, promotion: pawnPromotion };
-            const nextChessGame = computeNextChessGameAfterMove(preChessGame, moveWithPromotion);
-
-            return {
-                ...state,
-                chessGame: {
-                    ...chessGame,
-                    ...nextChessGame,
-                    pendingPromotion: null,
-                },
-                gameRoom: {
-                    ...gameRoom,
-                    playerIdToScore: computePlayerScores(gameRoom, nextChessGame.gameState),
-                },
-            };
-        }
-        case 'cancel-promotion': {
-            const { chessGame } = state;
-            const { pendingPromotion } = chessGame;
-            invariant(pendingPromotion, 'No pending promotion to cancel');
-            const { preChessGame, prePreviousMoveIndices } = pendingPromotion;
-            return {
-                ...state,
-                chessGame: {
-                    ...chessGame,
-                    boardState: {
-                        ...chessGame.boardState,
-                        board: preChessGame.boardState.board,
-                    },
-                    previousMoveIndices: prePreviousMoveIndices,
-                    pendingPromotion: null,
-                },
-            };
-        }
-        case 'load-fen': {
-            const { gameRoom } = state;
-            return {
-                ...state,
-                chessGame: {
-                    ...createChessGameFromFEN(action.fenString),
-                    timelineVersion: (state.chessGame?.timelineVersion || 0) + 1,
-                    previousMoveIndices: [],
-                    pendingPromotion: null,
-                },
-                gameRoom: {
-                    ...gameRoom,
-                    gameCount: gameRoom.gameCount + 1,
-                },
-            };
-        }
-        case 'end-game': {
-            const { reason, winner } = action;
-            const { chessGame, gameRoom } = state;
-            const newGameState: ChessGameUI['gameState'] = {
-                ...chessGame.gameState,
-                status: reason,
-                winner,
-            };
-
-            return {
-                ...state,
-                chessGame: {
-                    ...chessGame,
-                    gameState: newGameState,
-                },
-                gameRoom: {
-                    ...gameRoom,
-                    playerIdToScore: computePlayerScores(gameRoom, newGameState),
-                },
-            };
-        }
-        case 'start-self-play-room': {
-            const { timeControlOption } = action;
-            return createSelfPlayChessGameRoomState(timeControlOption);
-        }
-        case 'load-room': {
-            const { gameRoom, fen } = action;
-
-            return {
-                ...state,
-                gameRoom,
-                ...(fen
-                    ? {
-                          chessGame: {
-                              ...createChessGameFromFEN(fen),
-                              timelineVersion: state.chessGame.timelineVersion + 1,
-                              previousMoveIndices: [],
-                              pendingPromotion: null,
-                          },
-                      }
-                    : {}),
-            };
-        }
-        case 'add-message': {
-            const { message } = action;
-            const { gameRoom } = state;
-
-            const newMessage = {
-                ...message,
-                createdAt: new Date(message.createdAt),
-            };
-            // Keep messages sorted by oldest to newest
-            const sortedMessages = [...gameRoom.messages, newMessage].sort(
-                (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-            );
-
-            return {
-                ...state,
-                gameRoom: {
-                    ...gameRoom,
-                    messages: sortedMessages,
-                },
-            };
-        }
-        case 'load-current-player-id': {
-            const { playerId } = action;
-            return {
-                ...state,
-                currentPlayerId: playerId,
-            };
-        }
-        default:
-            return state;
-    }
+export function useGameRoom(): GameRoomContextType {
+    const context = useContext(GameRoomContext);
+    invariant(context, 'useGameRoom must be used within ChessGameRoomProvider');
+    return context;
 }
 
 type Props = {
@@ -308,7 +63,7 @@ type Props = {
 };
 
 function ChessGameRoomProvider({ initialData, children }: Props) {
-    const [state, dispatch] = useReducer(reducer, initialData);
+    const [state, dispatch] = useReducer(chessGameRoomReducer, initialData);
 
     const { gameRoom, currentPlayerId } = state;
 
@@ -361,6 +116,35 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
         dispatch({ type: 'load-current-player-id', playerId });
     }, []);
 
+    const resetClocks = useCallback(() => {
+        dispatch({ type: 'reset-clocks' });
+    }, []);
+
+    const setClocks = useCallback((clockState: ChessClockState | null) => {
+        dispatch({ type: 'set-clocks', clockState });
+    }, []);
+
+    const chessClockContextValue: ChessClockContextType = useMemo(
+        () => ({
+            clockState: state.clockState,
+            resetClocks,
+            setClocks,
+        }),
+        [state.clockState, resetClocks, setClocks]
+    );
+
+    const chessGameContextValue: ChessGameContextType = useMemo(
+        () => ({
+            chessGame: state.chessGame,
+            movePiece,
+            promotePawn,
+            cancelPromotion,
+            loadFEN,
+            endGame,
+        }),
+        [state.chessGame, movePiece, promotePawn, cancelPromotion, loadFEN, endGame]
+    );
+
     const gameRoomContextValue: GameRoomContextType = useMemo(
         () => ({
             gameRoom: state.gameRoom,
@@ -382,23 +166,17 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
         ]
     );
 
-    const chessGameContextValue: ChessGameContextType = useMemo(
-        () => ({
-            chessGame: state.chessGame,
-            movePiece,
-            promotePawn,
-            cancelPromotion,
-            loadFEN,
-            endGame,
-        }),
-        [state.chessGame, movePiece, promotePawn, cancelPromotion, loadFEN, endGame]
-    );
-
     return (
         <GameRoomContext.Provider value={gameRoomContextValue}>
-            <ChessGameContext.Provider value={chessGameContextValue}>{children}</ChessGameContext.Provider>
+            <ChessGameContext.Provider value={chessGameContextValue}>
+                <ChessClockContext.Provider value={chessClockContextValue}>{children}</ChessClockContext.Provider>
+            </ChessGameContext.Provider>
         </GameRoomContext.Provider>
     );
 }
 
 export default ChessGameRoomProvider;
+
+// For convenience re-exports
+export type { ChessGameRoomState } from './chessGameRoom/types';
+export { createInitialChessClockState, createSelfPlayChessGameRoomState } from './chessGameRoom/state';

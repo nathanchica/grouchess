@@ -139,6 +139,9 @@ export const EndGameReasonEnum = ChessGameStatusEnum.extract([
 ]);
 export type EndGameReason = z.infer<typeof EndGameReasonEnum>;
 
+export const ExpiredClockGameStatusEnum = EndGameReasonEnum.extract(['time-out', 'insufficient-material']);
+export type ExpiredClockGameStatus = z.infer<typeof ExpiredClockGameStatusEnum>;
+
 export const ChessGameStateSchema = z.object({
     status: ChessGameStatusEnum,
     winner: PieceColorEnum.optional().describe('Color of the winning player, if applicable'),

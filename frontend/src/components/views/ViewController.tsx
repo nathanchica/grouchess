@@ -8,9 +8,13 @@ import MainMenuView from './MainMenuView';
 
 import { useFetchChessGame } from '../../hooks/useFetchChessGame';
 import { useAuth } from '../../providers/AuthProvider';
-import { createInitialChessClockState } from '../../providers/ChessClockSocketProvider';
-import { createSelfPlayChessGameRoomState, type ChessGameRoomState } from '../../providers/ChessGameRoomProvider';
+import {
+    createInitialChessClockState,
+    createSelfPlayChessGameRoomState,
+    type ChessGameRoomState,
+} from '../../providers/ChessGameRoomProvider';
 import { useSocket } from '../../providers/SocketProvider';
+import { rebaseServerClockToPerf } from '../../utils/clock';
 
 /**
  * Controls which main view to show based on whether the chess game data has been loaded.
@@ -31,10 +35,12 @@ function ViewController() {
                   pendingPromotion: null,
               },
               gameRoom: initialChessGameData.gameRoom,
+              clockState: initialChessGameData.clockState
+                  ? rebaseServerClockToPerf(initialChessGameData.clockState)
+                  : null,
               currentPlayerId: initialChessGameData.playerId,
           }
         : null;
-    const initialClockState = initialChessGameData?.clockState || null;
 
     const onSelfPlayStart = useCallback((timeControl: TimeControl | null) => {
         const selfPlayGameRoomState: ChessGameRoomState = createSelfPlayChessGameRoomState(timeControl);
@@ -42,7 +48,7 @@ function ViewController() {
             chessGame: selfPlayGameRoomState.chessGame,
             gameRoom: selfPlayGameRoomState.gameRoom,
             playerId: selfPlayGameRoomState.currentPlayerId,
-            clockState: createInitialChessClockState(timeControl ?? undefined),
+            clockState: timeControl ? createInitialChessClockState(timeControl) : null,
         });
     }, []);
 
@@ -74,7 +80,6 @@ function ViewController() {
                 <ChessGameView
                     key={`${initialChessGameRoomData.gameRoom.id}-${initialChessGameRoomData.gameRoom.gameCount}`}
                     initialChessGameRoomData={initialChessGameRoomData}
-                    initialClockState={initialClockState}
                 />
             ) : (
                 <MainMenuView onSelfPlayStart={onSelfPlayStart} />

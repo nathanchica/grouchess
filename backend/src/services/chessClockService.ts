@@ -1,4 +1,4 @@
-import type { ChessClockState, PieceColor } from '@grouchess/chess';
+import { updateClockState, type ChessClockState, type PieceColor } from '@grouchess/chess';
 import type { TimeControl } from '@grouchess/game-room';
 
 const MS_PER_SECOND = 1000;
@@ -6,33 +6,6 @@ const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 
 export class ChessClockService {
     private gameRoomIdToClockStateMap: Map<string, ChessClockState> = new Map();
-
-    private computeUpdatedClockState(clockState: ChessClockState, switchTo?: PieceColor): ChessClockState {
-        if (clockState.isPaused) return clockState;
-        if (clockState.lastUpdatedTimeMs === null) return clockState;
-
-        const now = Date.now();
-        const newClockState = {
-            ...clockState,
-            white: { ...clockState.white },
-            black: { ...clockState.black },
-            lastUpdatedTimeMs: now,
-        };
-
-        const elapsedMs = now - clockState.lastUpdatedTimeMs;
-        const activeColor = clockState.white.isActive ? 'white' : 'black';
-
-        let newTimeRemaining = newClockState[activeColor].timeRemainingMs - elapsedMs;
-        if (switchTo) {
-            newTimeRemaining += newClockState.incrementMs;
-            newClockState.white.isActive = switchTo === 'white';
-            newClockState.black.isActive = switchTo === 'black';
-        }
-
-        newClockState[activeColor].timeRemainingMs = Math.max(0, newTimeRemaining);
-
-        return newClockState;
-    }
 
     initializeClockForRoom(roomId: string, timeControl: TimeControl): ChessClockState {
         const baseTimeMs = timeControl.minutes * MS_PER_MINUTE;
@@ -59,7 +32,7 @@ export class ChessClockService {
         if (!clockState) {
             return null;
         }
-        const updatedClockState = this.computeUpdatedClockState(clockState);
+        const updatedClockState = updateClockState(clockState, Date.now());
         this.gameRoomIdToClockStateMap.set(roomId, updatedClockState);
         return updatedClockState;
     }
@@ -78,7 +51,7 @@ export class ChessClockService {
             throw new Error('Cannot switch clock while paused');
         }
 
-        const updatedClockState = this.computeUpdatedClockState(clockState, toColor);
+        const updatedClockState = updateClockState(clockState, Date.now(), toColor);
         this.gameRoomIdToClockStateMap.set(roomId, updatedClockState);
         return updatedClockState;
     }

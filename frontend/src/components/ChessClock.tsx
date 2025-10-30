@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
-
 import type { PieceColor } from '@grouchess/chess';
+import invariant from 'tiny-invariant';
 
-import { useMonotonicClock } from '../hooks/useMonotonicClock';
-import { useChessClock } from '../providers/ChessClockSocketProvider';
+import { useChessClock } from '../providers/ChessGameRoomProvider';
+import { useClockTick } from '../providers/ClockTickProvider';
 
 const MS_IN_SECOND = 1000;
 const SEC_IN_MINUTE = 60;
@@ -34,21 +33,18 @@ function formatMsPart(ms: number): string {
 }
 
 function ChessClock({ isActive, color }: Props) {
-    const chessClock = useChessClock();
-    const { elapsedMs, start, reset } = useMonotonicClock();
-    const { isPaused } = chessClock;
+    const { nowMs } = useClockTick();
+    const { clockState } = useChessClock();
+    invariant(clockState, 'ChessClock requires non-null clockState');
 
-    const { timeRemainingMs } = chessClock[color];
+    const { isPaused } = clockState;
+    const { timeRemainingMs } = clockState[color];
 
-    useEffect(() => {
-        if (isActive && !isPaused) {
-            start();
-        } else {
-            reset();
-        }
-    }, [isActive, isPaused, start, reset]);
-
-    const timeToDisplayMs = isActive && !isPaused ? timeRemainingMs - elapsedMs : timeRemainingMs;
+    const elapsedActiveMs =
+        isActive && !isPaused && clockState.lastUpdatedTimeMs !== null
+            ? Math.max(0, nowMs - clockState.lastUpdatedTimeMs)
+            : 0;
+    const timeToDisplayMs = isActive && !isPaused ? timeRemainingMs - elapsedActiveMs : timeRemainingMs;
     const { minutes, seconds, milliseconds } = parseTime(Math.max(timeToDisplayMs, 0));
 
     const showMsPart = minutes === 0 && seconds <= SHOW_MS_THRESHOLD_SECONDS;
