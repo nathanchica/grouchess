@@ -150,7 +150,7 @@ export class GameRoomService {
         gameRoom.playerIdToScore[playerId] += isDraw ? 0.5 : 1;
     }
 
-    updatePlayerScores(roomId: string, gameState: ChessGameState): void {
+    updatePlayerScores(roomId: string, gameState: ChessGameState): ChessGameRoom['playerIdToScore'] {
         const gameRoom = this.getGameRoomById(roomId);
         if (!gameRoom) {
             throw new InvalidInputError('Game room not found');
@@ -169,6 +169,7 @@ export class GameRoomService {
                 this.incrementPlayerScore(roomId, id, true);
             });
         }
+        return gameRoom.playerIdToScore;
     }
 
     swapPlayerColors(roomId: string): void {
