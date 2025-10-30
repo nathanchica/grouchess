@@ -61,7 +61,7 @@ export type CastleRightsByColor = z.infer<typeof CastleRightsByColorSchema>;
 export const ChessBoardSchema = z
     .array(PieceAliasEnum.nullish())
     .length(NUM_SQUARES)
-    .describe('Array of piece aliases representing the chess board. Empty squares are undefined');
+    .describe('Array of piece aliases representing the chess board. Empty squares are represented by null/undefined');
 export type ChessBoardType = z.infer<typeof ChessBoardSchema>;
 
 export const ChessBoardStateSchema = z.object({

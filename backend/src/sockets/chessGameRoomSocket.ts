@@ -73,7 +73,7 @@ export function createChessGameRoomSocketHandler({
                         io.to(gameRoomTarget).emit('game_room_ready');
                     }
                 } catch (error) {
-                    console.error('Error joining room:', error);
+                    console.error('Error while waiting for game:', error);
                     sendErrorEvent('Failed to join room');
                 }
             });
