@@ -131,7 +131,12 @@ export const ChessGameStatusEnum = z.enum([
 ]);
 export type ChessGameStatus = z.infer<typeof ChessGameStatusEnum>;
 
-export const EndGameReasonEnum = ChessGameStatusEnum.extract(['draw-by-agreement', 'resigned', 'time-out']);
+export const EndGameReasonEnum = ChessGameStatusEnum.extract([
+    'draw-by-agreement',
+    'resigned',
+    'time-out',
+    'insufficient-material',
+]);
 export type EndGameReason = z.infer<typeof EndGameReasonEnum>;
 
 export const ChessGameStateSchema = z.object({

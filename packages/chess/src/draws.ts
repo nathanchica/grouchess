@@ -38,6 +38,9 @@ export function createRepetitionKeyFromBoardState(boardState: ChessBoardState): 
 
 /**
  * Determines whether neither side can possibly checkmate given the remaining material.
+ * If a color is provided, determines whether only that specific color has insufficient mating material, regardless of
+ * the opponent's material.
+ *
  * Considers the following drawn cases:
  * - King vs king (bare kings)
  * - If both sides have any one of the following, and there are no pawns on the board the game will end in a draw:
@@ -48,7 +51,7 @@ export function createRepetitionKeyFromBoardState(boardState: ChessBoardState): 
  *
  * https://support.chess.com/en/articles/8705277-what-does-insufficient-mating-material-mean
  */
-export function hasInsufficientMatingMaterial(board: ChessBoardType): boolean {
+export function hasInsufficientMatingMaterial(board: ChessBoardType, color?: PieceColor): boolean {
     const material: Record<PieceColor, MaterialSummary> = {
         white: { pawns: 0, rooks: 0, queens: 0, knights: 0, bishops: 0 },
         black: { pawns: 0, rooks: 0, queens: 0, knights: 0, bishops: 0 },
@@ -83,6 +86,29 @@ export function hasInsufficientMatingMaterial(board: ChessBoardType): boolean {
 
     const hasMajorMaterial = ({ pawns, rooks, queens }: MaterialSummary): boolean =>
         pawns > 0 || rooks > 0 || queens > 0;
+
+    // If checking a specific color, determine if that color has insufficient material to deliver checkmate
+    if (color) {
+        const colorMaterial = material[color];
+
+        // If the color has any major material (pawns, rooks, queens), they can potentially checkmate
+        if (hasMajorMaterial(colorMaterial)) return false;
+
+        const minorPieces = colorMaterial.bishops + colorMaterial.knights;
+
+        // Lone king - insufficient
+        if (minorPieces === 0) return true;
+
+        // King + single minor piece (bishop or knight) - insufficient
+        if (minorPieces === 1) return true;
+
+        // King + two knights - insufficient (per chess.com rules)
+        if (colorMaterial.knights === 2 && colorMaterial.bishops === 0) return true;
+
+        // King + two bishops, or king + bishop + knight - sufficient material
+        return false;
+    }
+
     if (hasMajorMaterial(material.white) || hasMajorMaterial(material.black)) return false;
 
     const whiteMinor = material.white.bishops + material.white.knights;

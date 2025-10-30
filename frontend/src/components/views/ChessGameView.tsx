@@ -2,9 +2,10 @@ import type { ChessClockState } from '@grouchess/chess';
 
 import MainSection from '../../components/MainSection';
 import PlayersInfoSection from '../../components/PlayersInfoSection';
-import ChessClockProvider from '../../providers/ChessClockSocketProvider';
+import ChessClockSocketProvider from '../../providers/ChessClockSocketProvider';
 import ChessGameRoomProvider, { type ChessGameRoomState } from '../../providers/ChessGameRoomProvider';
 import PlayerChatSocketProvider from '../../providers/PlayerChatSocketProvider';
+import ChessClocksController from '../controllers/ChessClocksController';
 import ChessMovesController from '../controllers/ChessMovesController';
 import SoundEffects from '../controllers/SoundEffects';
 import GameInfoPanel from '../game_info_panel/GameInfoPanel';
@@ -16,14 +17,18 @@ type Props = {
 
 function ChessGameView({ initialChessGameRoomData: initialData, initialClockState }: Props) {
     const { gameRoom } = initialData;
-    const { messages: initialMessages } = gameRoom;
+    const { messages: initialMessages, type, timeControl } = gameRoom;
+
+    // Determine if clocks should be controlled locally or by the server
+    const shouldUseChessClocksController = type === 'self' && Boolean(timeControl);
 
     return (
         <ChessGameRoomProvider initialData={initialData}>
             <PlayerChatSocketProvider initialMessages={initialMessages}>
-                <ChessClockProvider initialState={initialClockState}>
+                <ChessClockSocketProvider initialState={initialClockState}>
                     <SoundEffects />
                     <ChessMovesController />
+                    {shouldUseChessClocksController && <ChessClocksController />}
 
                     <main className="min-h-dvh font-serif bg-zinc-800">
                         <div className="grid grid-cols-12 2xl:gap-12 xl:gap-10 lg:gap-8 gap-4 py-8 2xl:px-24 xl:px-12 px-4">
@@ -46,7 +51,7 @@ function ChessGameView({ initialChessGameRoomData: initialData, initialClockStat
                             <GameInfoPanel />
                         </section>
                     </main>
-                </ChessClockProvider>
+                </ChessClockSocketProvider>
             </PlayerChatSocketProvider>
         </ChessGameRoomProvider>
     );
