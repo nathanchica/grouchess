@@ -1,17 +1,42 @@
 # Grouchess
 
-Grouchess is a Lichess-clone project just for fun and learning. A chess game built with Vite + React + TypeScript.
-The goal is to replicate core Lichess gameplay UX and then explore a realtime backend with Express + Socket.io to play
-with other players.
+Grouchess is a Lichess-clone project just for fun and learning.
 
-Status: UI-only. There is no backend yet aside from a simple scaffolded service; all gameplay runs client-side.
-The move engine supports standard moves, castling, pawn promotions, and en passant. See [Roadmap](#roadmap).
+Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned features.
 
 ## Tech Stack
 
-- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4, Socket.io-client
 - Backend: Express, Socket.io, Zod
-- Tooling: ESLint, Prettier, TypeScript
+- Tooling: ESLint, Prettier, pnpm, Husky
+
+## Features
+
+- Player vs Player over network (via Socket.io)
+    - Chat
+    - Rematches
+- Player vs Self (local)
+- Drag-and-drop and click-to-move piece movement
+- Legal move generation and enforcement
+    - Castling, en passant, pawn promotion
+- Game status detection (check, checkmate, stalemate, draws)
+    - Threefold repetition detection
+    - 50-move rule
+    - Insufficient material
+- Move history display
+    - Algebraic notation (SAN) and FEN generation/parsing
+- Game clocks
+    - Monotonic timers in frontend
+- Sharing FEN strings of current board state
+- Loading board from FEN strings (self-play mode only)
+- Sound effects with mute/volume controls
+- Preloaded and cached piece set images with text fallback
+- Game rooms with unique IDs
+- Responsive design for desktop and mobile
+- Auth tokens for player identity in game rooms
+    - Persists across page reloads (saved in sessionStorage)
+- Main menu with room creation
+- Waiting room UI for challengers
 
 ## Quick Start
 
@@ -23,133 +48,167 @@ Install dependencies (from repo root):
 pnpm install
 ```
 
-Run the frontend dev server:
+Run both dev servers:
 
 ```bash
-pnpm dev:frontend
+pnpm dev
 ```
-
-Notes
-
-- `pnpm dev` tries to run both backend and frontend; the backend workspace is empty, so prefer `dev:frontend` for now.
-- Type checking and linting:
-    - `pnpm typecheck`
-    - `pnpm lint`
 
 ## File Structure
 
 ```
 .
-├─ frontend/                                                  # Vite React app
-│  ├─ public/                                                 # Static assets (piece SVGs)
+├─ backend/                                   # Express + Socket.IO API/server
 │  └─ src/
-│     ├─ components/                                          # UI components
-│     │  ├─ ChessBoard.tsx                                    # Board UI, drag/click interaction, glow rendering
-│     │  ├─ ChessSquare.tsx                                   # Single square visuals
-│     │  ├─ ChessPiece.tsx                                    # Piece rendering (image/text fallback)
-│     │  ├─ GhostPiece.tsx                                    # Drag ghost overlay
-│     │  ├─ PawnPromotionPrompt.tsx                           # Modal with pawn promotion options
-│     │  ├─ PromotionCard.tsx                                 # Pawn promotion modal content
-│     │  ├─ SoundEffects.tsx                                  # Sound effects component that subscribes to game state
-│     │  ├─ SoundControls.tsx                                 # Mute/volume UI controls
-│     │  ├─ GameInfoPanel.tsx                                 # Side panel with move history and game actions
-│     │  ├─ InfoCard.tsx, PlayerCard.tsx, ResetButton.tsx     # Non-chessboard components
-│     │  ├─ GameRoomController.tsx                            # Syncs game room state with backend
-│     ├─ providers/                                           # React context providers
-│     │  ├─ ChessGameProvider.tsx                             # Game state/reducer and context API
-│     │  ├─ SoundProvider.tsx                                 # Sound effects context API
-│     │  ├─ ImagesProvider.tsx                                # Preload/decode piece images
-│     │  └─ GameRoomProvider.tsx                              # Game room state
-│     ├─ views/                                               # Top-level views
-│     │  ├─ ChessGameView.tsx                                 # Chess game view
-│     │  ├─ MainMenuView.tsx                                  # Main menu view
-│     │  └─ ViewController.tsx                                # Manages current view state based on room/game status
-│     └─ utils/                                               # Core chess logic + helpers
-│        ├─ board.ts                                          # Board coords, bounds, king lookups, glow helpers
-│        ├─ draws.ts                                          # Draw conditions and status computation
-│        ├─ pieces.ts                                         # Piece metadata, colors, constants
-│        ├─ moves.ts                                          # Move engine (Move type, gen, legality, en passant, castling)
-│        ├─ notations.ts                                      # algebraic notation generation/parsing
-│        └─ preload.ts                                        # Image preloading utilities
-├─ backend/                                                   # Express + Socket.io planned
-└─ package.json                                               # Workspace scripts
+│     ├─ index.ts                             # Server entry
+│     ├─ app.ts                               # Express app wiring
+│     ├─ config.ts                            # Env/config utilities
+│     ├─ routes/                              # REST endpoints
+│     │  ├─ health.ts
+│     │  ├─ room.ts
+│     │  └─ timeControl.ts
+│     ├─ sockets/                             # Socket.IO namespaces/handlers
+│     │  └─ chessGameRoomSocket.ts
+│     ├─ servers/
+│     │  └─ chess.ts                          # Socket server bootstrap
+│     ├─ services/                            # Domain services (chess/game room/clock)
+│     │  ├─ chessClockService.ts
+│     │  ├─ chessGameService.ts
+│     │  ├─ gameRoomService.ts
+│     │  └─ playerService.ts
+│     ├─ middleware/
+│     │  ├─ authenticateRequest.ts
+│     │  └─ authenticateSocket.ts
+│     └─ utils/
+│        ├─ errors.ts
+│        ├─ generateId.ts
+│        └─ token.ts
+│
+├─ frontend/                                  # Vite + React client
+│  ├─ public/                                 # Static assets (SVG pieces, sounds)
+│  └─ src/
+│     ├─ components/
+│     │  ├─ chess_board/                      # Board UI, pieces, promotion
+│     │  ├─ common/                           # Generic UI (buttons, tooltips, etc.)
+│     │  ├─ controllers/                      # Orchestrators (moves, sound)
+│     │  ├─ game_info_panel/                  # Move history, modals, result card
+│     │  ├─ mainmenu/                         # Room creation/joining UI
+│     │  └─ views/                            # Top-level views
+│     ├─ providers/                           # React context providers
+│     │  ├─ AuthProvider.tsx
+│     │  ├─ SocketProvider.tsx
+│     │  ├─ ChessGameRoomProvider.tsx
+│     │  ├─ ClockTickProvider.tsx
+│     │  ├─ PlayerChatSocketProvider.tsx
+│     │  ├─ SoundProvider.tsx
+│     │  └─ ImagesProvider.tsx
+│     ├─ hooks/                               # Custom hooks for data fetching, room/join, clocks, etc.
+│     ├─ utils/                               # UI utilities (preload, types, pieces, draws)
+│     ├─ socket.ts                            # Socket.IO client bootstrap
+│     ├─ App.tsx
+│     └─ main.tsx
+│
+├─ packages/                                  # Shared TS libraries for FE/BE
+│  ├─ chess/                                  # Core chess engine + schemas
+│  │  └─ src/
+│  │     ├─ board.ts
+│  │     ├─ castles.ts
+│  │     ├─ draws.ts
+│  │     ├─ moves.ts
+│  │     ├─ notations.ts
+│  │     ├─ pieces.ts
+│  │     ├─ schema.ts
+│  │     └─ state.ts
+│  ├─ game-room/                              # Game room models, time control, scores
+│  │  └─ src/
+│  │     ├─ schema.ts
+│  │     ├─ timeControl.ts
+│  │     └─ scores.ts
+│  ├─ http-schemas/                           # Zod schemas for HTTP contracts
+│  │  └─ src/
+│  │     ├─ chess.ts
+│  │     └─ timeControl.ts
+│  ├─ socket-events/                          # Socket.IO event names/payload types
+│  │  └─ src/
+│  │     ├─ common.ts
+│  │     └─ chess.ts
+│  └─ errors/                                 # Shared error helpers/types
+│     └─ src/
+│        └─ index.ts
+│
+├─ docs/                                      # Project docs
+│  └─ ChessGameClock.md
+├─ scripts/                                   # Dev scripts
+├─ package.json                               # Root workspace scripts/config
+├─ pnpm-workspace.yaml                        # Monorepo workspace config
+└─ tsconfig.json                              # Base TS config
 ```
 
 ## Core Components & Logic
 
-- Game state: `frontend/src/providers/ChessGameProvider.tsx`
-    - Holds:
-        - `board`
-        - `playerTurn`
-        - `castleRightsByColor`
-        - `enPassantTargetIndex`
-        - `halfmoveClock`
-        - `fullmoveClock`
-        - `moveHistory`
-        - `previousMoveIndices`
-        - `timelineVersion`
-        - `pendingPromotion`
-        - `gameStatus`
-        - `legalMovesStore`
-    - Reducer applies a Move to produce the next board and updates castling rights & clocks.
-    - Generates legal moves each turn and caches them in `legalMovesStore`.
-    - Able to initialize from FEN strings.
+- Chess engine (shared): `packages/chess`
+    - State and legal moves: `packages/chess/src/state.ts`, `packages/chess/src/moves.ts`
+        - `computeAllLegalMoves`, `computeNextChessGameAfterMove`, `isKingInCheck`
+    - Notation/FEN: `packages/chess/src/notations.ts`
+        - `createFEN`, `isValidFEN`
+    - Draws and castling: `packages/chess/src/draws.ts`, `packages/chess/src/castles.ts`
+        - `isDrawStatus`, `computeCastleRightsChangesFromMove`
+    - Types/schemas: `packages/chess/src/schema.ts` (Zod + TypeScript types)
 
-- Move engine: `frontend/src/utils/moves.ts`
-    - `type Move` models a move (start/end/type, moving piece, optional capture info, optional promotion info).
-    - `computePossibleMovesForIndex(...)` generates legal moves for a square and filters out self-check.
-    - `isSquareAttacked(...)` detects attacks via pre-hoisted attacker sets.
-    - `computeNextChessBoardFromMove(board, move)` returns a chess board with a given move applied to it
-      (castling/en passant included).
-    - `computeCastleRightsChangesFromMove(move)` produces castling rights diffs.
+- Game room & time controls (shared): `packages/game-room`
+    - Models: `packages/game-room/src/schema.ts` (players, messages, room types)
+    - Time control helpers: `packages/game-room/src/timeControl.ts`
+        - `SUPPORTED_TIME_CONTROLS`, `getTimeControlByAlias`, `isValidTimeControlAlias`
+    - Scoring: `packages/game-room/src/scores.ts` (`computePlayerScores`)
 
-- Draws: `frontend/src/utils/draws.ts`
-    - `computeForcedDrawStatus(...)` checks for stalemate, 50-move rule, insufficient material.
+- Socket events (shared): `packages/socket-events`
+    - Event contracts and payload schemas: `packages/socket-events/src/chess.ts`, `packages/socket-events/src/common.ts`
+    - Used by backend `backend/src/sockets/chessGameRoomSocket.ts` and frontend providers
+      (`frontend/src/providers/ChessClockSocketProvider.tsx`, `frontend/src/providers/PlayerChatSocketProvider.tsx`,
+      `frontend/src/providers/SocketProvider.tsx`).
 
-- Notations: `frontend/src/utils/notations.ts`
-    - `createFEN(...)` builds FEN strings from board state.
-    - `createAlgebraicNotation(...)` builds SAN strings from moves and board state.
+- HTTP contracts (shared): `packages/http-schemas`
+    - REST request/response schemas for chess/game-room: `packages/http-schemas/src/chess.ts`, `packages/http-schemas/src/timeControl.ts`
+    - Used in backend routes (`backend/src/routes/*`) and frontend hooks
+      (`frontend/src/hooks/useFetchChessGame.ts`, `frontend/src/hooks/useFetchTimeControlOptions.ts`,
+      `frontend/src/hooks/useCreateGameRoom.ts`, `frontend/src/hooks/useJoinGameRoom.ts`).
 
-- Board UI: `frontend/src/components/ChessBoard.tsx`
-    - Pointer drag-and-drop and click-to-move.
-    - Determines glowing squares based off legalMoveStore and previousMoveIndices from state.
+- Backend services: `backend/src/services/*`
+    - `chessGameService.ts` (game lifecycle, move application)
+    - `chessClockService.ts` (room clock state, emits `clock_update`)
+    - `gameRoomService.ts` (room creation/join/updates), `playerService.ts`
+    - Auth: `backend/src/utils/token.ts`, middleware (`authenticateRequest.ts`, `authenticateSocket.ts`)
 
-- Visuals: `frontend/src/components/ChessSquare.tsx`
-    - Renders per-square state (selected, previous move, check, canMove/canCapture).
-    - Renders coordinate legends (files a–h and ranks 1–8)
+- Frontend orchestration
+    - Providers: `AuthProvider.tsx`, `SocketProvider.tsx`, `ChessGameRoomProvider.tsx`,
+      `ChessClockSocketProvider.tsx`, `PlayerChatSocketProvider.tsx`, `SoundProvider.tsx`, `ImagesProvider.tsx`
+    - Controllers: `frontend/src/components/controllers/ChessMovesController.tsx`, `.../SoundEffects.tsx`
+    - Hooks: `useMonotonicClock.ts`, `useCreateGameRoom.ts`, `useJoinGameRoom.ts`,
+      `useFetchChessGame.ts`, `useFetchTimeControlOptions.ts`, `useWaitingRoom.ts`
+    - UI: `frontend/src/components/chess_board/*`, `.../game_info_panel/*`, `.../chat/*`, `.../common/*`, `.../views/*`
 
-- Piece set images & preload: `frontend/src/providers/ImagesProvider.tsx`, `frontend/src/utils/preload.ts`
-    - Preloads and decodes SVGs to avoid flicker; falls back to text if an image fails.
-
-- Sounds:
-    - `frontend/src/providers/SoundProvider.tsx` manages sound state and HTMLAudioElement pooling.
-    - `frontend/src/components/SoundEffects.tsx` subscribes to game state changes and plays sounds.
-    - `frontend/src/components/SoundControls.tsx` has sound settings UI (mute/volume).
-
-- Game room: `frontend/src/providers/GameRoomProvider.tsx`, `frontend/src/components/GameRoomController.tsx`
-    - Provides room context (room id, membership, status) and actions
+- Clocks
+    - Frontend monotonic timer: `frontend/src/hooks/useMonotonicClock.ts` (see `docs/ChessGameClock.md`)
+    - Server-clock sync via Socket.IO `clock_update` with `ChessClockState`
 
 ## Roadmap
 
-- Backend service with Express + Socket.io for realtime play with other players
-- Main menu to start a new game room or join a game room
-- Game room
-- Game timers
 - Chat panel
     - Move takebacks
     - Resign
     - Draw offers
-    - Game rematches
 - Player vs CPU mode
     - AI chat
 - Timeline jumping
 - Change piece set images
 - Change board colors
 - Piece sliding animations
+- Game history export and import (PGN)
+- Terminal / CLI client
 
 #### Won't implement
 
-- Correspondence chess
+- Correspondence chess (days per move)
 - Puzzles / tactics trainer / analysis board
 - Variants (Chess960, King of the Hill, Three-check, etc.)
 - User accounts / profiles / ratings
