@@ -59,7 +59,7 @@ export function computeCastlingLegality(
     const enemyColor = getEnemyColor(color);
     const rookAlias: PieceAlias = isWhite ? 'R' : 'r';
 
-    const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] === undefined);
+    const areIndicesAllEmpty = (indices: number[]) => indices.every((index) => board[index] == null);
     const areIndicesAllSafe = (indices: number[]) =>
         indices.every((index) => !isSquareAttacked(board, index, enemyColor));
     const checkLegality = (indicesToBeEmpty: number[], indicesToBeSafe: number[], rookStartIndex: number): boolean => {

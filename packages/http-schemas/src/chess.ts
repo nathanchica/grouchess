@@ -1,11 +1,26 @@
 import { ChessClockStateSchema, ChessGameSchema, PieceColorEnum } from '@grouchess/chess';
-import { ChessGameRoomSchema, PlayerSchema, RoomTypeEnum, TimeControlSchema } from '@grouchess/game-room';
+import {
+    ChessGameRoomSchema,
+    MessageSchema,
+    PlayerSchema,
+    RoomTypeEnum,
+    TimeControlSchema,
+} from '@grouchess/game-room';
 import * as z from 'zod';
 
 export const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
 
+// Coerce Date fields coming over the wire as ISO strings
+const ChessGameRoomResponseSchema = ChessGameRoomSchema.extend({
+    messages: z.array(
+        MessageSchema.extend({
+            createdAt: z.coerce.date(),
+        })
+    ),
+});
+
 export const GetChessGameResponseSchema = z.object({
-    gameRoom: ChessGameRoomSchema,
+    gameRoom: ChessGameRoomResponseSchema,
     chessGame: ChessGameSchema,
     clockState: ChessClockStateSchema.nullable(),
     playerId: PlayerSchema.shape.id,

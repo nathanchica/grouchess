@@ -116,7 +116,7 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, att
             if (isRay) {
                 while (isRowColInBounds(rowCol)) {
                     const pieceAlias = board[rowColToIndex(rowCol)];
-                    if (pieceAlias !== undefined) {
+                    if (pieceAlias != null) {
                         if (pieceIsAttacker(pieceAlias, attackers)) return true;
                         break; // blocked by first piece hit
                     }
@@ -124,7 +124,7 @@ export function isSquareAttacked(board: ChessBoardType, squareIndex: number, att
                 }
             } else {
                 const pieceAlias = board[rowColToIndex(rowCol)];
-                if (pieceAlias !== undefined && pieceIsAttacker(pieceAlias, attackers)) return true;
+                if (pieceAlias != null && pieceIsAttacker(pieceAlias, attackers)) return true;
             }
         }
 
@@ -213,7 +213,7 @@ function computePawnLegalMoves(
     for (const currRow of potentialRows) {
         if (!isRowInBounds(currRow)) continue;
         const index = rowColToIndex({ row: currRow, col });
-        if (board[index] !== undefined) break;
+        if (board[index] != null) break;
         legalMoves.push(createMove(board, startIndex, index, 'standard'));
     }
 
@@ -256,7 +256,7 @@ function computeSlidingPieceLegalMoves(
         while (isRowColInBounds(rowCol)) {
             const endIndex = rowColToIndex(rowCol);
             const pieceAliasAtIndex = board[endIndex];
-            if (pieceAliasAtIndex !== undefined) {
+            if (pieceAliasAtIndex != null) {
                 const isEnemyPiece = getColorFromAlias(pieceAliasAtIndex) !== color;
                 if (isEnemyPiece) legalMoves.push(createMove(board, startIndex, endIndex, 'capture'));
                 break;
@@ -282,7 +282,7 @@ function computeLegalMovesFromRowColDeltas(
         const endIndex = rowColToIndex(rowCol);
         if (endIndex < 0) continue;
         const pieceAliasAtIndex = board[endIndex];
-        const isEmpty = pieceAliasAtIndex === undefined;
+        const isEmpty = pieceAliasAtIndex == null;
         const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
         if (isEmpty || isEnemyPiece) {
             legalMoves.push(createMove(board, startIndex, endIndex, isEnemyPiece ? 'capture' : 'standard'));
@@ -345,8 +345,7 @@ export function computeAllLegalMoves({
     enPassantTargetIndex,
 }: ChessBoardState): LegalMovesStore {
     const allMoves: Move[] = [];
-    const byStartIndex: Record<number, Move[]> = {};
-    const byEndIndex: Record<number, Move[]> = {};
+    const byStartIndex: Record<string, Move[]> = {};
     const typeAndEndIndexToStartIndex: Record<`${PieceType}:${number}`, number[]> = {};
     const castleRights = castleRightsByColor[playerTurn];
 
@@ -359,9 +358,6 @@ export function computeAllLegalMoves({
                 movesForIndex.forEach((move) => {
                     const { endIndex, piece } = move;
 
-                    byEndIndex[endIndex] ??= [];
-                    byEndIndex[endIndex].push(move);
-
                     const key = `${piece.type}:${endIndex}` as `${PieceType}:${number}`;
                     typeAndEndIndexToStartIndex[key] ??= [];
                     typeAndEndIndexToStartIndex[key].push(move.startIndex);
@@ -373,7 +369,6 @@ export function computeAllLegalMoves({
     return {
         allMoves,
         byStartIndex,
-        byEndIndex,
         typeAndEndIndexToStartIndex,
     };
 }

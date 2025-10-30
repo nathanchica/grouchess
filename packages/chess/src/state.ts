@@ -5,7 +5,7 @@ import {
     algebraicNotationToIndex,
     computeEnPassantTargetIndex,
     createBoardFromFEN,
-    createInitialChessBoard,
+    createInitialBoard,
     isPromotionSquare,
 } from './board.js';
 import { computeCastleRightsChangesFromMove, createInitialCastleRights } from './castles.js';
@@ -28,7 +28,7 @@ import {
 
 export function createInitialBoardState(): ChessBoardState {
     return {
-        board: createInitialChessBoard(),
+        board: createInitialBoard(),
         playerTurn: 'white',
         castleRightsByColor: createInitialCastleRights(),
         enPassantTargetIndex: null,

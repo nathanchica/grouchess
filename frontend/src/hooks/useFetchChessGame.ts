@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import type { GetChessGameResponse } from '@grouchess/http-schemas';
+import { GetChessGameResponseSchema, type GetChessGameResponse } from '@grouchess/http-schemas';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -50,8 +50,9 @@ export function useFetchChessGame(): UseFetchChessGameResult {
                 throw new Error('Unable to load chess game right now.');
             }
 
-            const data = (await response.json()) as GetChessGameResponse;
-            onSuccess?.(data);
+            const json = await response.json();
+            const parsed = GetChessGameResponseSchema.parse(json);
+            onSuccess?.(parsed);
         } catch (fetchError) {
             const err = fetchError instanceof Error ? fetchError : new Error('Failed to load chess game.');
             setError(err);
