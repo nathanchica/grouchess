@@ -4,6 +4,7 @@ import ChessGameRoomProvider, { type ChessGameRoomState } from '../../providers/
 import PlayerChatSocketProvider from '../../providers/PlayerChatSocketProvider';
 import ChessClocksLocalController from '../controllers/ChessClocksLocalController';
 import ChessClocksSocketController from '../controllers/ChessClocksSocketController';
+import ChessGameRoomController from '../controllers/ChessGameRoomController';
 import ChessMovesController from '../controllers/ChessMovesController';
 import SoundEffects from '../controllers/SoundEffects';
 import GameInfoPanel from '../game_info_panel/GameInfoPanel';
@@ -28,6 +29,7 @@ function ChessGameView({ initialChessGameRoomData: initialData }: Props) {
         <ChessGameRoomProvider initialData={initialData}>
             <PlayerChatSocketProvider initialMessages={initialMessages}>
                 <SoundEffects />
+                <ChessGameRoomController />
                 <ChessMovesController />
                 {chessClocksController}
 

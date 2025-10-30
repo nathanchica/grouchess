@@ -33,7 +33,10 @@ export function useTimeoutDetection() {
                 isPaused: true,
                 lastUpdatedTimeMs: null,
             });
-            endGame(expiredClockGameState.status as ExpiredClockGameStatus, expiredClockGameState.winner);
+            endGame({
+                reason: expiredClockGameState.status as ExpiredClockGameStatus,
+                winner: expiredClockGameState.winner,
+            });
         }
     }, [clockState, boardState.board, endGame, gameState.status, isRunning, nowMs, setClocks]);
 

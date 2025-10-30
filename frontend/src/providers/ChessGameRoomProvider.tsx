@@ -1,12 +1,12 @@
 import { useCallback, useContext, useMemo, useReducer, createContext, type ReactNode } from 'react';
 
 import { INITIAL_CHESS_BOARD_FEN } from '@grouchess/chess';
-import type { ChessClockState, EndGameReason, Move, PawnPromotion, PieceColor } from '@grouchess/chess';
+import type { ChessClockState, Move, PawnPromotion, PieceColor } from '@grouchess/chess';
 import type { ChessGameRoom, Message, Player, TimeControl } from '@grouchess/game-room';
 import invariant from 'tiny-invariant';
 
 import { chessGameRoomReducer } from './chessGameRoom/reducer';
-import type { ChessGameRoomState } from './chessGameRoom/types';
+import type { ChessGameRoomState, EndGameInput } from './chessGameRoom/types';
 
 import type { ChessGameUI } from '../utils/types';
 
@@ -22,7 +22,7 @@ export type ChessGameContextType = {
     promotePawn: (pawnPromotion: PawnPromotion) => void;
     cancelPromotion: () => void;
     loadFEN: (fenString?: string) => void;
-    endGame: (reason: EndGameReason, winner?: PieceColor) => void;
+    endGame: (input: EndGameInput) => void;
 };
 
 export type GameRoomContextType = {
@@ -96,8 +96,8 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
         dispatch({ type: 'load-fen', fenString });
     }, []);
 
-    const endGame = useCallback((reason: EndGameReason, winner?: PieceColor) => {
-        dispatch({ type: 'end-game', reason, winner });
+    const endGame = useCallback((input: EndGameInput) => {
+        dispatch({ type: 'end-game', input });
     }, []);
 
     const startSelfPlayRoom = useCallback((timeControlOption: TimeControl | null) => {
