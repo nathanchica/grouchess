@@ -50,12 +50,17 @@ function ChessClocksLocalController() {
     }, []);
 
     const onMoveApplied = useCallback(
-        (movingColor: PieceColor) => {
+        (movingColor: PieceColor, isFirstMove: boolean) => {
             const nextActive: PieceColor = movingColor === 'white' ? 'black' : 'white';
             if (clockState.isPaused) {
-                // Start clocks after the first move (custom rule)
-                const started = startClock(clockState, nextActive);
-                setClocks(started);
+                const startedClockState = startClock(clockState, nextActive);
+
+                // increment white clock if first move
+                if (isFirstMove && movingColor === 'white') {
+                    startedClockState.white.timeRemainingMs += startedClockState.incrementMs;
+                }
+
+                setClocks(startedClockState);
                 return;
             }
             const switched = updateClockState(clockState, performance.now(), nextActive);
@@ -72,7 +77,7 @@ function ChessClocksLocalController() {
 
         const lastMove = moveHistory[currentCount - 1];
         const movingColor = lastMove.move.piece.color;
-        onMoveApplied(movingColor);
+        onMoveApplied(movingColor, currentCount === 1);
 
         prevMoveCountRef.current = currentCount;
     }, [moveHistory, onMoveApplied]);

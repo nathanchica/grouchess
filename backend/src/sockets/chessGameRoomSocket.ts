@@ -128,7 +128,12 @@ export function createChessGameRoomSocketHandler({
                         }
                     }
 
-                    const { gameState } = chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
+                    const { gameState, moveHistory } = chessGameService.movePiece(
+                        roomId,
+                        fromIndex,
+                        toIndex,
+                        promotion
+                    );
                     const isGameOver = gameState.status !== 'in-progress';
 
                     socket.to(gameRoomTarget).emit('piece_moved', {
@@ -160,6 +165,12 @@ export function createChessGameRoomSocketHandler({
                         } else {
                             clockState = chessClockService.switchClock(roomId, nextActiveColor);
                         }
+
+                        // increment white clock if first move
+                        if (moveHistory.length === 1 && nextActiveColor === 'black') {
+                            clockState.white.timeRemainingMs += clockState.incrementMs;
+                        }
+
                         io.to(gameRoomTarget).emit('clock_update', { clockState });
                     }
                 } catch (error) {
