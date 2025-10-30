@@ -1,5 +1,11 @@
-import { BoardIndexSchema, ChessClockStateSchema, PawnPromotionEnum } from '@grouchess/chess';
-import { MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
+import {
+    BoardIndexSchema,
+    ChessClockStateSchema,
+    ChessGameStatusEnum,
+    PawnPromotionEnum,
+    PieceColorEnum,
+} from '@grouchess/chess';
+import { ChessGameRoomSchema, MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
 import * as z from 'zod';
 
 import { AuthenticatedPayload, ErrorEventPayload } from './common.js';
@@ -45,6 +51,13 @@ export const ClockUpdatePayloadSchema = z.object({
 });
 export type ClockUpdatePayload = z.infer<typeof ClockUpdatePayloadSchema>;
 
+export const GameEndedPayloadSchema = z.object({
+    reason: ChessGameStatusEnum,
+    winner: PieceColorEnum.optional(),
+    updatedScores: ChessGameRoomSchema.shape.playerIdToScore,
+});
+export type GameEndedPayload = z.infer<typeof GameEndedPayloadSchema>;
+
 /**
  * EVENTS INTERFACE DEFINITIONS
  */
@@ -57,6 +70,7 @@ export interface ChessServerToClientEvents {
     piece_moved: (payload: PieceMovedPayload) => void;
     new_message: (payload: NewMessagePayload) => void;
     user_typing: (payload: UserTypingPayload) => void;
+    game_ended: (payload: GameEndedPayload) => void;
 }
 
 export interface ChessClientToServerEvents {
@@ -66,6 +80,7 @@ export interface ChessClientToServerEvents {
     typing: (input: TypingEventInput) => void;
     offer_rematch: () => void;
     offer_draw: () => void;
+    resign: () => void;
 }
 
 export interface ChessSocketData {

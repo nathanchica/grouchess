@@ -27,7 +27,6 @@ function ChessClocksLocalController() {
     const prevMoveCountRef = useRef<number>(moveHistory.length);
     const prevStatusRef = useRef<string>(gameState.status);
     const prevTimelineRef = useRef<number>(timelineVersion);
-    const timeoutHandledRef = useRef<boolean>(false);
 
     const startClock = useCallback((state: ChessClockState, activeColor: PieceColor): ChessClockState => {
         const now = performance.now();
@@ -85,7 +84,6 @@ function ChessClocksLocalController() {
 
         if (status !== prevStatus && status !== 'in-progress') {
             setClocks(pauseClock(clockState));
-            timeoutHandledRef.current = false;
         }
 
         prevStatusRef.current = status;
@@ -99,7 +97,6 @@ function ChessClocksLocalController() {
             resetClocks();
             // Reset move count tracking for the new game timeline
             prevMoveCountRef.current = moveHistory.length;
-            timeoutHandledRef.current = false;
         }
         prevTimelineRef.current = currentVersion;
     }, [moveHistory.length, resetClocks, timelineVersion]);

@@ -116,9 +116,13 @@ export function createChessGameRoomSocketHandler({
                         if (expiredClockGameState) {
                             clockState = chessClockService.pauseClock(roomId);
                             chessGameService.endGameForRoom(roomId, expiredClockGameState);
-                            gameRoomService.updatePlayerScores(roomId, expiredClockGameState);
+                            const updatedScores = gameRoomService.updatePlayerScores(roomId, expiredClockGameState);
 
-                            // TODO: emit a end_game event
+                            io.to(gameRoomTarget).emit('game_ended', {
+                                reason: expiredClockGameState.status,
+                                winner: expiredClockGameState.winner,
+                                updatedScores,
+                            });
                             io.to(gameRoomTarget).emit('clock_update', { clockState });
                             return;
                         }
@@ -138,12 +142,18 @@ export function createChessGameRoomSocketHandler({
                             clockState = chessClockService.pauseClock(roomId);
                             io.to(gameRoomTarget).emit('clock_update', { clockState });
                         }
-                        gameRoomService.updatePlayerScores(roomId, gameState);
+                        const updatedScores = gameRoomService.updatePlayerScores(roomId, gameState);
+
+                        io.to(gameRoomTarget).emit('game_ended', {
+                            reason: gameState.status,
+                            winner: gameState.winner,
+                            updatedScores,
+                        });
                         return;
                     }
 
+                    // update clock for move
                     if (clockState) {
-                        // update clock for move
                         const nextActiveColor = playerColor === 'white' ? 'black' : 'white';
                         if (clockState.isPaused) {
                             clockState = chessClockService.startClock(roomId, nextActiveColor);
