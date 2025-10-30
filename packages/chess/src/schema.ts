@@ -39,7 +39,6 @@ export type PawnPromotion = z.infer<typeof PawnPromotionEnum>;
 
 export const PieceSchema = z.object({
     alias: PieceAliasEnum,
-    startingIndices: z.array(BoardIndexSchema),
     color: PieceColorEnum,
     type: z.enum(['pawn', 'rook', 'knight', 'bishop', 'queen', 'king']),
     value: z.union([z.literal(1), z.literal(3), z.literal(5), z.literal(9), z.literal(10)]),
@@ -60,7 +59,7 @@ export const CastleRightsByColorSchema = z.object({
 export type CastleRightsByColor = z.infer<typeof CastleRightsByColorSchema>;
 
 export const ChessBoardSchema = z
-    .array(PieceAliasEnum.optional())
+    .array(PieceAliasEnum.nullish())
     .length(NUM_SQUARES)
     .describe('Array of piece aliases representing the chess board. Empty squares are undefined');
 export type ChessBoardType = z.infer<typeof ChessBoardSchema>;
@@ -110,8 +109,7 @@ export type MoveRecord = z.infer<typeof MoveRecordSchema>;
 
 export const LegalMovesStoreSchema = z.object({
     allMoves: z.array(MoveSchema).describe('All legal moves for the current player for the current board state'),
-    byStartIndex: z.record(BoardIndexSchema, z.array(MoveSchema)).describe('Legal moves indexed by their start index'),
-    byEndIndex: z.record(BoardIndexSchema, z.array(MoveSchema)).describe('Legal moves indexed by their end index'),
+    byStartIndex: z.record(z.string(), z.array(MoveSchema)).describe('Legal moves indexed by their start index'),
     typeAndEndIndexToStartIndex: z
         .record(z.string(), z.array(BoardIndexSchema))
         .describe(

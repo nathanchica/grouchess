@@ -2,7 +2,6 @@ export {
     algebraicNotationToIndex,
     computeEnPassantTargetIndex,
     createBoardFromFEN,
-    createInitialChessBoard,
     getKingIndices,
     indexToRowCol,
     INITIAL_CHESS_BOARD_FEN,

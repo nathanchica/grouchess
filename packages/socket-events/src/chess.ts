@@ -1,5 +1,5 @@
 import { BoardIndexSchema, ChessClockStateSchema, PawnPromotionEnum } from '@grouchess/chess';
-import { ChessGameRoomSchema, MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
+import { MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
 import * as z from 'zod';
 
 import { AuthenticatedPayload, ErrorEventPayload } from './common.js';
@@ -20,8 +20,13 @@ export const SendMessageInputSchema = z.object({
 });
 export type SendMessageInput = z.infer<typeof SendMessageInputSchema>;
 
+// Coerce Date fields coming over the wire as ISO strings
+const SocketMessageSchema = MessageSchema.extend({
+    createdAt: z.coerce.date(),
+});
+
 export const NewMessagePayloadSchema = z.object({
-    message: MessageSchema,
+    message: SocketMessageSchema,
 });
 export type NewMessagePayload = z.infer<typeof NewMessagePayloadSchema>;
 
@@ -35,12 +40,6 @@ export const UserTypingPayloadSchema = TypingEventInputSchema.extend({
 });
 export type UserTypingPayload = z.infer<typeof UserTypingPayloadSchema>;
 
-export const LoadGamePayloadSchema = z.object({
-    fen: z.string(),
-    gameRoom: ChessGameRoomSchema,
-});
-export type LoadGamePayload = z.infer<typeof LoadGamePayloadSchema>;
-
 export const ClockUpdatePayloadSchema = z.object({
     clockState: ChessClockStateSchema.nullable(),
 });
@@ -53,7 +52,6 @@ export type ClockUpdatePayload = z.infer<typeof ClockUpdatePayloadSchema>;
 export interface ChessServerToClientEvents {
     authenticated: (payload: AuthenticatedPayload) => void;
     error: (payload: ErrorEventPayload) => void;
-    load_game: (payload: LoadGamePayload) => void;
     game_room_ready: () => void;
     clock_update: (payload: ClockUpdatePayload) => void;
     piece_moved: (payload: PieceMovedPayload) => void;

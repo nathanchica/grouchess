@@ -1,11 +1,12 @@
 import invariant from 'tiny-invariant';
 
-import { aliasToPieceData, isValidPieceAlias } from './pieces.js';
+import { isValidPieceAlias } from './pieces.js';
 import type { ChessBoardType, PieceAlias, PieceColor, RowCol } from './schema.js';
 import { NUM_SQUARES, NUM_COLS, NUM_ROWS } from './schema.js';
 
 // Standard initial FEN string for a new chess game
-export const INITIAL_CHESS_BOARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const INITIAL_CHESS_BOARD_FEN_PLACEMENT = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+export const INITIAL_CHESS_BOARD_FEN = `${INITIAL_CHESS_BOARD_FEN_PLACEMENT} w KQkq - 0 1`;
 
 /**
  * r | n | b | q | k | b | n | r  (0 - 7)
@@ -24,15 +25,6 @@ export const INITIAL_CHESS_BOARD_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK
  * ------------------------------
  * R | N | B | Q | K | B | N | R  (56 - 63)
  */
-export function createInitialChessBoard(): ChessBoardType {
-    const board: ChessBoardType = Array(NUM_SQUARES).fill(undefined);
-    Object.values(aliasToPieceData).forEach(({ alias, startingIndices }) => {
-        startingIndices.forEach((index) => {
-            board[index] = alias;
-        });
-    });
-    return board;
-}
 
 /**
  * Converts a board index (0-63) to a RowCol.
@@ -146,6 +138,10 @@ export function createBoardFromFEN(placementString: string): ChessBoardType {
     }
 
     return board;
+}
+
+export function createInitialBoard(): ChessBoardType {
+    return createBoardFromFEN(INITIAL_CHESS_BOARD_FEN_PLACEMENT);
 }
 
 /**
