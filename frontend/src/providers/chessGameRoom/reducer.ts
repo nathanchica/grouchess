@@ -6,20 +6,18 @@ import {
     getPiece,
     isPromotionSquare,
     updateClockState,
-    type EndGameReason,
     type ExpiredClockGameStatus,
-    type PieceColor,
 } from '@grouchess/chess';
 import { computePlayerScores } from '@grouchess/game-room';
 import invariant from 'tiny-invariant';
 
 import { createInitialChessClockState, createSelfPlayChessGameRoomState } from './state';
-import type { ChessGameRoomState, Action } from './types';
+import type { ChessGameRoomState, Action, EndGameInput } from './types';
 
 import type { ChessGameUI } from '../../utils/types';
 
 export function chessGameRoomReducer(state: ChessGameRoomState, action: Action): ChessGameRoomState {
-    function endGame(reason: EndGameReason, winner?: PieceColor): ChessGameRoomState {
+    function endGame({ reason, winner, updatedScores }: EndGameInput): ChessGameRoomState {
         const { chessGame, gameRoom } = state;
         const newGameState: ChessGameUI['gameState'] = {
             ...chessGame.gameState,
@@ -35,7 +33,7 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
             },
             gameRoom: {
                 ...gameRoom,
-                playerIdToScore: computePlayerScores(gameRoom, newGameState),
+                playerIdToScore: updatedScores ?? computePlayerScores(gameRoom, newGameState),
             },
         };
     }
@@ -54,10 +52,10 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
                 const updatedClockState = updateClockState(clockState, performance.now());
                 const expiredClockGameState = computeGameStateBasedOnClock(updatedClockState, board);
                 if (expiredClockGameState) {
-                    return endGame(
-                        expiredClockGameState.status as ExpiredClockGameStatus,
-                        expiredClockGameState.winner
-                    );
+                    return endGame({
+                        reason: expiredClockGameState.status as ExpiredClockGameStatus,
+                        winner: expiredClockGameState.winner,
+                    });
                 }
             }
 
@@ -164,8 +162,7 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
             };
         }
         case 'end-game': {
-            const { reason, winner } = action;
-            return endGame(reason, winner);
+            return endGame(action.input);
         }
         case 'start-self-play-room': {
             const { timeControlOption } = action;
