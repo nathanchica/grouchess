@@ -188,8 +188,7 @@ pnpm dev
     - UI: `frontend/src/components/chess_board/*`, `.../game_info_panel/*`, `.../chat/*`, `.../common/*`, `.../views/*`
 
 - Clocks
-    - Frontend monotonic timer: `frontend/src/hooks/useMonotonicClock.ts` (see `docs/ChessGameClock.md`)
-    - Server-clock sync via Socket.IO `clock_update` with `ChessClockState`
+    - See `docs/ChessGameClock.md` for detailed design and implementation notes.
 
 ## Roadmap
 
@@ -200,6 +199,7 @@ pnpm dev
 - Player vs CPU mode
     - AI chat
 - Timeline jumping
+- Server-side timeout enforcement
 - Change piece set images
 - Change board colors
 - Piece sliding animations
