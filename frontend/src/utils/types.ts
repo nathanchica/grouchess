@@ -5,7 +5,7 @@ export type WaitingRoom = {
     roomId: ChessGameRoom['id'];
     playerId: Player['id'];
     token: string;
-    isCreator: boolean;
+    isCreator?: boolean;
 };
 
 export type ChessGameUI = ChessGame & {
