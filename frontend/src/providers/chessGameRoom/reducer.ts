@@ -1,12 +1,13 @@
 import {
+    computeGameStateBasedOnClock,
     computeNextChessBoardFromMove,
     computeNextChessGameAfterMove,
     createChessGameFromFEN,
     getPiece,
-    hasInsufficientMatingMaterial,
     isPromotionSquare,
     updateClockState,
     type EndGameReason,
+    type ExpiredClockGameStatus,
     type PieceColor,
 } from '@grouchess/chess';
 import { computePlayerScores } from '@grouchess/game-room';
@@ -48,26 +49,20 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
             const { startIndex, endIndex, piece, promotion } = move;
             const { type: pieceType } = piece;
 
-            const nextBoard = computeNextChessBoardFromMove(board, move);
-            const nextPreviousMoveIndices = [startIndex, endIndex] as [number, number];
-
             // end game if time expired just in case
             if (clockState) {
                 const updatedClockState = updateClockState(clockState, performance.now());
-                const activeColor = playerTurn;
-                const activeClock = activeColor === 'white' ? updatedClockState.white : updatedClockState.black;
-                if (activeClock.timeRemainingMs <= 0) {
-                    const winner = activeColor === 'white' ? 'black' : 'white';
-                    const board = chessGame.boardState.board;
-                    const opponentCanMate = !hasInsufficientMatingMaterial(board, winner);
-
-                    if (opponentCanMate) {
-                        return endGame('time-out', winner);
-                    } else {
-                        return endGame('insufficient-material');
-                    }
+                const expiredClockGameState = computeGameStateBasedOnClock(updatedClockState, board);
+                if (expiredClockGameState) {
+                    return endGame(
+                        expiredClockGameState.status as ExpiredClockGameStatus,
+                        expiredClockGameState.winner
+                    );
                 }
             }
+
+            const nextBoard = computeNextChessBoardFromMove(board, move);
+            const nextPreviousMoveIndices = [startIndex, endIndex] as [number, number];
 
             // If pawn reached last rank, pause to await promotion choice
             const isPawnMove = pieceType === 'pawn';

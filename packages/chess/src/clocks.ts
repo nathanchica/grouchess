@@ -1,4 +1,5 @@
-import type { ChessClockState, PieceColor } from '@grouchess/chess';
+import { hasInsufficientMatingMaterial } from './draws.js';
+import type { ChessBoardType, ChessClockState, ChessGameState, PieceColor } from './schema.js';
 
 /**
  * Updates the chess clock state based on elapsed time from the provided `nowMs` and optional switch of active player.
@@ -30,4 +31,29 @@ export function updateClockState(state: ChessClockState, nowMs: number, switchTo
     newState[activeColor].timeRemainingMs = Math.max(0, newTimeRemaining);
 
     return newState;
+}
+
+/**
+ * Computes the game state if the clock has run out for either player.
+ * If time has run out, opponent wins unless they have insufficient mating material (then it's a draw).
+ * If time has not run out or is paused, returns null.
+ */
+export function computeGameStateBasedOnClock(
+    clockState: ChessClockState,
+    board: ChessBoardType
+): ChessGameState | null {
+    if (clockState.isPaused) return null;
+    const whiteTimeRemaining = clockState.white.timeRemainingMs;
+    const blackTimeRemaining = clockState.black.timeRemainingMs;
+    if (whiteTimeRemaining > 0 && blackTimeRemaining > 0) return null;
+
+    // If we reach this point, at least one player's time has run out
+    const expiredColor = whiteTimeRemaining <= 0 ? 'white' : 'black';
+    const winner: PieceColor = expiredColor === 'white' ? 'black' : 'white';
+    const opponentCanMate = !hasInsufficientMatingMaterial(board, winner);
+
+    return {
+        status: opponentCanMate ? 'time-out' : 'insufficient-material',
+        winner: opponentCanMate ? winner : undefined,
+    };
 }

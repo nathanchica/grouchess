@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import {
-    hasInsufficientMatingMaterial,
-    updateClockState,
-    type ChessClockState,
-    type PieceColor,
-} from '@grouchess/chess';
+import { updateClockState, type ChessClockState, type PieceColor } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
+import { useTimeoutDetection } from '../../hooks/useTimeoutDetection';
 import { useChessClock, useChessGame } from '../../providers/ChessGameRoomProvider';
 import { useClockTick } from '../../providers/ClockTickProvider';
 
@@ -19,10 +15,12 @@ import { useClockTick } from '../../providers/ClockTickProvider';
  *  - On game over: apply final elapsed time and pause clocks
  */
 function ChessClocksLocalController() {
-    const { nowMs, start, stop, isRunning } = useClockTick();
-    const { chessGame, endGame } = useChessGame();
+    const { start, stop, isRunning } = useClockTick();
+    const { chessGame } = useChessGame();
     const { setClocks, resetClocks, clockState } = useChessClock();
     invariant(clockState, 'ChessClocksLocalController requires non-null clockState');
+
+    useTimeoutDetection();
 
     const { moveHistory, gameState, timelineVersion } = chessGame;
 
@@ -30,7 +28,6 @@ function ChessClocksLocalController() {
     const prevStatusRef = useRef<string>(gameState.status);
     const prevTimelineRef = useRef<number>(timelineVersion);
     const timeoutHandledRef = useRef<boolean>(false);
-    const wasRunningRef = useRef<boolean>(false);
 
     const startClock = useCallback((state: ChessClockState, activeColor: PieceColor): ChessClockState => {
         const now = performance.now();
@@ -110,43 +107,16 @@ function ChessClocksLocalController() {
     // Drive shared monotonic timer based on active/paused state
     useEffect(() => {
         const shouldRun = !clockState.isPaused && (clockState.white.isActive || clockState.black.isActive);
-        if (shouldRun) {
-            if (!wasRunningRef.current) {
-                start();
-                wasRunningRef.current = true;
-            }
-        } else {
-            if (wasRunningRef.current) {
-                stop();
-                wasRunningRef.current = false;
-            }
+        if (shouldRun && !isRunning) {
+            start();
+        } else if (!shouldRun && isRunning) {
+            stop();
         }
-    }, [clockState.black.isActive, clockState.isPaused, clockState.white.isActive, start, stop]);
 
-    // Detect time-out and end game
-    useEffect(() => {
-        if (gameState.status !== 'in-progress') return;
-        if (clockState.isPaused) return;
-        if (!isRunning) return;
-        const activeColor: PieceColor = clockState.white.isActive ? 'white' : 'black';
-        const lastUpdated = clockState.lastUpdatedTimeMs ?? nowMs;
-        const elapsedActiveMs = Math.max(0, nowMs - lastUpdated);
-        const timeLeft = clockState[activeColor].timeRemainingMs - elapsedActiveMs;
-        if (timeLeft <= 0 && !timeoutHandledRef.current) {
-            timeoutHandledRef.current = true;
-            const pausedClockState = pauseClock(clockState);
-            setClocks(pausedClockState);
-            const winner: PieceColor = activeColor === 'white' ? 'black' : 'white';
-            const board = chessGame.boardState.board;
-            const opponentCanMate = !hasInsufficientMatingMaterial(board, winner);
-
-            if (opponentCanMate) {
-                endGame('time-out', winner);
-            } else {
-                endGame('insufficient-material');
-            }
-        }
-    }, [clockState, chessGame.boardState.board, endGame, gameState.status, isRunning, nowMs, pauseClock, setClocks]);
+        return () => {
+            if (isRunning) stop();
+        };
+    }, [clockState.black.isActive, clockState.isPaused, clockState.white.isActive, isRunning, start, stop]);
 
     return null;
 }

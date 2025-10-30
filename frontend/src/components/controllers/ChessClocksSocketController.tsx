@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import type { ClockUpdatePayload } from '@grouchess/socket-events';
 import invariant from 'tiny-invariant';
 
+import { useTimeoutDetection } from '../../hooks/useTimeoutDetection';
 import { useChessClock } from '../../providers/ChessGameRoomProvider';
 import { useClockTick } from '../../providers/ClockTickProvider';
 import { useSocket } from '../../providers/SocketProvider';
@@ -13,11 +14,11 @@ import { rebaseServerClockToPerf } from '../../utils/clock';
  */
 function ChessClocksSocketController() {
     const { socket } = useSocket();
-    const { start, stop } = useClockTick();
+    const { start, stop, isRunning } = useClockTick();
     const { setClocks, clockState } = useChessClock();
     invariant(clockState, 'ChessClocksSocketController requires non-null clockState');
 
-    const wasRunningRef = useRef<boolean>(false);
+    useTimeoutDetection();
 
     const onClockUpdate = useCallback(
         ({ clockState }: ClockUpdatePayload) => {
@@ -37,16 +38,16 @@ function ChessClocksSocketController() {
     // Drive shared monotonic tick on server-managed games for smooth countdown display
     useEffect(() => {
         const shouldRun = !clockState.isPaused && (clockState.white.isActive || clockState.black.isActive);
-        if (shouldRun) {
-            if (!wasRunningRef.current) {
-                start();
-                wasRunningRef.current = true;
-            }
-        } else if (wasRunningRef.current) {
+        if (shouldRun && !isRunning) {
+            start();
+        } else if (!shouldRun && isRunning) {
             stop();
-            wasRunningRef.current = false;
         }
-    }, [clockState, start, stop]);
+
+        return () => {
+            if (isRunning) stop();
+        };
+    }, [clockState, isRunning, start, stop]);
 
     return null;
 }
