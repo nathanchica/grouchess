@@ -9,6 +9,7 @@ import { useSocket } from './SocketProvider';
 
 type ChessClockContextType = ChessClockState & {
     setClocks: (clockState: ChessClockState | null) => void;
+    resetClocks: () => void;
 };
 
 export function createInitialChessClockState(timeControl?: TimeControl): ChessClockState {
@@ -34,6 +35,7 @@ function createInitialContextValue(): ChessClockContextType {
     return {
         ...createInitialChessClockState(),
         setClocks: () => {},
+        resetClocks: () => {},
     };
 }
 
@@ -50,13 +52,17 @@ type Props = {
     children: ReactNode;
 };
 
-function ChessClockProvider({ initialState, children }: Props) {
+function ChessClockSocketProvider({ initialState, children }: Props) {
     const { socket } = useSocket();
     const [clockState, setClockState] = useState<ChessClockState>(initialState || createInitialChessClockState());
 
     const setClocks = useCallback((clockState: ChessClockState | null) => {
         setClockState(clockState || createInitialChessClockState());
     }, []);
+
+    const resetClocks = useCallback(() => {
+        setClockState(initialState || createInitialChessClockState());
+    }, [initialState]);
 
     const onClockUpdate = useCallback(
         ({ clockState }: ClockUpdatePayload) => {
@@ -77,10 +83,11 @@ function ChessClockProvider({ initialState, children }: Props) {
         return {
             ...clockState,
             setClocks,
+            resetClocks,
         };
-    }, [clockState, setClocks]);
+    }, [clockState, setClocks, resetClocks]);
 
     return <ChessClockContext.Provider value={contextValue}>{children}</ChessClockContext.Provider>;
 }
 
-export default ChessClockProvider;
+export default ChessClockSocketProvider;
