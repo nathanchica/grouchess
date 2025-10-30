@@ -3,8 +3,8 @@ import { useEffect, useRef } from 'react';
 import { isDrawStatus, type ChessGameStatus } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
-import { useChessGame } from '../providers/ChessGameRoomProvider';
-import { useSound, type SoundName } from '../providers/SoundProvider';
+import { useChessGame } from '../../providers/ChessGameRoomProvider';
+import { useSound, type SoundName } from '../../providers/SoundProvider';
 
 const CHECK_DELAY_MS = 120;
 

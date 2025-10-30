@@ -133,7 +133,7 @@ function ChessBoard() {
         setSelectedIndex(null);
     }
 
-    const createClickHandler = (pieceAliasAtSquare: PieceAlias | undefined, clickedIndex: number) => () => {
+    const createClickHandler = (pieceAliasAtSquare: PieceAlias | undefined | null, clickedIndex: number) => () => {
         if (boardInteractionIsDisabled) return;
 
         const isPossibleMoveSquare = clickedIndex in indexToMoveDataForSelectedPiece;

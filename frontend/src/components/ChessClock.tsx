@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import type { PieceColor } from '@grouchess/chess';
 
 import { useMonotonicClock } from '../hooks/useMonotonicClock';
-import { useChessClock } from '../providers/ChessClockProvider';
+import { useChessClock } from '../providers/ChessClockSocketProvider';
 
 const MS_IN_SECOND = 1000;
 const SEC_IN_MINUTE = 60;

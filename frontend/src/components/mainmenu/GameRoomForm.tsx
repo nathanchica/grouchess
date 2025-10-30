@@ -2,9 +2,9 @@ import { useState } from 'react';
 
 import type { PieceColor } from '@grouchess/chess';
 import type { RoomType, TimeControl } from '@grouchess/game-room';
+import { useNavigate } from 'react-router';
 
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
-import { useGameRoom } from '../../providers/ChessGameRoomProvider';
 import type { WaitingRoom } from '../../utils/types';
 import Spinner from '../common/Spinner';
 import DisplayNameForm from '../mainmenu/DisplayNameForm';
@@ -49,12 +49,12 @@ const ROOM_TYPE_TO_FORMS_MAP: Record<string, string[]> = {
 const DEFAULT_SIDE: PieceColor = 'white';
 
 type Props = {
-    onRoomCreated: (waitingRoom: WaitingRoom) => void;
+    onSelfPlayStart: (timeControl: TimeControl | null) => void;
 };
 
-function GameRoomForm({ onRoomCreated }: Props) {
-    const { startSelfPlayRoom, loadCurrentPlayerId } = useGameRoom();
+function GameRoomForm({ onSelfPlayStart }: Props) {
     const { createGameRoom, loading } = useCreateGameRoom();
+    const navigate = useNavigate();
 
     const [selectedRoomType, setSelectedRoomType] = useState<RoomType>(DEFAULT_ROOM_TYPE);
     const [selectedTimeControlOption, setSelectedTimeControlOption] = useState<TimeControl | null>(null);
@@ -88,11 +88,17 @@ function GameRoomForm({ onRoomCreated }: Props) {
         }
     });
 
+    const onRoomCreated = (newWaitingRoom: WaitingRoom) => {
+        navigate(`/${newWaitingRoom.roomId}`, {
+            state: newWaitingRoom,
+        });
+    };
+
     const handleStartClick = () => {
         setErrorMessage(null);
 
         if (selectedRoomType === 'self') {
-            startSelfPlayRoom(selectedTimeControlOption);
+            onSelfPlayStart(selectedTimeControlOption);
             return;
         }
 
@@ -103,7 +109,6 @@ function GameRoomForm({ onRoomCreated }: Props) {
             roomType: selectedRoomType,
             onSuccess: (data) => {
                 onRoomCreated({ ...data, isCreator: true });
-                loadCurrentPlayerId(data.playerId);
             },
             onError: ({ message }) => {
                 setErrorMessage(message);

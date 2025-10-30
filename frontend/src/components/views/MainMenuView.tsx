@@ -1,12 +1,14 @@
-import { useState } from 'react';
-
-import { Routes, Route, useNavigate } from 'react-router';
+import type { TimeControl } from '@grouchess/game-room';
+import { Routes, Route } from 'react-router';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
-import type { WaitingRoom } from '../../utils/types';
 import GameRoomForm from '../mainmenu/GameRoomForm';
 import WaitingRoomView from '../mainmenu/WaitingRoomView';
+
+type Props = {
+    onSelfPlayStart: (timeControl: TimeControl | null) => void;
+};
 
 /**
  * Main menu view component.
@@ -14,20 +16,11 @@ import WaitingRoomView from '../mainmenu/WaitingRoomView';
  * If a roomId is present in the URL path, shows the WaitingRoomView for that room.
  * Otherwise, shows the GameRoomForm to create a new room.
  */
-function MainMenuView() {
+function MainMenuView({ onSelfPlayStart }: Props) {
     const { imgSrcMap } = useImages();
-    const navigate = useNavigate();
-    const [waitingRoomProps, setWaitingRoomProps] = useState<WaitingRoom | null>(null);
 
     const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
     const logoImgSrc = imgSrcMap[rookImgSrc] ?? rookImgSrc;
-
-    const onRoomCreated = (newWaitingRoom: WaitingRoom) => {
-        setWaitingRoomProps(newWaitingRoom);
-        const key = `token:${newWaitingRoom.roomId}`;
-        sessionStorage.setItem(key, JSON.stringify(newWaitingRoom));
-        navigate(`/${newWaitingRoom.roomId}`);
-    };
 
     return (
         <main className="min-h-dvh font-serif bg-zinc-900 text-zinc-100">
@@ -45,16 +38,8 @@ function MainMenuView() {
                 </header>
 
                 <Routes>
-                    <Route
-                        path="/:roomId"
-                        element={
-                            <WaitingRoomView
-                                roomToken={waitingRoomProps?.token}
-                                isCreator={Boolean(waitingRoomProps?.isCreator)}
-                            />
-                        }
-                    />
-                    <Route path="/" element={<GameRoomForm onRoomCreated={onRoomCreated} />} />
+                    <Route path="/:roomId" element={<WaitingRoomView />} />
+                    <Route path="/" element={<GameRoomForm onSelfPlayStart={onSelfPlayStart} />} />
                 </Routes>
             </div>
         </main>

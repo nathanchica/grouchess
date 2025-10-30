@@ -1,7 +1,7 @@
 import invariant from 'tiny-invariant';
 
 import PlayerCard from './PlayerCard';
-import PlayerChatPanel from './PlayerChatPanel';
+import PlayerChatPanel from './chat/PlayerChatPanel';
 
 import { useGameRoom } from '../providers/ChessGameRoomProvider';
 
@@ -13,7 +13,6 @@ type Props = {
 
 function PlayersInfoSection({ variant }: Props) {
     const { gameRoom, currentPlayerId } = useGameRoom();
-    invariant(gameRoom, 'gameRoom is required to display PlayersInfoSection');
 
     const { playerIdToDisplayName, colorToPlayerId, type: roomType } = gameRoom;
     const { white: whitePlayerId, black: blackPlayerId } = colorToPlayerId;
@@ -26,7 +25,7 @@ function PlayersInfoSection({ variant }: Props) {
     const currentPlayerCard = isCurrentPlayerWhite ? whiteCard : blackCard;
     const otherPlayerCard = isCurrentPlayerWhite ? blackCard : whiteCard;
 
-    const playerChatPanel = roomType !== 'self' ? <PlayerChatPanel /> : null;
+    const playerChatPanel = roomType !== 'self' ? <PlayerChatPanel currentPlayerId={currentPlayerId} /> : null;
 
     return variant === 'col' ? (
         <div className="flex flex-col gap-4 h-full">
