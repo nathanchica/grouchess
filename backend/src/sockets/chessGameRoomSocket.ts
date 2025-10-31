@@ -1,3 +1,4 @@
+import type { ChessGameState } from '@grouchess/chess';
 import { computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from '@grouchess/socket-events';
 
@@ -195,6 +196,47 @@ export function createChessGameRoomSocketHandler({
                 } catch (error) {
                     console.error('Error sending message:', error);
                     sendErrorEvent('Failed to send message');
+                }
+            });
+
+            socket.on('resign', () => {
+                try {
+                    const chessGame = chessGameService.getChessGameForRoom(roomId);
+                    if (!chessGame) {
+                        sendErrorEvent('Game has not started yet');
+                        return;
+                    }
+
+                    if (chessGame.gameState.status !== 'in-progress') {
+                        sendErrorEvent('Game is already over');
+                        return;
+                    }
+
+                    const resigningColor = gameRoomService.getPlayerColor(roomId, playerId);
+                    const winningColor = resigningColor === 'white' ? 'black' : 'white';
+                    const resignedGameState: ChessGameState = {
+                        status: 'resigned',
+                        winner: winningColor,
+                    };
+
+                    chessGameService.endGameForRoom(roomId, resignedGameState);
+
+                    let clockState = chessClockService.getClockStateForRoom(roomId);
+                    if (clockState) {
+                        clockState = chessClockService.pauseClock(roomId);
+                    }
+                    io.to(gameRoomTarget).emit('clock_update', { clockState });
+
+                    const updatedScores = gameRoomService.updatePlayerScores(roomId, resignedGameState);
+
+                    io.to(gameRoomTarget).emit('game_ended', {
+                        reason: resignedGameState.status,
+                        winner: resignedGameState.winner,
+                        updatedScores,
+                    });
+                } catch (error) {
+                    console.error('Error handling resignation:', error);
+                    sendErrorEvent('Failed to resign');
                 }
             });
 

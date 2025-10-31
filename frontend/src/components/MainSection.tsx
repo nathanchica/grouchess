@@ -7,9 +7,13 @@ import { useChessGame } from '../providers/ChessGameRoomProvider';
 function MainSection() {
     const { chessGame } = useChessGame();
     invariant(chessGame, 'chessGame is required for MainSection component');
-    const { timelineVersion } = chessGame;
+    const { timelineVersion, gameState } = chessGame;
 
-    return <ChessBoard key={`chessboard-${timelineVersion}`} />;
+    /**
+     * Use timelineVersion and game status as key to force remounting ChessBoard when timelineVersion changes or game
+     * status changes in order to reset interaction states (e.g., dragging piece, selected square) appropriately.
+     */
+    return <ChessBoard key={`chessboard-${timelineVersion}-${gameState.status}`} />;
 }
 
 export default MainSection;

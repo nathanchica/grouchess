@@ -14,16 +14,25 @@ type Props = {
     onRematchClick: () => void;
 };
 
+function capitalizeFirstLetter(text: string) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 function GameResultCard({ gameState, onExitClick, onRematchClick }: Props) {
     const [isOfferingRematch, setIsOfferingRematch] = useState(false);
 
-    const isDraw = isDrawStatus(gameState.status);
-    const winnerLabel = isDraw ? 'Draw' : gameState.winner === 'white' ? 'White wins' : 'Black wins';
-    const resultScore = gameState.winner === 'white' ? '1-0' : gameState.winner === 'black' ? '0-1' : '1/2-1/2';
+    const { status, winner } = gameState;
+    const isDraw = isDrawStatus(status);
+
+    const winnerLabel = isDraw ? 'Draw' : winner === 'white' ? 'White wins' : 'Black wins';
+    const resultScore = winner === 'white' ? '1-0' : winner === 'black' ? '0-1' : '1/2-1/2';
     const statusLabel = (() => {
-        if (isDraw) return getDisplayTextForDrawStatus(gameState.status);
-        const label = gameState.status.replace(/-/g, ' ');
-        return label.charAt(0).toUpperCase() + label.slice(1);
+        if (isDraw) return getDisplayTextForDrawStatus(status);
+        if (status === 'resigned') {
+            const loserText = winner === 'white' ? 'Black' : winner === 'black' ? 'White' : 'Player';
+            return `${loserText} resigned`;
+        }
+        return capitalizeFirstLetter(status.replace(/-/g, ' '));
     })();
 
     const handleRematchOfferClick = () => {

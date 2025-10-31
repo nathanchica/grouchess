@@ -31,21 +31,19 @@ function MoveHistoryTable({ onExitClick }: Props) {
     const { gameRoom } = useGameRoom();
     invariant(chessGame && gameRoom, 'chessGame and gameRoom are required to display move history');
     const { moveHistory, gameState } = chessGame;
-    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const containerEndRef = useRef<HTMLDivElement | null>(null);
 
     const moveNotations = moveHistory.map(({ notation }) => notation);
     const movePairs = createMovePairs(moveNotations);
     const isGameOver = gameState.status !== 'in-progress';
 
-    // Auto-scroll to bottom when a new move is added
+    // Auto-scroll to bottom when a new move is added or the game ends
     useEffect(() => {
-        const element = scrollContainerRef.current;
-        if (!element) return;
-        element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
-    }, [moveHistory.length]);
+        containerEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [moveHistory.length, isGameOver]);
 
     return (
-        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <table className="table-fixed w-full 2xl:text-base text-sm">
                 <colgroup>
                     <col className="xl:w-[4ch] lg:w-[3ch] w-[2ch]" />
@@ -97,6 +95,8 @@ function MoveHistoryTable({ onExitClick }: Props) {
                     onExitClick={onExitClick}
                 />
             ) : null}
+
+            <div ref={containerEndRef} />
         </div>
     );
 }
