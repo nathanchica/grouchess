@@ -3,8 +3,10 @@ import { useState } from 'react';
 import invariant from 'tiny-invariant';
 
 import ExitGameRoomModal from './ExitGameRoomModal';
+import GameActions from './GameActions';
 import LoadBoardModal from './LoadBoardModal';
 import MoveHistoryTable from './MoveHistoryTable';
+import PlayerScoreDisplay from './PlayerScoreDisplay';
 import ShareBoardStateModal from './ShareBoardStateModal';
 import SoundControls from './SoundControls';
 
@@ -28,6 +30,7 @@ function GameInfoPanel() {
     invariant(gameRoom && chessGame, 'Game room and chess game are required');
     const { players, playerIdToScore, type } = gameRoom;
     const { timelineVersion } = chessGame;
+    const [player1, player2] = players;
 
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
     const [loadBoardModalIsShowing, setLoadBoardModalIsShowing] = useState(false);
@@ -53,16 +56,6 @@ function GameInfoPanel() {
     const onResetButtonClick = () => {
         loadFEN();
     };
-
-    let headerText = '';
-    let scoreText = '';
-    if (type === 'self') {
-        headerText = 'Freeplay';
-    } else {
-        const [player1, player2] = players;
-        headerText = `${player1.displayName} vs. ${player2.displayName}`;
-        scoreText = `${playerIdToScore[player1.id]}-${playerIdToScore[player2.id]}`;
-    }
 
     const iconButtons: IconButtonPropsWithKey[] = [
         {
@@ -124,13 +117,15 @@ function GameInfoPanel() {
     return (
         <>
             <InfoCard className="h-full">
-                <div className="xl:px-6 xl:py-5 p-3 flex flex-col gap-4 h-full">
-                    <section className="flex lg:flex-row flex-col gap-1 justify-between">
-                        <span className="lg:text-lg text-sm text-zinc-100">{headerText}</span>
-                        <span className="lg:text-base text-xs text-zinc-300 tracking-[0.2em] proportional-nums">
-                            {scoreText}
-                        </span>
-                    </section>
+                <div className="xl:px-6 xl:py-5 p-3 flex flex-col 2xl:gap-8 gap-4 h-full">
+                    {type === 'self' ? (
+                        <section className="text-zinc-100">Self Play</section>
+                    ) : (
+                        <section className="text-zinc-100">
+                            <PlayerScoreDisplay name={player1.displayName} score={playerIdToScore[player1.id]} /> -{' '}
+                            <PlayerScoreDisplay name={player2.displayName} score={playerIdToScore[player2.id]} />
+                        </section>
+                    )}
 
                     {currentView === 'history' && (
                         <MoveHistoryTable key={`move-history-table-${timelineVersion}`} onExitClick={showExitModal} />
@@ -142,8 +137,10 @@ function GameInfoPanel() {
                         </>
                     )}
 
+                    {type !== 'self' && <GameActions />}
+
                     <section
-                        className={`flex ${type === 'self' ? 'justify-between' : 'justify-end md:gap-12 gap-8'}`}
+                        className={`flex ${type === 'self' ? 'justify-between' : 'justify-center md:gap-12 gap-8'}`}
                         aria-label="Game actions"
                     >
                         {iconButtons.map(({ key, skip, icon, onClick, ariaProps, isActive, tooltipText }) =>
