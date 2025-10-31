@@ -10,22 +10,84 @@ import { generateId } from '../utils/generateId.js';
 const MESSAGE_ID_LENGTH = 12;
 const MAX_ID_GEN_RETRIES = 10;
 
-type PlayerOffers = {
+type ChessGameOffers = {
     rematchOfferedByPlayerId: Player['id'] | null;
-    drawOfferedByPlayerId: Player['id'] | null;
+    drawOfferMessage: Message | null;
 };
 
 export class GameRoomService {
     private gameRoomIdToGameRoom: Map<ChessGameRoom['id'], ChessGameRoom> = new Map();
-    private gameRoomIdToPlayerOffers: Map<ChessGameRoom['id'], PlayerOffers> = new Map();
+    private gameRoomIdToPlayerOffers: Map<ChessGameRoom['id'], ChessGameOffers> = new Map();
 
-    private getGameRoomWithOffers(roomId: string): { gameRoom: ChessGameRoom; offers: PlayerOffers } | null {
+    private getGameRoomWithOffers(roomId: string): { gameRoom: ChessGameRoom; offers: ChessGameOffers } | null {
         const gameRoom = this.getGameRoomById(roomId);
         const offers = this.gameRoomIdToPlayerOffers.get(roomId);
         if (!gameRoom || !offers) {
             return null;
         }
         return { gameRoom, offers };
+    }
+
+    private generateUniqueMessageId(existingIds: Set<string>): string {
+        let id: string;
+        let attempts = 0;
+        do {
+            id = generateId(MESSAGE_ID_LENGTH);
+            attempts++;
+        } while (existingIds.has(id) && attempts < MAX_ID_GEN_RETRIES);
+        if (existingIds.has(id)) {
+            throw new Error('Failed to generate a unique message ID after maximum retries');
+        }
+        return id;
+    }
+
+    private respondToDrawOffer(roomId: string, playerId: string, accept: boolean): Message {
+        const gameRoom = this.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new Error('Game room not found');
+        }
+        const gameRoomOffers = this.gameRoomIdToPlayerOffers.get(roomId);
+        if (!gameRoomOffers) {
+            throw new Error('Game room offers not found');
+        }
+
+        const { messages } = gameRoom;
+        const { drawOfferMessage } = gameRoomOffers;
+        if (!drawOfferMessage) {
+            throw new InvalidInputError('No active draw offer to respond to');
+        }
+        const { id: messageId } = drawOfferMessage;
+
+        let newMessage: Message | null = null;
+        const newRoom = {
+            ...gameRoom,
+            messages: messages.map((message) => {
+                if (message.id !== messageId) return message;
+                if (message.authorId === playerId)
+                    throw new InvalidInputError('Player cannot respond to their own draw offer');
+                if (message.type !== 'draw-offer') return message;
+                newMessage = {
+                    ...message,
+                    type: accept ? ('draw-accept' as Message['type']) : ('draw-decline' as Message['type']),
+                    content: accept ? 'Draw accepted.' : 'Draw declined.',
+                };
+                return newMessage;
+            }),
+        };
+
+        if (!newMessage) {
+            throw new Error('Failed to process draw offer response');
+        }
+
+        this.gameRoomIdToGameRoom.set(roomId, newRoom);
+
+        const newGameRoomOffers: ChessGameOffers = {
+            ...gameRoomOffers,
+            drawOfferMessage: null,
+        };
+
+        this.gameRoomIdToPlayerOffers.set(roomId, newGameRoomOffers);
+        return newMessage;
     }
 
     createGameRoom({ timeControl, roomType, creator, creatorColorInput }: CreateGameRoomInput): ChessGameRoom {
@@ -50,7 +112,7 @@ export class GameRoomService {
             type: roomType,
         };
         this.gameRoomIdToGameRoom.set(id, gameRoom);
-        this.gameRoomIdToPlayerOffers.set(id, { rematchOfferedByPlayerId: null, drawOfferedByPlayerId: null });
+        this.gameRoomIdToPlayerOffers.set(id, { rematchOfferedByPlayerId: null, drawOfferMessage: null });
         return gameRoom;
     }
 
@@ -58,7 +120,7 @@ export class GameRoomService {
         return this.gameRoomIdToGameRoom.get(roomId) || null;
     }
 
-    getOffersForGameRoom(roomId: string): PlayerOffers | null {
+    getOffersForGameRoom(roomId: string): ChessGameOffers | null {
         return this.gameRoomIdToPlayerOffers.get(roomId) || null;
     }
 
@@ -88,24 +150,40 @@ export class GameRoomService {
             throw new Error('Game room not found');
         }
 
-        const existingIds = new Set(gameRoom.messages.map((msg) => msg.id));
-        let id: string;
-        let attempts = 0;
-        do {
-            id = generateId(MESSAGE_ID_LENGTH);
-            attempts++;
-        } while (existingIds.has(id) && attempts < MAX_ID_GEN_RETRIES);
-        if (existingIds.has(id)) {
-            throw new Error('Failed to generate a unique message ID after maximum retries');
+        let contentToUse = content;
+        if (messageType === 'draw-offer') {
+            contentToUse = `${gameRoom.playerIdToDisplayName[authorId]} is offering a draw...`;
+        } else if (messageType === 'draw-accept') {
+            contentToUse = 'Draw accepted.';
+        } else if (messageType === 'draw-decline') {
+            contentToUse = 'Draw declined.';
         }
+
+        const existingIds = new Set(gameRoom.messages.map((msg) => msg.id));
         const message: Message = {
-            id,
+            id: this.generateUniqueMessageId(existingIds),
             type: messageType,
             authorId,
-            content,
+            content: contentToUse,
             createdAt: new Date(),
         };
         gameRoom.messages = [...gameRoom.messages, message].slice(-MAX_MESSAGES_PER_ROOM);
+
+        if (messageType === 'draw-offer') {
+            const offers = this.gameRoomIdToPlayerOffers.get(roomId);
+            if (!offers) {
+                throw new Error('Game room offers not found');
+            }
+            if (offers.drawOfferMessage) {
+                throw new Error('There is already an active draw offer');
+            }
+            const newOffers = {
+                ...offers,
+                drawOfferMessage: message,
+            };
+            this.gameRoomIdToPlayerOffers.set(roomId, newOffers);
+        }
+
         return message;
     }
 
@@ -136,7 +214,7 @@ export class GameRoomService {
         const { gameRoom, offers } = gameRoomWithOffers;
         gameRoom.gameCount += 1;
         offers.rematchOfferedByPlayerId = null;
-        offers.drawOfferedByPlayerId = null;
+        offers.drawOfferMessage = null;
     }
 
     incrementPlayerScore(roomId: string, playerId: string, isDraw: boolean = false): void {
@@ -191,12 +269,12 @@ export class GameRoomService {
         gameRoomOffers.rematchOfferedByPlayerId = playerId;
     }
 
-    offerDraw(roomId: string, playerId: string): void {
-        const gameRoomOffers = this.gameRoomIdToPlayerOffers.get(roomId);
-        if (!gameRoomOffers) {
-            throw new Error('Game room not found');
-        }
-        gameRoomOffers.drawOfferedByPlayerId = playerId;
+    declineDraw(roomId: string, playerId: string): Message {
+        return this.respondToDrawOffer(roomId, playerId, false);
+    }
+
+    acceptDraw(roomId: string, playerId: string): Message {
+        return this.respondToDrawOffer(roomId, playerId, true);
     }
 
     deleteGameRoom(roomId: string): boolean {

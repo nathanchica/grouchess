@@ -1,5 +1,6 @@
 import type { ChessGameState } from '@grouchess/chess';
 import { computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
+import type { Message } from '@grouchess/game-room';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from '@grouchess/socket-events';
 
 import { authenticateSocket } from '../middleware/authenticateSocket.js';
@@ -46,6 +47,24 @@ export function createChessGameRoomSocketHandler({
             socket.join(gameRoomTarget);
 
             socket.emit('authenticated', { playerId });
+
+            const sendGameEnded = (gameState: ChessGameState) => {
+                chessGameService.endGameForRoom(roomId, gameState);
+
+                let clockState = chessClockService.getClockStateForRoom(roomId);
+                if (clockState) {
+                    clockState = chessClockService.pauseClock(roomId);
+                }
+                io.to(gameRoomTarget).emit('clock_update', { clockState });
+
+                const updatedScores = gameRoomService.updatePlayerScores(roomId, gameState);
+
+                io.to(gameRoomTarget).emit('game_ended', {
+                    reason: gameState.status,
+                    winner: gameState.winner,
+                    updatedScores,
+                });
+            };
 
             socket.on('wait_for_game', () => {
                 try {
@@ -115,16 +134,7 @@ export function createChessGameRoomSocketHandler({
                             chessGame.boardState.board
                         );
                         if (expiredClockGameState) {
-                            clockState = chessClockService.pauseClock(roomId);
-                            chessGameService.endGameForRoom(roomId, expiredClockGameState);
-                            const updatedScores = gameRoomService.updatePlayerScores(roomId, expiredClockGameState);
-
-                            io.to(gameRoomTarget).emit('game_ended', {
-                                reason: expiredClockGameState.status,
-                                winner: expiredClockGameState.winner,
-                                updatedScores,
-                            });
-                            io.to(gameRoomTarget).emit('clock_update', { clockState });
+                            sendGameEnded(expiredClockGameState);
                             return;
                         }
                     }
@@ -143,18 +153,22 @@ export function createChessGameRoomSocketHandler({
                         promotion,
                     });
 
-                    if (isGameOver) {
-                        if (clockState) {
-                            clockState = chessClockService.pauseClock(roomId);
-                            io.to(gameRoomTarget).emit('clock_update', { clockState });
+                    try {
+                        const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
+                        if (!gameRoomOffers) {
+                            throw new Error('Game room offers not found');
                         }
-                        const updatedScores = gameRoomService.updatePlayerScores(roomId, gameState);
+                        const { drawOfferMessage } = gameRoomOffers;
+                        if (drawOfferMessage && playerId !== drawOfferMessage.authorId) {
+                            const message = gameRoomService.declineDraw(roomId, playerId);
+                            io.to(gameRoomTarget).emit('draw_declined', { message });
+                        }
+                    } catch (error) {
+                        console.error('Error declining draw offer after move:', error);
+                    }
 
-                        io.to(gameRoomTarget).emit('game_ended', {
-                            reason: gameState.status,
-                            winner: gameState.winner,
-                            updatedScores,
-                        });
+                    if (isGameOver) {
+                        sendGameEnded(gameState);
                         return;
                     }
 
@@ -219,21 +233,7 @@ export function createChessGameRoomSocketHandler({
                         winner: winningColor,
                     };
 
-                    chessGameService.endGameForRoom(roomId, resignedGameState);
-
-                    let clockState = chessClockService.getClockStateForRoom(roomId);
-                    if (clockState) {
-                        clockState = chessClockService.pauseClock(roomId);
-                    }
-                    io.to(gameRoomTarget).emit('clock_update', { clockState });
-
-                    const updatedScores = gameRoomService.updatePlayerScores(roomId, resignedGameState);
-
-                    io.to(gameRoomTarget).emit('game_ended', {
-                        reason: resignedGameState.status,
-                        winner: resignedGameState.winner,
-                        updatedScores,
-                    });
+                    sendGameEnded(resignedGameState);
                 } catch (error) {
                     console.error('Error handling resignation:', error);
                     sendErrorEvent('Failed to resign');
@@ -270,6 +270,71 @@ export function createChessGameRoomSocketHandler({
                 }
 
                 io.to(gameRoomTarget).emit('game_room_ready');
+            });
+
+            socket.on('offer_draw', () => {
+                try {
+                    const chessGame = chessGameService.getChessGameForRoom(roomId);
+                    if (!chessGame) {
+                        sendErrorEvent('Game has not started yet');
+                        return;
+                    }
+
+                    if (chessGame.gameState.status !== 'in-progress') {
+                        sendErrorEvent('Game is already over');
+                        return;
+                    }
+
+                    const message: Message = gameRoomService.addMessageToGameRoom(roomId, 'draw-offer', playerId);
+                    io.to(gameRoomTarget).emit('new_message', { message });
+                } catch (error) {
+                    console.error('Error offering draw:', error);
+                    sendErrorEvent('Failed to offer draw');
+                }
+            });
+
+            socket.on('decline_draw', () => {
+                try {
+                    const message = gameRoomService.declineDraw(roomId, playerId);
+                    if (!message) {
+                        sendErrorEvent('Failed to decline draw offer');
+                        return;
+                    }
+                    io.to(gameRoomTarget).emit('draw_declined', { message });
+                } catch (error) {
+                    console.error('Error declining draw offer:', error);
+                    sendErrorEvent('Failed to decline draw offer');
+                }
+            });
+
+            socket.on('accept_draw', () => {
+                try {
+                    const chessGame = chessGameService.getChessGameForRoom(roomId);
+                    if (!chessGame) {
+                        sendErrorEvent('Game has not started yet');
+                        return;
+                    }
+
+                    if (chessGame.gameState.status !== 'in-progress') {
+                        sendErrorEvent('Game is already over');
+                        return;
+                    }
+
+                    const message = gameRoomService.acceptDraw(roomId, playerId);
+                    if (!message) {
+                        sendErrorEvent('Failed to accept draw offer');
+                        return;
+                    }
+
+                    const drawGameState: ChessGameState = {
+                        status: 'draw-by-agreement',
+                    };
+                    io.to(gameRoomTarget).emit('draw_accepted', { message });
+                    sendGameEnded(drawGameState);
+                } catch (error) {
+                    console.error('Error accepting draw offer:', error);
+                    sendErrorEvent('Failed to accept draw offer');
+                }
             });
 
             socket.on('typing', (input) => {

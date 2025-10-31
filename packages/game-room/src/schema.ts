@@ -7,7 +7,7 @@ export const MAX_MESSAGES_PER_ROOM = 100;
 export const MAX_MESSAGE_LENGTH = 140;
 export const MAX_PLAYER_DISPLAY_NAME_LENGTH = 20;
 
-export const MessageTypeEnum = z.enum(['standard', 'rematch', 'draw-offer']);
+export const MessageTypeEnum = z.enum(['standard', 'rematch', 'draw-offer', 'draw-decline', 'draw-accept']);
 export const PlayerStatusEnum = z.enum(['online', 'offline', 'away']);
 export const RoomTypeEnum = z.enum(['self', 'player-vs-cpu', 'player-vs-player']);
 
