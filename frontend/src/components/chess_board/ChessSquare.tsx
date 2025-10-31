@@ -105,7 +105,8 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
         }
     }
 
-    const legendFontColor = isDarkSquare ? 'text-zinc-100' : 'text-zinc-500';
+    let legendFontColor = isDarkSquare ? 'text-zinc-100' : 'text-zinc-500';
+    if (isPreviousMove) legendFontColor = 'text-zinc-500';
     const legendBaseClasses = `absolute text-xs font-bold pointer-events-none ${legendFontColor}`;
 
     const INDEX_TO_ROW_LEGEND = isFlipped ? INDEX_TO_ROW_LEGEND_FLIPPED : INDEX_TO_ROW_LEGEND_NOT_FLIPPED;

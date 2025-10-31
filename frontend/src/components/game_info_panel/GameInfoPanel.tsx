@@ -6,7 +6,6 @@ import ExitGameRoomModal from './ExitGameRoomModal';
 import GameActions from './GameActions';
 import LoadBoardModal from './LoadBoardModal';
 import MoveHistoryTable from './MoveHistoryTable';
-import PlayerScoreDisplay from './PlayerScoreDisplay';
 import ShareBoardStateModal from './ShareBoardStateModal';
 import SoundControls from './SoundControls';
 
@@ -16,6 +15,8 @@ import GearIcon from '../../assets/icons/gear.svg?react';
 import RotateLeftIcon from '../../assets/icons/rotate-left.svg?react';
 import ShareNodesIcon from '../../assets/icons/share-nodes.svg?react';
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
+import { useImages } from '../../providers/ImagesProvider';
+import { aliasToPieceImageData } from '../../utils/pieces';
 import IconButton, { type IconButtonProps } from '../common/IconButton';
 import InfoCard from '../common/InfoCard';
 
@@ -25,12 +26,15 @@ type Views = 'history' | 'settings';
 type IconButtonPropsWithKey = IconButtonProps & { key: string; skip?: boolean };
 
 function GameInfoPanel() {
+    const { isReady: isImagesLoaded, imgSrcMap } = useImages();
     const { chessGame, loadFEN } = useChessGame();
     const { gameRoom, currentPlayerColor } = useGameRoom();
     invariant(gameRoom && chessGame, 'Game room and chess game are required');
-    const { players, playerIdToScore, type } = gameRoom;
+    const { type } = gameRoom;
     const { timelineVersion, moveHistory } = chessGame;
-    const [player1, player2] = players;
+
+    const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
+    const logoImgSrc = imgSrcMap[rookImgSrc] ?? rookImgSrc;
 
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
     const [loadBoardModalIsShowing, setLoadBoardModalIsShowing] = useState(false);
@@ -117,15 +121,13 @@ function GameInfoPanel() {
     return (
         <>
             <InfoCard className="h-full">
-                <div className="xl:px-6 xl:py-5 p-3 flex flex-col 2xl:gap-8 gap-4 h-full">
-                    {type === 'self' ? (
-                        <section className="text-zinc-100">Self Play</section>
-                    ) : (
-                        <section className="text-zinc-100">
-                            <PlayerScoreDisplay name={player1.displayName} score={playerIdToScore[player1.id]} /> -{' '}
-                            <PlayerScoreDisplay name={player2.displayName} score={playerIdToScore[player2.id]} />
-                        </section>
-                    )}
+                <div className="xl:py-5 p-2 flex flex-col 2xl:gap-8 gap-4 h-full">
+                    <div className="flex flex-row justify-center items-center gap-2 cursor-default">
+                        {isImagesLoaded && <img src={logoImgSrc} alt={rookAltText} className="2xl:size-9 size-7" />}
+                        <span className="text-zinc-100 font-display text-center pr-3 2xl:text-2xl text-lg font-bold">
+                            grouchess
+                        </span>
+                    </div>
 
                     {currentView === 'history' && (
                         <MoveHistoryTable key={`move-history-table-${timelineVersion}`} onExitClick={showExitModal} />
@@ -145,10 +147,7 @@ function GameInfoPanel() {
                         />
                     )}
 
-                    <section
-                        className={`flex ${type === 'self' ? 'justify-between' : 'justify-evenly'}`}
-                        aria-label="Game actions"
-                    >
+                    <section className="flex flex-row justify-evenly" aria-label="Game actions">
                         {iconButtons.map(({ key, skip, icon, onClick, ariaProps, isActive, tooltipText }) =>
                             !skip ? (
                                 <IconButton

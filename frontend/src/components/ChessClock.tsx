@@ -1,12 +1,13 @@
 import type { PieceColor } from '@grouchess/chess';
 import invariant from 'tiny-invariant';
 
+import StopwatchIcon from '../assets/icons/stopwatch.svg?react';
 import { useChessClock } from '../providers/ChessGameRoomProvider';
 import { useClockTick } from '../providers/ClockTickProvider';
 
 const MS_IN_SECOND = 1000;
 const SEC_IN_MINUTE = 60;
-const SHOW_MS_THRESHOLD_SECONDS = 20;
+const SHOW_MS_THRESHOLD_SECONDS = 10;
 
 type Props = {
     isActive: boolean;
@@ -27,9 +28,7 @@ function formatMinutesAndSeconds(minutes: number, seconds: number): string {
 }
 
 function formatMsPart(ms: number): string {
-    return Math.floor(ms / 10)
-        .toString()
-        .padStart(2, '0');
+    return Math.floor(ms / 100).toString();
 }
 
 function ChessClock({ isActive, color }: Props) {
@@ -47,21 +46,22 @@ function ChessClock({ isActive, color }: Props) {
     const timeToDisplayMs = isActive && !isPaused ? timeRemainingMs - elapsedActiveMs : timeRemainingMs;
     const { minutes, seconds, milliseconds } = parseTime(Math.max(timeToDisplayMs, 0));
 
-    const showMsPart = minutes === 0 && seconds <= SHOW_MS_THRESHOLD_SECONDS;
+    const showMsPart = minutes === 0 && seconds < SHOW_MS_THRESHOLD_SECONDS;
     const minAndSecText = formatMinutesAndSeconds(minutes, seconds);
-    const msPartText = showMsPart ? formatMsPart(milliseconds) : '00';
+    const msPartText = showMsPart ? formatMsPart(milliseconds) : '0';
 
     return (
-        <time
-            className={`col-span-3 cursor-default text-zinc-300 text-right pr-2 text-2xl font-bold tabular-nums tracking-widest py-1 rounded-lg ${isActive && 'bg-zinc-600'}`}
-            aria-live="polite"
-            aria-label={`${color} clock: ${minAndSecText}${msPartText} remaining`}
+        <div
+            className={`flex flex-row gap-3 justify-end items-center cursor-default text-zinc-300 text-2xl font-bold tabular-nums tracking-widest p-1 rounded-lg ${isActive && 'bg-zinc-600'}`}
         >
-            {minAndSecText}
-            <span className={`text-base ${!showMsPart && 'invisible'}`}>
-                .<span className="inline-block w-[2ch]">{msPartText}</span>
-            </span>
-        </time>
+            {isActive && <StopwatchIcon className="inline-block size-5 text-zinc-300/80 ml-4" aria-hidden="true" />}
+            <time aria-live="polite" aria-label={`${color} clock: ${minAndSecText}${msPartText} remaining`}>
+                {minAndSecText}
+                <span className={`text-base ${!showMsPart && 'invisible'}`}>
+                    .<span className="w-[1ch]">{msPartText}</span>
+                </span>
+            </time>
+        </div>
     );
 }
 
