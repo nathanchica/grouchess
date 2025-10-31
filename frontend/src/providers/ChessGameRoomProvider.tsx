@@ -179,4 +179,4 @@ export default ChessGameRoomProvider;
 
 // For convenience re-exports
 export type { ChessGameRoomState } from './chessGameRoom/types';
-export { createInitialChessClockState, createSelfPlayChessGameRoomState } from './chessGameRoom/state';
+export { createSelfPlayChessGameRoomState } from './chessGameRoom/state';

@@ -16,6 +16,7 @@
         "@fontsource-variable/merriweather": "^5.2.6",
         "@fontsource-variable/playfair-display": "^5.2.8",
         "@grouchess/chess": "workspace:*",
+        "@grouchess/chess-clocks": "workspace:*",
         "@grouchess/game-room": "workspace:*",
         "@grouchess/http-schemas": "workspace:*",
         "@grouchess/socket-events": "workspace:*",

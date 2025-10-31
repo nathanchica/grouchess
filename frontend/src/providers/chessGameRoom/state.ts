@@ -1,26 +1,8 @@
-import { createInitialChessGame, type ChessClockState } from '@grouchess/chess';
+import { createInitialChessGame } from '@grouchess/chess';
+import { createInitialChessClockState } from '@grouchess/chess-clocks';
 import type { TimeControl, ChessGameRoom, Player } from '@grouchess/game-room';
 
 import type { ChessGameRoomState } from './types';
-
-export function createInitialChessClockState(timeControl?: TimeControl): ChessClockState {
-    const baseTimeMs = timeControl?.minutes ? timeControl.minutes * 60 * 1000 : 0;
-    const incrementMs = timeControl?.increment ? timeControl.increment * 1000 : 0;
-    return {
-        white: {
-            timeRemainingMs: baseTimeMs,
-            isActive: false,
-        },
-        black: {
-            timeRemainingMs: baseTimeMs,
-            isActive: false,
-        },
-        lastUpdatedTimeMs: null,
-        baseTimeMs,
-        incrementMs,
-        isPaused: true,
-    };
-}
 
 export function createSelfPlayChessGameRoomState(timeControlOption: TimeControl | null): ChessGameRoomState {
     const player1: Player = {

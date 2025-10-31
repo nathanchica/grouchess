@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { createInitialChessClockState } from '@grouchess/chess-clocks';
 import type { TimeControl } from '@grouchess/game-room';
 import type { GetChessGameResponse } from '@grouchess/http-schemas';
 
@@ -8,11 +9,7 @@ import MainMenuView from './MainMenuView';
 
 import { useFetchChessGame } from '../../hooks/useFetchChessGame';
 import { useAuth } from '../../providers/AuthProvider';
-import {
-    createInitialChessClockState,
-    createSelfPlayChessGameRoomState,
-    type ChessGameRoomState,
-} from '../../providers/ChessGameRoomProvider';
+import { createSelfPlayChessGameRoomState, type ChessGameRoomState } from '../../providers/ChessGameRoomProvider';
 import { useSocket } from '../../providers/SocketProvider';
 import { rebaseServerClockToPerf } from '../../utils/clock';
 

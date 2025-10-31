@@ -1,17 +1,20 @@
 import {
-    computeGameStateBasedOnClock,
     computeNextChessBoardFromMove,
     computeNextChessGameAfterMove,
     createChessGameFromFEN,
     getPiece,
     isPromotionSquare,
-    updateClockState,
     type ExpiredClockGameStatus,
 } from '@grouchess/chess';
+import {
+    computeGameStateBasedOnClock,
+    createInitialChessClockState,
+    createUpdatedClockState,
+} from '@grouchess/chess-clocks';
 import { computePlayerScores } from '@grouchess/game-room';
 import invariant from 'tiny-invariant';
 
-import { createInitialChessClockState, createSelfPlayChessGameRoomState } from './state';
+import { createSelfPlayChessGameRoomState } from './state';
 import type { ChessGameRoomState, Action, EndGameInput } from './types';
 
 import type { ChessGameUI } from '../../utils/types';
@@ -49,7 +52,7 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
 
             // end game if time expired just in case
             if (clockState) {
-                const updatedClockState = updateClockState(clockState, performance.now());
+                const updatedClockState = createUpdatedClockState(clockState, performance.now());
                 const expiredClockGameState = computeGameStateBasedOnClock(updatedClockState, board);
                 if (expiredClockGameState) {
                     return endGame({
