@@ -41,6 +41,7 @@ export default [
                 window: 'readonly',
                 setTimeout: 'readonly',
                 clearTimeout: 'readonly',
+                AbortController: 'readonly',
                 Audio: 'readonly',
                 Image: 'readonly',
                 HTMLAudioElement: 'readonly',

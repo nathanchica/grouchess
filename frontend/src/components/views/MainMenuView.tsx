@@ -1,9 +1,10 @@
 import type { TimeControl } from '@grouchess/game-room';
 import { Routes, Route } from 'react-router';
 
+import ServiceHealthCheckView from './ServiceHealthCheckView';
+
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
-import GameRoomForm from '../mainmenu/GameRoomForm';
 import WaitingRoomView from '../mainmenu/WaitingRoomView';
 
 type Props = {
@@ -39,7 +40,7 @@ function MainMenuView({ onSelfPlayStart }: Props) {
 
                 <Routes>
                     <Route path="/:roomId" element={<WaitingRoomView />} />
-                    <Route path="/" element={<GameRoomForm onSelfPlayStart={onSelfPlayStart} />} />
+                    <Route path="/" element={<ServiceHealthCheckView onSelfPlayStart={onSelfPlayStart} />} />
                 </Routes>
             </div>
         </main>
