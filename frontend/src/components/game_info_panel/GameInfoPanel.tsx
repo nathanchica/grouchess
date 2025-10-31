@@ -26,10 +26,10 @@ type IconButtonPropsWithKey = IconButtonProps & { key: string; skip?: boolean };
 
 function GameInfoPanel() {
     const { chessGame, loadFEN } = useChessGame();
-    const { gameRoom } = useGameRoom();
+    const { gameRoom, currentPlayerColor } = useGameRoom();
     invariant(gameRoom && chessGame, 'Game room and chess game are required');
     const { players, playerIdToScore, type } = gameRoom;
-    const { timelineVersion } = chessGame;
+    const { timelineVersion, moveHistory } = chessGame;
     const [player1, player2] = players;
 
     const [shareModalIsShowing, setShareModalIsShowing] = useState(false);
@@ -137,10 +137,16 @@ function GameInfoPanel() {
                         </>
                     )}
 
-                    {type !== 'self' && <GameActions />}
+                    {type !== 'self' && (
+                        <GameActions
+                            // Reset the component each turn or each game to reset internal states
+                            key={`game-actions-${timelineVersion}-${moveHistory.length}`}
+                            playerColor={currentPlayerColor}
+                        />
+                    )}
 
                     <section
-                        className={`flex ${type === 'self' ? 'justify-between' : 'justify-center md:gap-12 gap-8'}`}
+                        className={`flex ${type === 'self' ? 'justify-between' : 'justify-evenly'}`}
                         aria-label="Game actions"
                     >
                         {iconButtons.map(({ key, skip, icon, onClick, ariaProps, isActive, tooltipText }) =>

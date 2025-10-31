@@ -11,12 +11,10 @@ type Props = {
 };
 
 function PlayerChatPanel({ currentPlayerId }: Props) {
-    const { messages, sendStandardMessage } = usePlayerChatSocket();
+    const { messages, sendStandardMessage, acceptDrawOffer, declineDrawOffer } = usePlayerChatSocket();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [inputValue, setInputValue] = useState('');
-
-    const standardMessages = messages.filter(({ type }) => type === 'standard');
 
     const handleSubmit = () => {
         if (!inputValue.trim() || !currentPlayerId) return;
@@ -33,13 +31,19 @@ function PlayerChatPanel({ currentPlayerId }: Props) {
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [standardMessages.length]);
+    }, [messages.length]);
 
     return (
         <div className="flex flex-col h-full border border-gray-400 rounded-lg overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {standardMessages.map((message) => (
-                    <ChatMessage key={message.id} message={message} currentPlayerId={currentPlayerId} />
+                {messages.map((message) => (
+                    <ChatMessage
+                        key={message.id}
+                        message={message}
+                        currentPlayerId={currentPlayerId}
+                        onDrawAccept={acceptDrawOffer}
+                        onDrawDecline={declineDrawOffer}
+                    />
                 ))}
                 <div ref={messagesEndRef} />
             </div>

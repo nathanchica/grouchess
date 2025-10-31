@@ -15,6 +15,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 - Player vs Player over network (via Socket.io)
     - Chat
     - Rematches
+    - Draw offers
 - Player vs Self (local)
 - Drag-and-drop and click-to-move piece movement
 - Legal move generation and enforcement
@@ -194,8 +195,7 @@ pnpm dev
 
 - Chat panel
     - Move takebacks
-    - Resign
-    - Draw offers
+    - Rematch offers
 - Player vs CPU mode
     - AI chat
 - Timeline jumping

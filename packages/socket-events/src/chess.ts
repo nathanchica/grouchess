@@ -58,6 +58,16 @@ export const GameEndedPayloadSchema = z.object({
 });
 export type GameEndedPayload = z.infer<typeof GameEndedPayloadSchema>;
 
+export const DrawDeclinedPayloadSchema = z.object({
+    message: SocketMessageSchema,
+});
+export type DrawDeclinedPayload = z.infer<typeof DrawDeclinedPayloadSchema>;
+
+export const DrawAcceptedPayloadSchema = z.object({
+    message: SocketMessageSchema,
+});
+export type DrawAcceptedPayload = z.infer<typeof DrawAcceptedPayloadSchema>;
+
 /**
  * EVENTS INTERFACE DEFINITIONS
  */
@@ -70,6 +80,8 @@ export interface ChessServerToClientEvents {
     piece_moved: (payload: PieceMovedPayload) => void;
     new_message: (payload: NewMessagePayload) => void;
     user_typing: (payload: UserTypingPayload) => void;
+    draw_declined: (payload: DrawDeclinedPayload) => void;
+    draw_accepted: (payload: DrawAcceptedPayload) => void;
     game_ended: (payload: GameEndedPayload) => void;
 }
 
@@ -80,6 +92,8 @@ export interface ChessClientToServerEvents {
     typing: (input: TypingEventInput) => void;
     offer_rematch: () => void;
     offer_draw: () => void;
+    decline_draw: () => void;
+    accept_draw: () => void;
     resign: () => void;
 }
 
