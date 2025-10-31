@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-import { computeGameStateBasedOnClock, updateClockState, type ExpiredClockGameStatus } from '@grouchess/chess';
+import type { ExpiredClockGameStatus } from '@grouchess/chess';
+import { computeGameStateBasedOnClock, createUpdatedClockState, createPausedClockState } from '@grouchess/chess-clocks';
 import invariant from 'tiny-invariant';
 
 import { useChessClock, useChessGame } from '../providers/ChessGameRoomProvider';
@@ -24,15 +25,12 @@ export function useTimeoutDetection() {
         if (clockState.isPaused) return;
         if (!isRunning) return;
 
-        const updatedClockState = updateClockState(clockState, nowMs);
+        const updatedClockState = createUpdatedClockState(clockState, nowMs);
         const expiredClockGameState = computeGameStateBasedOnClock(updatedClockState, boardState.board);
         if (expiredClockGameState && !timeoutHandledRef.current) {
             timeoutHandledRef.current = true;
-            setClocks({
-                ...updatedClockState,
-                isPaused: true,
-                lastUpdatedTimeMs: null,
-            });
+            const pausedClockState = createPausedClockState(updatedClockState);
+            setClocks(pausedClockState);
             endGame({
                 reason: expiredClockGameState.status as ExpiredClockGameStatus,
                 winner: expiredClockGameState.winner,

@@ -56,6 +56,9 @@ importers:
       '@grouchess/chess':
         specifier: workspace:*
         version: link:../packages/chess
+      '@grouchess/chess-clocks':
+        specifier: workspace:*
+        version: link:../packages/chess-clocks
       '@grouchess/game-room':
         specifier: workspace:*
         version: link:../packages/game-room
@@ -117,6 +120,9 @@ importers:
       '@grouchess/chess':
         specifier: workspace:*
         version: link:../packages/chess
+      '@grouchess/chess-clocks':
+        specifier: workspace:*
+        version: link:../packages/chess-clocks
       '@grouchess/game-room':
         specifier: workspace:*
         version: link:../packages/game-room
@@ -178,6 +184,25 @@ importers:
       tiny-invariant:
         specifier: ^1.3.3
         version: 1.3.3
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  packages/chess-clocks:
+    dependencies:
+      '@grouchess/chess':
+        specifier: workspace:*
+        version: link:../chess
+      '@grouchess/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@grouchess/game-room':
+        specifier: workspace:*
+        version: link:../game-room
       zod:
         specifier: ^4.1.12
         version: 4.1.12

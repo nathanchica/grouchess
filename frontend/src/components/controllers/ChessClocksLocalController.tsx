@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { updateClockState, type ChessClockState, type PieceColor } from '@grouchess/chess';
+import type { PieceColor } from '@grouchess/chess';
+import { createStartedClockState, createPausedClockState, createUpdatedClockState } from '@grouchess/chess-clocks';
 import invariant from 'tiny-invariant';
 
 import { useTimeoutDetection } from '../../hooks/useTimeoutDetection';
@@ -28,40 +29,27 @@ function ChessClocksLocalController() {
     const prevStatusRef = useRef<string>(gameState.status);
     const prevTimelineRef = useRef<number>(timelineVersion);
 
-    const startClock = useCallback((state: ChessClockState, activeColor: PieceColor): ChessClockState => {
-        const now = performance.now();
-        return {
-            white: { ...state.white, isActive: activeColor === 'white' },
-            black: { ...state.black, isActive: activeColor === 'black' },
-            lastUpdatedTimeMs: now,
-            baseTimeMs: state.baseTimeMs,
-            incrementMs: state.incrementMs,
-            isPaused: false,
-        };
-    }, []);
-
-    const pauseClock = useCallback((state: ChessClockState): ChessClockState => {
-        const updated = updateClockState(state, performance.now());
-        return {
-            ...updated,
-            isPaused: true,
-            lastUpdatedTimeMs: null,
-        };
-    }, []);
-
     const onMoveApplied = useCallback(
-        (movingColor: PieceColor) => {
+        (movingColor: PieceColor, isFirstMove: boolean) => {
             const nextActive: PieceColor = movingColor === 'white' ? 'black' : 'white';
             if (clockState.isPaused) {
-                // Start clocks after the first move (custom rule)
-                const started = startClock(clockState, nextActive);
-                setClocks(started);
+                // On first move by white, add increment to white's clock
+                const incrementColor = isFirstMove && movingColor === 'white' ? 'white' : undefined;
+
+                const startedClockState = createStartedClockState(
+                    clockState,
+                    nextActive,
+                    performance.now(),
+                    incrementColor
+                );
+                setClocks(startedClockState);
                 return;
             }
-            const switched = updateClockState(clockState, performance.now(), nextActive);
+
+            const switched = createUpdatedClockState(clockState, performance.now(), nextActive);
             setClocks(switched);
         },
-        [clockState, setClocks, startClock]
+        [clockState, setClocks]
     );
 
     // Update clocks after each new move
@@ -72,7 +60,7 @@ function ChessClocksLocalController() {
 
         const lastMove = moveHistory[currentCount - 1];
         const movingColor = lastMove.move.piece.color;
-        onMoveApplied(movingColor);
+        onMoveApplied(movingColor, currentCount === 1);
 
         prevMoveCountRef.current = currentCount;
     }, [moveHistory, onMoveApplied]);
@@ -83,11 +71,14 @@ function ChessClocksLocalController() {
         const status = gameState.status;
 
         if (status !== prevStatus && status !== 'in-progress') {
-            setClocks(pauseClock(clockState));
+            // Update clock with final elapsed time before pausing
+            const updated = createUpdatedClockState(clockState, performance.now());
+            const paused = createPausedClockState(updated);
+            setClocks(paused);
         }
 
         prevStatusRef.current = status;
-    }, [clockState, gameState.status, pauseClock, setClocks]);
+    }, [clockState, gameState.status, setClocks]);
 
     // Reset clocks on game reset (timelineVersion increments each time game is reset)
     useEffect(() => {
@@ -101,7 +92,7 @@ function ChessClocksLocalController() {
         prevTimelineRef.current = currentVersion;
     }, [moveHistory.length, resetClocks, timelineVersion]);
 
-    // Drive shared monotonic timer based on active/paused state
+    // Drive monotonic timer based on active/paused state
     useEffect(() => {
         const shouldRun = !clockState.isPaused && (clockState.white.isActive || clockState.black.isActive);
         if (shouldRun && !isRunning) {

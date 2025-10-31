@@ -1,28 +1,18 @@
-import { updateClockState, type ChessClockState, type PieceColor } from '@grouchess/chess';
+import type { PieceColor } from '@grouchess/chess';
+import {
+    createInitialChessClockState,
+    createUpdatedClockState,
+    createPausedClockState,
+    createStartedClockState,
+    type ChessClockState,
+} from '@grouchess/chess-clocks';
 import type { TimeControl } from '@grouchess/game-room';
-
-const MS_PER_SECOND = 1000;
-const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 
 export class ChessClockService {
     private gameRoomIdToClockStateMap: Map<string, ChessClockState> = new Map();
 
     initializeClockForRoom(roomId: string, timeControl: TimeControl): ChessClockState {
-        const baseTimeMs = timeControl.minutes * MS_PER_MINUTE;
-        const initialState: ChessClockState = {
-            white: {
-                timeRemainingMs: baseTimeMs,
-                isActive: false,
-            },
-            black: {
-                timeRemainingMs: baseTimeMs,
-                isActive: false,
-            },
-            lastUpdatedTimeMs: null,
-            baseTimeMs,
-            incrementMs: timeControl.increment * MS_PER_SECOND,
-            isPaused: true,
-        };
+        const initialState = createInitialChessClockState(timeControl);
         this.gameRoomIdToClockStateMap.set(roomId, initialState);
         return initialState;
     }
@@ -32,7 +22,7 @@ export class ChessClockService {
         if (!clockState) {
             return null;
         }
-        const updatedClockState = updateClockState(clockState, Date.now());
+        const updatedClockState = createUpdatedClockState(clockState, Date.now());
         this.gameRoomIdToClockStateMap.set(roomId, updatedClockState);
         return updatedClockState;
     }
@@ -51,26 +41,9 @@ export class ChessClockService {
             throw new Error('Cannot switch clock while paused');
         }
 
-        const updatedClockState = updateClockState(clockState, Date.now(), toColor);
+        const updatedClockState = createUpdatedClockState(clockState, Date.now(), toColor);
         this.gameRoomIdToClockStateMap.set(roomId, updatedClockState);
         return updatedClockState;
-    }
-
-    checkTimeExpired(roomId: string): PieceColor | null {
-        const clockState = this.getClockStateForRoom(roomId);
-        if (!clockState) {
-            throw new Error('Clock not initialized for this room');
-        }
-
-        this.gameRoomIdToClockStateMap.set(roomId, clockState);
-
-        if (clockState.white.timeRemainingMs <= 0) {
-            return 'white';
-        }
-        if (clockState.black.timeRemainingMs <= 0) {
-            return 'black';
-        }
-        return null;
     }
 
     pauseClock(roomId: string): ChessClockState {
@@ -79,31 +52,22 @@ export class ChessClockService {
             throw new Error('Clock not initialized for this room');
         }
 
-        clockState.isPaused = true;
-        clockState.lastUpdatedTimeMs = null;
+        const pausedClockState = createPausedClockState(clockState);
+        this.gameRoomIdToClockStateMap.set(roomId, pausedClockState);
 
-        this.gameRoomIdToClockStateMap.set(roomId, clockState);
-
-        return clockState;
+        return pausedClockState;
     }
 
-    startClock(roomId: string, activeColor?: PieceColor): ChessClockState {
+    startClock(roomId: string, activeColor: PieceColor, incrementColor?: PieceColor): ChessClockState {
         const clockState = this.getClockStateForRoom(roomId);
         if (!clockState) {
             throw new Error('Clock not initialized for this room');
         }
 
-        clockState.isPaused = false;
-        clockState.lastUpdatedTimeMs = Date.now();
+        const startedClockState = createStartedClockState(clockState, activeColor, Date.now(), incrementColor);
+        this.gameRoomIdToClockStateMap.set(roomId, startedClockState);
 
-        if (activeColor) {
-            clockState.white.isActive = activeColor === 'white';
-            clockState.black.isActive = activeColor === 'black';
-        }
-
-        this.gameRoomIdToClockStateMap.set(roomId, clockState);
-
-        return clockState;
+        return startedClockState;
     }
 
     resetClock(roomId: string): ChessClockState {
@@ -112,14 +76,22 @@ export class ChessClockService {
             throw new Error('Clock not initialized for this room');
         }
 
-        clockState.white.timeRemainingMs = clockState.baseTimeMs;
-        clockState.black.timeRemainingMs = clockState.baseTimeMs;
-        clockState.white.isActive = false;
-        clockState.black.isActive = false;
-        clockState.lastUpdatedTimeMs = null;
-        clockState.isPaused = true;
-        this.gameRoomIdToClockStateMap.set(roomId, clockState);
+        const resetClockState: ChessClockState = {
+            white: {
+                timeRemainingMs: clockState.baseTimeMs,
+                isActive: false,
+            },
+            black: {
+                timeRemainingMs: clockState.baseTimeMs,
+                isActive: false,
+            },
+            lastUpdatedTimeMs: null,
+            baseTimeMs: clockState.baseTimeMs,
+            incrementMs: clockState.incrementMs,
+            isPaused: true,
+        };
+        this.gameRoomIdToClockStateMap.set(roomId, resetClockState);
 
-        return clockState;
+        return resetClockState;
     }
 }

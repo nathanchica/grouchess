@@ -1,0 +1,32 @@
+{
+    "name": "@grouchess/chess-clocks",
+    "version": "1.0.0",
+    "description": "Chess clocks logic and utilities",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "chess-clocks"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "@grouchess/chess": "workspace:*",
+        "@grouchess/errors": "workspace:*",
+        "@grouchess/game-room": "workspace:*",
+        "zod": "^4.1.12"
+    }
+}

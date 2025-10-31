@@ -1,4 +1,4 @@
-import { computeGameStateBasedOnClock } from '@grouchess/chess';
+import { computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from '@grouchess/socket-events';
 
 import { authenticateSocket } from '../middleware/authenticateSocket.js';
@@ -128,7 +128,12 @@ export function createChessGameRoomSocketHandler({
                         }
                     }
 
-                    const { gameState } = chessGameService.movePiece(roomId, fromIndex, toIndex, promotion);
+                    const { gameState, moveHistory } = chessGameService.movePiece(
+                        roomId,
+                        fromIndex,
+                        toIndex,
+                        promotion
+                    );
                     const isGameOver = gameState.status !== 'in-progress';
 
                     socket.to(gameRoomTarget).emit('piece_moved', {
@@ -156,10 +161,14 @@ export function createChessGameRoomSocketHandler({
                     if (clockState) {
                         const nextActiveColor = playerColor === 'white' ? 'black' : 'white';
                         if (clockState.isPaused) {
-                            clockState = chessClockService.startClock(roomId, nextActiveColor);
+                            // increment white clock if first move
+                            const isFirstMove = moveHistory.length === 1 && nextActiveColor === 'black';
+                            const incrementColor = isFirstMove ? 'white' : undefined;
+                            clockState = chessClockService.startClock(roomId, nextActiveColor, incrementColor);
                         } else {
                             clockState = chessClockService.switchClock(roomId, nextActiveColor);
                         }
+
                         io.to(gameRoomTarget).emit('clock_update', { clockState });
                     }
                 } catch (error) {

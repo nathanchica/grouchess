@@ -10,7 +10,6 @@ export {
     rowColToIndex,
 } from './board.js';
 export { computeCastleRightsChangesFromMove, createInitialCastleRights } from './castles.js';
-export { computeGameStateBasedOnClock, updateClockState } from './clocks.js';
 export { hasInsufficientMatingMaterial, isDrawStatus } from './draws.js';
 export { computeAllLegalMoves, computeNextChessBoardFromMove, createMove, isKingInCheck } from './moves.js';
 export { createFEN, isValidFEN } from './notations.js';

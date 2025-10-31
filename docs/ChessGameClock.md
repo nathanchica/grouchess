@@ -88,6 +88,7 @@ Clock is initialized in **paused** state with:
 ### First Move (Clock Start)
 
 The clock remains paused until the first move is made. When white makes the first move, black's clock becomes active.
+If there is an increment, it is added to white's clock after the move is made.
 
 ### Each Move (Clock Switch + Timeout Check)
 
