@@ -168,7 +168,7 @@ function ChessBoard() {
     return (
         <div
             ref={boardRef}
-            className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-lg shadow-white/30"
+            className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-2xl shadow-white/25"
             onPointerMove={(event) => {
                 if (boardInteractionIsDisabled || !drag || !boardRef.current) return;
                 if (event.pointerId !== drag.pointerId) return;

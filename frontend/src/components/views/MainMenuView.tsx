@@ -29,11 +29,11 @@ function MainMenuView({ onSelfPlayStart }: Props) {
                     <a href="/">
                         <h1 className="flex items-center text-4xl font-display font-bold tracking-tight text-white sm:text-5xl">
                             <img src={logoImgSrc} alt={rookAltText} className="inline-block size-16" />
-                            Grouchess
+                            grouchess
                         </h1>
                     </a>
                     <p className="mt-2 text-base text-zinc-400 sm:max-w-xl sm:text-lg">
-                        Grouchess is a Lichess-clone project just for fun and learning
+                        grouchess is a Lichess-clone project just for fun and learning
                     </p>
                 </header>
 

@@ -34,7 +34,7 @@ function PlayerChatPanel({ currentPlayerId }: Props) {
     }, [messages.length]);
 
     return (
-        <div className="flex flex-col h-full border border-gray-400 rounded-lg overflow-hidden">
+        <div className="flex flex-col h-full bg-zinc-900/80 border border-gray-400/50 rounded-xl overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {messages.map((message) => (
                     <ChatMessage
@@ -60,7 +60,7 @@ function PlayerChatPanel({ currentPlayerId }: Props) {
                     onKeyDown={handleKeyDown}
                     placeholder="Message"
                     maxLength={MAX_MESSAGE_LENGTH}
-                    className="w-full bg-zinc-700 px-3 py-2 rounded-lg focus:outline-none placeholder:text-zinc-400 text-zinc-200"
+                    className="w-full bg-zinc-800 px-3 py-2 rounded-lg focus:outline-none placeholder:text-zinc-400 text-zinc-200"
                 />
             </div>
         </div>

@@ -18,8 +18,12 @@ function PlayersInfoSection({ variant }: Props) {
     const { white: whitePlayerId, black: blackPlayerId } = colorToPlayerId;
     invariant(whitePlayerId && blackPlayerId, 'Both players must be present to display PlayersInfoSection');
 
-    const blackCard = <PlayerCard color="black" displayName={playerIdToDisplayName[blackPlayerId]} />;
-    const whiteCard = <PlayerCard color="white" displayName={playerIdToDisplayName[whitePlayerId]} />;
+    const blackCard = (
+        <PlayerCard playerId={blackPlayerId} color="black" displayName={playerIdToDisplayName[blackPlayerId]} />
+    );
+    const whiteCard = (
+        <PlayerCard playerId={whitePlayerId} color="white" displayName={playerIdToDisplayName[whitePlayerId]} />
+    );
 
     const isCurrentPlayerWhite = currentPlayerId === whitePlayerId;
     const currentPlayerCard = isCurrentPlayerWhite ? whiteCard : blackCard;

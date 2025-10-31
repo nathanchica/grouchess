@@ -44,7 +44,7 @@ function GameResultCard({ gameState, onExitClick, onRematchClick }: Props) {
         <div
             aria-live="polite"
             role="status"
-            className="my-4 flex md:flex-row flex-col md:gap-2 gap-5 justify-between rounded-md border border-white/10 bg-zinc-900 p-3 w-[95%] text-sm text-zinc-200"
+            className="my-4 flex md:flex-row flex-col md:gap-2 gap-5 justify-between rounded-md bg-zinc-900 p-3 w-[95%] text-sm text-zinc-200"
         >
             <div>
                 <p className="text-xs uppercase tracking-widest text-zinc-400">{statusLabel}</p>
