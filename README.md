@@ -71,7 +71,17 @@ pnpm dev
 │     │  ├─ room.ts
 │     │  └─ timeControl.ts
 │     ├─ sockets/                             # Socket.IO namespaces/handlers
-│     │  └─ chessGameRoomSocket.ts
+│     │  └─ chess_game_room/
+│     │     ├─ handlers/
+│     │     │  ├─ chat.ts                     # Chat event handlers
+│     │     │  ├─ moves.ts                    # Move event handlers
+│     │     │  ├─ lifecycle.ts                # Game lifecycle event handlers
+│     │     │  ├─ disconnect.ts               # Disconnect handler
+│     │     │  └─ offers.ts                   # Draw/resign/rematch offer handlers
+│     │     ├─ index.ts                       # Socket namespace bootstrap
+│     │     ├─ context.ts                     # Socket event handler context
+│     │     ├─ utils.ts                       # Event handler utils
+│     │     └─ types.ts                       # Shared types for handlers
 │     ├─ servers/
 │     │  └─ chess.ts                          # Socket server bootstrap
 │     ├─ services/                            # Domain services (chess/game room/clock)
@@ -166,7 +176,7 @@ pnpm dev
 
 - Socket events (shared): `packages/socket-events`
     - Event contracts and payload schemas: `packages/socket-events/src/chess.ts`, `packages/socket-events/src/common.ts`
-    - Used by backend `backend/src/sockets/chessGameRoomSocket.ts` and frontend providers
+    - Used by backend `backend/src/sockets/chess_game_room/*` and frontend providers
       (`frontend/src/providers/ChessClockSocketProvider.tsx`, `frontend/src/providers/PlayerChatSocketProvider.tsx`,
       `frontend/src/providers/SocketProvider.tsx`).
 
@@ -201,6 +211,10 @@ pnpm dev
 - Terminal / CLI client
 - Chat panel
     - Move takebacks
+    - Slash commands (e.g., /rematch, /resign)
+    - Typing indicators
+    - Grouped messages by time
+    - Message reactions
 - Timeline jumping
 - Server-side timeout enforcement
 - Change piece set images

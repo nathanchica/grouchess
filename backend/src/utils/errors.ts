@@ -37,3 +37,11 @@ export class UnauthorizedError extends Error {
         Object.setPrototypeOf(this, UnauthorizedError.prototype);
     }
 }
+
+export class InvalidChessGameStateError extends Error {
+    constructor(message: string) {
+        super(`Invalid chess game state: ${message}`);
+        this.name = 'InvalidChessGameStateError';
+        Object.setPrototypeOf(this, InvalidChessGameStateError.prototype);
+    }
+}
