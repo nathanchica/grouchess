@@ -1,7 +1,10 @@
 import { NotConfiguredError, ServiceUnavailableError } from '@grouchess/errors';
+import * as Sentry from '@sentry/react';
 import { type FallbackProps } from 'react-error-boundary';
 
 function ErrorView({ error }: FallbackProps) {
+    Sentry.captureException(error);
+
     let headerText = 'Oh no!';
     if (error instanceof NotConfiguredError) {
         headerText = 'Configuration error';
