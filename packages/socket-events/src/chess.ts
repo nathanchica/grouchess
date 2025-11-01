@@ -1,10 +1,5 @@
-import {
-    BoardIndexSchema,
-    ChessClockStateSchema,
-    ChessGameStatusEnum,
-    PawnPromotionEnum,
-    PieceColorEnum,
-} from '@grouchess/chess';
+import { BoardIndexSchema, ChessGameStatusEnum, PawnPromotionEnum, PieceColorEnum } from '@grouchess/chess';
+import { ChessClockStateSchema } from '@grouchess/chess-clocks';
 import { ChessGameRoomSchema, MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
 import * as z from 'zod';
 
@@ -58,15 +53,10 @@ export const GameEndedPayloadSchema = z.object({
 });
 export type GameEndedPayload = z.infer<typeof GameEndedPayloadSchema>;
 
-export const DrawDeclinedPayloadSchema = z.object({
+export const OfferResponsePayloadSchema = z.object({
     message: SocketMessageSchema,
 });
-export type DrawDeclinedPayload = z.infer<typeof DrawDeclinedPayloadSchema>;
-
-export const DrawAcceptedPayloadSchema = z.object({
-    message: SocketMessageSchema,
-});
-export type DrawAcceptedPayload = z.infer<typeof DrawAcceptedPayloadSchema>;
+export type OfferResponsePayload = z.infer<typeof OfferResponsePayloadSchema>;
 
 /**
  * EVENTS INTERFACE DEFINITIONS
@@ -80,9 +70,11 @@ export interface ChessServerToClientEvents {
     piece_moved: (payload: PieceMovedPayload) => void;
     new_message: (payload: NewMessagePayload) => void;
     user_typing: (payload: UserTypingPayload) => void;
-    draw_declined: (payload: DrawDeclinedPayload) => void;
-    draw_accepted: (payload: DrawAcceptedPayload) => void;
     game_ended: (payload: GameEndedPayload) => void;
+    draw_declined: (payload: OfferResponsePayload) => void;
+    draw_accepted: (payload: OfferResponsePayload) => void;
+    rematch_declined: (payload: OfferResponsePayload) => void;
+    rematch_accepted: (payload: OfferResponsePayload) => void;
 }
 
 export interface ChessClientToServerEvents {
@@ -94,6 +86,10 @@ export interface ChessClientToServerEvents {
     offer_draw: () => void;
     decline_draw: () => void;
     accept_draw: () => void;
+    decline_rematch: () => void;
+    accept_move_takeback: () => void;
+    decline_move_takeback: () => void;
+    offer_move_takeback: () => void;
     resign: () => void;
 }
 

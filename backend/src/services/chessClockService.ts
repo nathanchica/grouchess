@@ -17,6 +17,10 @@ export class ChessClockService {
         return initialState;
     }
 
+    hasClockForRoom(roomId: string): boolean {
+        return this.gameRoomIdToClockStateMap.has(roomId);
+    }
+
     getClockStateForRoom(roomId: string): ChessClockState | null {
         const clockState = this.gameRoomIdToClockStateMap.get(roomId);
         if (!clockState) {

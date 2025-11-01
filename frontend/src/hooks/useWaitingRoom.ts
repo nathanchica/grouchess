@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useLocation } from 'react-router';
 
@@ -37,6 +37,7 @@ export function useWaitingRoom(roomId: string): Payload {
     const { state: locationState } = useLocation();
     const { socket, authenticateSocket, isAuthenticated } = useSocket();
     const { loadData: loadAuthData } = useAuth();
+    const isWaitingForGame = useRef<boolean>(false);
 
     const sessionStorageKey = `room:${roomId}`;
 
@@ -68,7 +69,10 @@ export function useWaitingRoom(roomId: string): Payload {
     }, []);
 
     const onAuthenticated = useCallback(() => {
+        // Prevent multiple emissions in case of re-renders
+        if (isWaitingForGame.current) return;
         socket.emit('wait_for_game');
+        isWaitingForGame.current = true;
     }, [socket]);
 
     /**

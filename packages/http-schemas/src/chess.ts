@@ -1,4 +1,5 @@
-import { ChessClockStateSchema, ChessGameSchema, PieceColorEnum } from '@grouchess/chess';
+import { ChessGameSchema, PieceColorEnum } from '@grouchess/chess';
+import { ChessClockStateSchema } from '@grouchess/chess-clocks';
 import {
     ChessGameRoomSchema,
     MessageSchema,

@@ -5,7 +5,7 @@ import type { ChessGameState } from '@grouchess/chess';
 import GameResultCard from './GameResultCard';
 
 import { useChessGame } from '../../providers/ChessGameRoomProvider';
-import { useSocket } from '../../providers/SocketProvider';
+import { usePlayerChatSocket } from '../../providers/PlayerChatSocketProvider';
 
 type Props = {
     isSelfPlay: boolean;
@@ -14,22 +14,25 @@ type Props = {
 };
 
 function GameResultCardController({ isSelfPlay, gameState, onExitClick }: Props) {
-    const { socket } = useSocket();
+    const { isAwaitingRematchResponse, sendRematchOffer } = usePlayerChatSocket();
     const { loadFEN } = useChessGame();
-
-    const sendOfferRematch = useCallback(() => {
-        socket.emit('offer_rematch');
-    }, [socket]);
 
     const onRematchClick = useCallback(() => {
         if (isSelfPlay) {
             loadFEN();
             return;
         }
-        sendOfferRematch();
-    }, [isSelfPlay, loadFEN, sendOfferRematch]);
+        sendRematchOffer();
+    }, [isSelfPlay, loadFEN, sendRematchOffer]);
 
-    return <GameResultCard onExitClick={onExitClick} onRematchClick={onRematchClick} gameState={gameState} />;
+    return (
+        <GameResultCard
+            isAwaitingRematchResponse={isAwaitingRematchResponse}
+            onExitClick={onExitClick}
+            onRematchClick={onRematchClick}
+            gameState={gameState}
+        />
+    );
 }
 
 export default GameResultCardController;

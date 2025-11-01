@@ -20,7 +20,7 @@ export class PlayerService {
         while (this.playerIdToPlayer.has(id)) {
             id = generateId();
         }
-        const player: Player = { id, displayName };
+        const player: Player = { id, displayName, status: 'offline' };
         this.playerIdToPlayer.set(id, player);
         this.playerIdToStatus.set(id, 'offline');
         return player;

@@ -247,6 +247,9 @@ importers:
       '@grouchess/chess':
         specifier: workspace:*
         version: link:../chess
+      '@grouchess/chess-clocks':
+        specifier: workspace:*
+        version: link:../chess-clocks
       '@grouchess/game-room':
         specifier: workspace:*
         version: link:../game-room
@@ -263,6 +266,9 @@ importers:
       '@grouchess/chess':
         specifier: workspace:*
         version: link:../chess
+      '@grouchess/chess-clocks':
+        specifier: workspace:*
+        version: link:../chess-clocks
       '@grouchess/game-room':
         specifier: workspace:*
         version: link:../game-room

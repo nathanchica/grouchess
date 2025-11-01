@@ -11,7 +11,14 @@ type Props = {
 };
 
 function PlayerChatPanel({ currentPlayerId }: Props) {
-    const { messages, sendStandardMessage, acceptDrawOffer, declineDrawOffer } = usePlayerChatSocket();
+    const {
+        messages,
+        sendStandardMessage,
+        acceptDrawOffer,
+        declineDrawOffer,
+        acceptRematchOffer,
+        declineRematchOffer,
+    } = usePlayerChatSocket();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [inputValue, setInputValue] = useState('');
@@ -43,6 +50,8 @@ function PlayerChatPanel({ currentPlayerId }: Props) {
                         currentPlayerId={currentPlayerId}
                         onDrawAccept={acceptDrawOffer}
                         onDrawDecline={declineDrawOffer}
+                        onRematchAccept={acceptRematchOffer}
+                        onRematchDecline={declineRematchOffer}
                     />
                 ))}
                 <div ref={messagesEndRef} />
