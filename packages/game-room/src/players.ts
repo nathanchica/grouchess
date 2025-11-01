@@ -3,6 +3,8 @@ import * as z from 'zod';
 export const MAX_PLAYER_DISPLAY_NAME_LENGTH = 20;
 
 export const PlayerStatusEnum = z.enum(['online', 'offline', 'away']);
+export type PlayerStatus = z.infer<typeof PlayerStatusEnum>;
+
 export const PlayerSchema = z.object({
     id: z.string(),
     displayName: z
@@ -13,5 +15,6 @@ export const PlayerSchema = z.object({
             MAX_PLAYER_DISPLAY_NAME_LENGTH,
             `Display name is too long. Max ${MAX_PLAYER_DISPLAY_NAME_LENGTH} characters`
         ),
+    status: PlayerStatusEnum.optional(),
 });
 export type Player = z.infer<typeof PlayerSchema>;

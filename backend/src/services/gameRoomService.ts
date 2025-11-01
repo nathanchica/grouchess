@@ -79,13 +79,11 @@ export class GameRoomService {
             if (message.id !== messageId) return message;
             if (message.authorId === playerId) throw new UnauthorizedError('Player cannot respond to their own offer');
             if (message.type !== offerMessageType) return message;
-            const responseType = getOfferResponseTypes(offerMessageType)[accept ? 'accept' : 'decline'];
-            const offerType = offerMessageType.split('-')[0];
-            const offerTypeText = offerType.charAt(0).toUpperCase() + offerType.slice(1);
+            const newMessageType = getOfferResponseTypes(offerMessageType)[accept ? 'accept' : 'decline'];
             newMessage = {
                 ...message,
-                type: responseType,
-                content: accept ? `${offerTypeText} accepted.` : `${offerTypeText} declined.`,
+                type: newMessageType,
+                content: getChessOfferResponseContent(newMessageType),
             };
             return newMessage;
         });

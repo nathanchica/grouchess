@@ -195,18 +195,21 @@ pnpm dev
 
 ## Roadmap
 
-- Chat panel
-    - Move takebacks
-    - Rematch offers
 - Player vs CPU mode
     - AI chat
+- Game history export and import (PGN)
+- Terminal / CLI client
+- Chat panel
+    - Move takebacks
 - Timeline jumping
 - Server-side timeout enforcement
 - Change piece set images
 - Change board colors
 - Piece sliding animations
-- Game history export and import (PGN)
-- Terminal / CLI client
+
+- More game modes:
+    - Othello/Reversi
+    - Battleship
 
 #### Won't implement
 

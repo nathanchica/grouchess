@@ -244,6 +244,17 @@ export function createChessGameRoomSocketHandler({
 
             socket.on('offer_rematch', () => {
                 try {
+                    const chessGame = chessGameService.getChessGameForRoom(roomId);
+                    if (!chessGame) {
+                        sendErrorEvent('Game has not started yet');
+                        return;
+                    }
+
+                    if (chessGame.gameState.status === 'in-progress') {
+                        sendErrorEvent('Game is still in progress');
+                        return;
+                    }
+
                     const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
                     if (!gameRoomOffers) {
                         sendErrorEvent('Game room not found');
@@ -288,8 +299,8 @@ export function createChessGameRoomSocketHandler({
                     io.to(gameRoomTarget).emit('rematch_accepted', { message });
                     io.to(gameRoomTarget).emit('game_room_ready');
                 } catch (error) {
-                    console.error('Error offering draw:', error);
-                    sendErrorEvent('Failed to offer draw');
+                    console.error('Error offering rematch:', error);
+                    sendErrorEvent('Failed to offer rematch');
                 }
             });
 

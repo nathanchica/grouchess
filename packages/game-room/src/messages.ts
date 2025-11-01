@@ -37,7 +37,7 @@ export type Message = z.infer<typeof MessageSchema>;
 
 const OFFER_MESSAGE_TYPE_TO_RESPONSES: Record<
     ChessGameOfferMessage,
-    { accept: ChessGameMessageType; decline: ChessGameMessageType }
+    { accept: ChessGameOfferResponseMessage; decline: ChessGameOfferResponseMessage }
 > = {
     'draw-offer': { accept: 'draw-accept', decline: 'draw-decline' },
     'rematch-offer': { accept: 'rematch-accept', decline: 'rematch-decline' },
