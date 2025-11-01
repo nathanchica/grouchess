@@ -38,6 +38,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
     - Persists across page reloads (saved in sessionStorage)
 - Main menu with room creation
 - Waiting room UI for challengers
+- Health check view while waiting for backend to wake back up
 
 ## Quick Start
 

@@ -37,3 +37,11 @@ export class ServiceUnavailableError extends Error {
         Object.setPrototypeOf(this, ServiceUnavailableError.prototype);
     }
 }
+
+export class RequestTimeoutError extends Error {
+    constructor() {
+        super('The request has timed out');
+        this.name = 'RequestTimeoutError';
+        Object.setPrototypeOf(this, RequestTimeoutError.prototype);
+    }
+}

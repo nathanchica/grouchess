@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { NotConfiguredError } from '@grouchess/errors';
+import { NotConfiguredError, RequestTimeoutError } from '@grouchess/errors';
 import { HealthStatusResponseSchema, type HealthStatusResponse } from '@grouchess/http-schemas';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 type FetchHealthStatusParams = {
     onSuccess?: (data: HealthStatusResponse) => void;
-    onError?: (error: Error) => void;
+    onError?: (error: Error | RequestTimeoutError) => void;
     timeoutMs?: number;
 };
 
 type UseFetchHealthResult = {
     fetchHealthStatus: (params?: FetchHealthStatusParams) => Promise<void>;
     loading: boolean;
-    error: Error | null;
+    error: Error | RequestTimeoutError | null;
 };
 
 export function useFetchServiceHealth(): UseFetchHealthResult {
@@ -43,10 +43,6 @@ export function useFetchServiceHealth(): UseFetchHealthResult {
             return;
         }
 
-        if (!isMountedRef.current) {
-            return;
-        }
-
         const controller = timeoutMs ? new AbortController() : null;
         const timeoutId = timeoutMs ? window.setTimeout(() => controller?.abort(), timeoutMs) : null;
 
@@ -69,15 +65,17 @@ export function useFetchServiceHealth(): UseFetchHealthResult {
         } catch (fetchError) {
             let err: Error;
             if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
-                err = new Error('Health request timed out.');
+                err = new RequestTimeoutError();
             } else if (fetchError instanceof Error) {
                 err = fetchError;
             } else {
                 err = new Error('Failed to load service health.');
             }
 
-            setError(err);
-            onError?.(err);
+            if (isMountedRef.current) {
+                setError(err);
+                onError?.(err);
+            }
         } finally {
             if (timeoutId !== null) {
                 window.clearTimeout(timeoutId);
