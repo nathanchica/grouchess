@@ -1,6 +1,8 @@
 import type { TimeControl } from '@grouchess/game-room';
+import { ErrorBoundary } from 'react-error-boundary';
 import { Routes, Route } from 'react-router';
 
+import ErrorView from './ErrorView';
 import ServiceHealthCheckView from './ServiceHealthCheckView';
 
 import { useImages } from '../../providers/ImagesProvider';
@@ -38,10 +40,12 @@ function MainMenuView({ onSelfPlayStart }: Props) {
                     </p>
                 </header>
 
-                <Routes>
-                    <Route path="/:roomId" element={<WaitingRoomView />} />
-                    <Route path="/" element={<ServiceHealthCheckView onSelfPlayStart={onSelfPlayStart} />} />
-                </Routes>
+                <ErrorBoundary fallbackRender={ErrorView}>
+                    <Routes>
+                        <Route path="/:roomId" element={<WaitingRoomView />} />
+                        <Route path="/" element={<ServiceHealthCheckView onSelfPlayStart={onSelfPlayStart} />} />
+                    </Routes>
+                </ErrorBoundary>
             </div>
         </main>
     );

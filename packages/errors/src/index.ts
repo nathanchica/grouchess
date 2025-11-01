@@ -21,3 +21,19 @@ export class IllegalMoveError extends Error {
         Object.setPrototypeOf(this, IllegalMoveError.prototype);
     }
 }
+
+export class NotConfiguredError extends Error {
+    constructor(message: string) {
+        super(`Not configured: ${message}`);
+        this.name = 'NotConfiguredError';
+        Object.setPrototypeOf(this, NotConfiguredError.prototype);
+    }
+}
+
+export class ServiceUnavailableError extends Error {
+    constructor() {
+        super('The service is currently unavailable');
+        this.name = 'ServiceUnavailableError';
+        Object.setPrototypeOf(this, ServiceUnavailableError.prototype);
+    }
+}
