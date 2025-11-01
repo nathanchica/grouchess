@@ -1,4 +1,12 @@
 import type { Message } from '@grouchess/game-room';
+import { isOfferMessageType, isOfferResponseMessageType } from '@grouchess/game-room';
+
+type OfferResponseActionProps = {
+    onAccept: () => void;
+    onDecline: () => void;
+    acceptLabel: string;
+    declineLabel: string;
+};
 
 const ACTION_BUTTON_CLASSES = 'hover:text-zinc-100 text-zinc-300 cursor-pointer p-1 transition';
 
@@ -16,9 +24,18 @@ type Props = {
     currentPlayerId: string;
     onDrawAccept: () => void;
     onDrawDecline: () => void;
+    onRematchAccept: () => void;
+    onRematchDecline: () => void;
 };
 
-function ChatMessage({ message, currentPlayerId, onDrawAccept, onDrawDecline }: Props) {
+function ChatMessage({
+    message,
+    currentPlayerId,
+    onDrawAccept,
+    onDrawDecline,
+    onRematchAccept,
+    onRematchDecline,
+}: Props) {
     const { authorId, content, createdAt, type, id } = message;
 
     const isStandardMessage = type === 'standard';
@@ -29,15 +46,16 @@ function ChatMessage({ message, currentPlayerId, onDrawAccept, onDrawDecline }: 
         bgColor = 'bg-slate-700';
     }
 
-    let contentText = content;
     let contentTextStyle = '';
+    if (isOfferResponseMessageType(type) || isOfferMessageType(type)) {
+        contentTextStyle = 'italic text-zinc-300';
+    }
+
+    let contentText = content;
     if (type === 'draw-offer' && isCurrentUser) {
         contentText = 'You offered a draw...';
-        contentTextStyle = 'italic text-zinc-300';
-    } else if (type === 'draw-decline') {
-        contentTextStyle = 'italic text-zinc-300';
-    } else if (type === 'draw-accept') {
-        contentTextStyle = 'italic text-zinc-300';
+    } else if (type === 'rematch-offer' && isCurrentUser) {
+        contentText = 'You offered a rematch...';
     }
 
     let footer = null;
@@ -48,23 +66,31 @@ function ChatMessage({ message, currentPlayerId, onDrawAccept, onDrawDecline }: 
             </span>
         );
     }
-    if (type === 'draw-offer' && !isCurrentUser) {
+
+    let offerResponseActionProps: OfferResponseActionProps | null = null;
+    if (type === 'draw-offer') {
+        offerResponseActionProps = {
+            onAccept: onDrawAccept,
+            onDecline: onDrawDecline,
+            acceptLabel: 'Accept draw offer',
+            declineLabel: 'Decline draw offer',
+        };
+    } else if (type === 'rematch-offer') {
+        offerResponseActionProps = {
+            onAccept: onRematchAccept,
+            onDecline: onRematchDecline,
+            acceptLabel: 'Accept rematch offer',
+            declineLabel: 'Decline rematch offer',
+        };
+    }
+    if (offerResponseActionProps && !isCurrentUser) {
+        const { onAccept, onDecline, acceptLabel, declineLabel } = offerResponseActionProps;
         footer = (
             <section className="text-xs flex flex-row justify-evenly">
-                <button
-                    type="button"
-                    className={ACTION_BUTTON_CLASSES}
-                    onClick={onDrawAccept}
-                    aria-label="Accept draw offer"
-                >
+                <button type="button" className={ACTION_BUTTON_CLASSES} onClick={onAccept} aria-label={acceptLabel}>
                     Accept
                 </button>
-                <button
-                    type="button"
-                    className={ACTION_BUTTON_CLASSES}
-                    onClick={onDrawDecline}
-                    aria-label="Decline draw offer"
-                >
+                <button type="button" className={ACTION_BUTTON_CLASSES} onClick={onDecline} aria-label={declineLabel}>
                     Decline
                 </button>
             </section>

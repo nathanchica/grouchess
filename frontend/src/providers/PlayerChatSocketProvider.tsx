@@ -3,10 +3,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Message } from '@grouchess/game-room';
 import {
     NewMessagePayloadSchema,
-    DrawAcceptedPayloadSchema,
-    DrawDeclinedPayloadSchema,
-    type DrawAcceptedPayload,
-    type DrawDeclinedPayload,
+    OfferResponsePayloadSchema,
+    type OfferResponsePayload,
     type NewMessagePayload,
 } from '@grouchess/socket-events';
 import invariant from 'tiny-invariant';
@@ -15,16 +13,24 @@ import { useSocket } from './SocketProvider';
 
 type PlayerChatSocketContextType = {
     messages: Message[];
+    isAwaitingRematchResponse: boolean;
     sendStandardMessage: (content: string) => void;
+    sendRematchOffer: () => void;
     acceptDrawOffer: () => void;
     declineDrawOffer: () => void;
+    acceptRematchOffer: () => void;
+    declineRematchOffer: () => void;
 };
 
 const PlayerChatSocketContext = createContext<PlayerChatSocketContextType>({
     messages: [],
+    isAwaitingRematchResponse: false,
     sendStandardMessage: () => {},
+    sendRematchOffer: () => {},
     acceptDrawOffer: () => {},
     declineDrawOffer: () => {},
+    acceptRematchOffer: () => {},
+    declineRematchOffer: () => {},
 });
 
 const MAX_MESSAGES = 100;
@@ -50,6 +56,7 @@ type Props = {
 function PlayerChatSocketProvider({ initialMessages, children }: Props) {
     const { socket } = useSocket();
     const [messages, setMessages] = useState<Message[]>(initialMessages);
+    const [isAwaitingRematchResponse, setIsAwaitingRematchResponse] = useState<boolean>(false);
 
     const sendStandardMessage = useCallback(
         (content: string) => {
@@ -58,12 +65,25 @@ function PlayerChatSocketProvider({ initialMessages, children }: Props) {
         [socket]
     );
 
+    const sendRematchOffer = useCallback(() => {
+        setIsAwaitingRematchResponse(true);
+        socket.emit('offer_rematch');
+    }, [socket]);
+
     const acceptDrawOffer = useCallback(() => {
         socket.emit('accept_draw');
     }, [socket]);
 
     const declineDrawOffer = useCallback(() => {
         socket.emit('decline_draw');
+    }, [socket]);
+
+    const acceptRematchOffer = useCallback(() => {
+        socket.emit('offer_rematch'); // Accepting a rematch is done by offering one back
+    }, [socket]);
+
+    const declineRematchOffer = useCallback(() => {
+        socket.emit('decline_rematch');
     }, [socket]);
 
     const onNewMessage = useCallback((payload: NewMessagePayload) => {
@@ -74,37 +94,55 @@ function PlayerChatSocketProvider({ initialMessages, children }: Props) {
         });
     }, []);
 
-    const onDrawDeclined = useCallback((payload: DrawDeclinedPayload) => {
-        const { message } = DrawDeclinedPayloadSchema.parse(payload);
+    const onOfferResponse = useCallback((payload: OfferResponsePayload) => {
+        const { message } = OfferResponsePayloadSchema.parse(payload);
         setMessages((prevMessages) => {
             const newMessages = prevMessages.map((msg) => (msg.id === message.id ? message : msg));
             return formatMessages(newMessages);
         });
-    }, []);
 
-    const onDrawAccepted = useCallback((payload: DrawAcceptedPayload) => {
-        const { message } = DrawAcceptedPayloadSchema.parse(payload);
-        setMessages((prevMessages) => {
-            const newMessages = prevMessages.map((msg) => (msg.id === message.id ? message : msg));
-            return formatMessages(newMessages);
-        });
+        if (message.type === 'rematch-decline' || message.type === 'rematch-accept') {
+            setIsAwaitingRematchResponse(false);
+        }
     }, []);
 
     useEffect(() => {
         socket.on('new_message', onNewMessage);
-        socket.on('draw_declined', onDrawDeclined);
-        socket.on('draw_accepted', onDrawAccepted);
+        socket.on('draw_declined', onOfferResponse);
+        socket.on('draw_accepted', onOfferResponse);
+        socket.on('rematch_declined', onOfferResponse);
+        socket.on('rematch_accepted', onOfferResponse);
 
         return () => {
             socket.off('new_message', onNewMessage);
-            socket.off('draw_declined', onDrawDeclined);
-            socket.off('draw_accepted', onDrawAccepted);
+            socket.off('draw_declined', onOfferResponse);
+            socket.off('draw_accepted', onOfferResponse);
+            socket.off('rematch_declined', onOfferResponse);
+            socket.off('rematch_accepted', onOfferResponse);
         };
-    }, [onNewMessage, onDrawDeclined, onDrawAccepted, socket]);
+    }, [onNewMessage, onOfferResponse, socket]);
 
     const value = useMemo(
-        () => ({ messages, sendStandardMessage, acceptDrawOffer, declineDrawOffer }),
-        [messages, sendStandardMessage, acceptDrawOffer, declineDrawOffer]
+        () => ({
+            messages,
+            isAwaitingRematchResponse,
+            sendStandardMessage,
+            sendRematchOffer,
+            acceptDrawOffer,
+            declineDrawOffer,
+            acceptRematchOffer,
+            declineRematchOffer,
+        }),
+        [
+            messages,
+            isAwaitingRematchResponse,
+            sendStandardMessage,
+            sendRematchOffer,
+            acceptDrawOffer,
+            declineDrawOffer,
+            acceptRematchOffer,
+            declineRematchOffer,
+        ]
     );
 
     return <PlayerChatSocketContext.Provider value={value}>{children}</PlayerChatSocketContext.Provider>;

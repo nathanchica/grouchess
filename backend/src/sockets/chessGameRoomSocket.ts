@@ -1,5 +1,5 @@
 import type { ChessGameState } from '@grouchess/chess';
-import { computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
+import { ChessClockState, computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
 import type { Message } from '@grouchess/game-room';
 import { MovePieceInputSchema, SendMessageInputSchema, TypingEventInputSchema } from '@grouchess/socket-events';
 
@@ -51,8 +51,8 @@ export function createChessGameRoomSocketHandler({
             const sendGameEnded = (gameState: ChessGameState) => {
                 chessGameService.endGameForRoom(roomId, gameState);
 
-                let clockState = chessClockService.getClockStateForRoom(roomId);
-                if (clockState) {
+                let clockState: ChessClockState | null = null;
+                if (chessClockService.hasClockForRoom(roomId)) {
                     clockState = chessClockService.pauseClock(roomId);
                 }
                 io.to(gameRoomTarget).emit('clock_update', { clockState });
@@ -79,6 +79,8 @@ export function createChessGameRoomSocketHandler({
                     // Game in progress (player rejoining)
                     const currentChessGame = chessGameService.getChessGameForRoom(roomId);
                     if (currentChessGame) {
+                        const message = gameRoomService.addMessageToGameRoom(roomId, 'player-rejoined-room', playerId);
+                        io.to(gameRoomTarget).emit('new_message', { message });
                         socket.emit('game_room_ready');
                         return;
                     }
@@ -158,7 +160,7 @@ export function createChessGameRoomSocketHandler({
                         if (!gameRoomOffers) {
                             throw new Error('Game room offers not found');
                         }
-                        const { drawOfferMessage } = gameRoomOffers;
+                        const { 'draw-offer': drawOfferMessage } = gameRoomOffers;
                         if (drawOfferMessage && playerId !== drawOfferMessage.authorId) {
                             const message = gameRoomService.declineDraw(roomId, playerId);
                             io.to(gameRoomTarget).emit('draw_declined', { message });
@@ -241,35 +243,68 @@ export function createChessGameRoomSocketHandler({
             });
 
             socket.on('offer_rematch', () => {
-                const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
-                if (!gameRoomOffers) {
-                    sendErrorEvent('Game room not found');
-                    return;
-                }
-                const { rematchOfferedByPlayerId } = gameRoomOffers;
-                if (!rematchOfferedByPlayerId) {
-                    gameRoomService.offerRematch(roomId, playerId);
-                    return;
-                }
-                if (rematchOfferedByPlayerId === playerId) {
-                    return; // Player has already offered rematch
-                }
+                try {
+                    const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
+                    if (!gameRoomOffers) {
+                        sendErrorEvent('Game room not found');
+                        return;
+                    }
+                    const { 'rematch-offer': rematchOfferMessage } = gameRoomOffers;
+                    if (!rematchOfferMessage) {
+                        const message: Message = gameRoomService.addMessageToGameRoom(
+                            roomId,
+                            'rematch-offer',
+                            playerId
+                        );
+                        io.to(gameRoomTarget).emit('new_message', { message });
+                        return;
+                    }
+                    if (rematchOfferMessage.authorId === playerId) {
+                        sendErrorEvent('You have already offered a rematch');
+                        return;
+                    }
 
-                gameRoomService.startNewGameInRoom(roomId);
-                gameRoomService.swapPlayerColors(roomId);
+                    // Both players have offered a rematch: start new game
+                    const message = gameRoomService.acceptRematch(roomId, playerId);
+                    if (!message) {
+                        sendErrorEvent('Failed to accept rematch offer');
+                        return;
+                    }
 
-                const gameRoom = gameRoomService.getGameRoomById(roomId);
-                if (!gameRoom) {
-                    sendErrorEvent('Game room not found after starting rematch');
-                    return;
-                }
-                const { timeControl } = gameRoom;
-                chessGameService.createChessGameForRoom(roomId);
-                if (timeControl) {
-                    chessClockService.resetClock(roomId);
-                }
+                    gameRoomService.startNewGameInRoom(roomId);
+                    gameRoomService.swapPlayerColors(roomId);
 
-                io.to(gameRoomTarget).emit('game_room_ready');
+                    const gameRoom = gameRoomService.getGameRoomById(roomId);
+                    if (!gameRoom) {
+                        sendErrorEvent('Game room not found after starting rematch');
+                        return;
+                    }
+                    const { timeControl } = gameRoom;
+                    chessGameService.createChessGameForRoom(roomId);
+                    if (timeControl) {
+                        chessClockService.resetClock(roomId);
+                    }
+
+                    io.to(gameRoomTarget).emit('rematch_accepted', { message });
+                    io.to(gameRoomTarget).emit('game_room_ready');
+                } catch (error) {
+                    console.error('Error offering draw:', error);
+                    sendErrorEvent('Failed to offer draw');
+                }
+            });
+
+            socket.on('decline_rematch', () => {
+                try {
+                    const message = gameRoomService.declineRematch(roomId, playerId);
+                    if (!message) {
+                        sendErrorEvent('Failed to decline rematch offer');
+                        return;
+                    }
+                    io.to(gameRoomTarget).emit('rematch_declined', { message });
+                } catch (error) {
+                    console.error('Error declining rematch offer:', error);
+                    sendErrorEvent('Failed to decline rematch offer');
+                }
             });
 
             socket.on('offer_draw', () => {
@@ -354,6 +389,9 @@ export function createChessGameRoomSocketHandler({
 
             socket.on('disconnect', () => {
                 playerService.updateStatus(playerId, false);
+                const message = gameRoomService.addMessageToGameRoom(roomId, 'player-left-room', playerId);
+                io.to(gameRoomTarget).emit('new_message', { message });
+
                 const gameRoom = gameRoomService.getGameRoomById(roomId);
                 if (!gameRoom) {
                     return;
