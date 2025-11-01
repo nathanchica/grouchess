@@ -39,6 +39,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 - Main menu with room creation
 - Waiting room UI for challengers
 - Health check view while waiting for backend to wake back up
+- Error boundary with Sentry logging
 
 ## Quick Start
 
@@ -223,5 +224,5 @@ pnpm dev
 - Piece SVGs from [Lichess](https://github.com/lichess-org/lila/tree/master/public/piece)
 - Sound effects from [Lichess](https://github.com/lichess-org/lila/tree/master/public/sound/lisp)
 - Icons from [FontAwesome](https://fontawesome.com)
-- Cat pixel art by [MPGames](https://mariaparragames.itch.io/fat-cat-set)
+- Animated cat pixel art by [MPGames](https://mariaparragames.itch.io/fat-cat-set)
 - Tower fall icon by [Lorc from game-icons.net](https://game-icons.net/1x1/lorc/tower-fall.html)

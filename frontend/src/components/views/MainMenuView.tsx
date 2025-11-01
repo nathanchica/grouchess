@@ -2,11 +2,11 @@ import type { TimeControl } from '@grouchess/game-room';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Routes, Route } from 'react-router';
 
-import ErrorView from './ErrorView';
 import ServiceHealthCheckView from './ServiceHealthCheckView';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
+import ErrorView from '../mainmenu/ErrorView';
 import WaitingRoomView from '../mainmenu/WaitingRoomView';
 
 type Props = {
