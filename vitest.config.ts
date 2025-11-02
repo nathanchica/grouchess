@@ -52,13 +52,20 @@ export default defineConfig({
         environment: 'node',
         pool: 'threads',
         globals: true,
-        include: ['**/__tests__/**/*.test.ts'],
+        include: ['**/__tests__/**/*.test.ts', 'backend/**/*.test.ts'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
             reportsDirectory: './coverage',
-            exclude: ['packages/chess/src/index.ts', 'packages/errors/src/index.ts'],
+            exclude: [
+                'packages/chess/src/index.ts',
+                'packages/chess-clocks/src/index.ts',
+                'packages/errors/src/index.ts',
+                'packages/game-room/src/index.ts',
+                'packages/http-schemas/src/index.ts',
+            ],
         },
+        setupFiles: ['./backend/vitest.setup.ts'],
     },
     resolve: {
         alias: resolvePackageAliases(),

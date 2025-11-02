@@ -9,7 +9,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 - Lanuage: TypeScript
 - Frontend: React 19, Vite, Tailwind CSS 4, Socket.io-client, React Router 7
 - Backend: Express, Socket.io
-- Tooling: Vitest, Zod 4, ESLint, Prettier, pnpm, Husky
+- Tooling: Vitest, Zod 4, supertest, ESLint, Prettier, pnpm, Husky
 
 ## Features
 
