@@ -24,6 +24,9 @@ import {
     validatePromotion,
 } from './utils/moves.js';
 
+/**
+ * Creates the initial board state for a new chess game
+ */
 export function createInitialBoardState(): ChessBoardState {
     return {
         board: createInitialBoard(),
@@ -35,6 +38,9 @@ export function createInitialBoardState(): ChessBoardState {
     };
 }
 
+/**
+ * Creates the initial chess game state
+ */
 export function createInitialChessGame(): ChessGame {
     const boardState: ChessBoardState = createInitialBoardState();
     const positionKey = createRepetitionKeyFromBoardState(boardState);
@@ -48,6 +54,9 @@ export function createInitialChessGame(): ChessGame {
     };
 }
 
+/**
+ * Computes the current game status based on the board state and legal moves
+ */
 export function computeGameStatus(
     board: ChessBoardType,
     playerTurn: PieceColor,
@@ -78,6 +87,9 @@ export function computeGameStatus(
     return { status: 'in-progress' };
 }
 
+/**
+ * Computes the next chess game state after a move has been made
+ */
 export function computeNextChessGameAfterMove(prevChessGame: ChessGame, move: Move): ChessGame {
     const { legalMovesStore, boardState, positionCounts, moveHistory, captures } = prevChessGame;
     const { startIndex, endIndex } = move;
@@ -128,6 +140,9 @@ export function computeNextChessGameAfterMove(prevChessGame: ChessGame, move: Mo
     };
 }
 
+/**
+ * Creates a chess game from a FEN string
+ */
 export function createChessGameFromFEN(fenString: string): ChessGame {
     const boardState: ChessBoardState = createBoardStateFromFEN(fenString);
     const positionKey = createRepetitionKeyFromBoardState(boardState);
