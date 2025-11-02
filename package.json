@@ -23,7 +23,7 @@
         "lint:check": "eslint .",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "typecheck": "pnpm typecheck:packages && pnpm build:packages && pnpm typecheck:backend && pnpm typecheck:frontend",
+        "typecheck": "pnpm build:packages && pnpm typecheck:packages && pnpm typecheck:backend && pnpm typecheck:frontend",
         "typecheck:backend": "pnpm --filter backend typecheck",
         "typecheck:frontend": "pnpm --filter frontend typecheck",
         "typecheck:packages": "pnpm --filter \"./packages/*\" typecheck",
