@@ -48,9 +48,9 @@ export function createBoardStateFromFEN(fenString: string): ChessBoardState {
 }
 
 /**
- * Checks if a given algebraic notation is valid
+ * Checks if a given en passant notation is valid (e.g., 'a-h3' or 'a-h6')
  */
-export function isValidAlgebraicNotation(notation: string): boolean {
+export function isValidEnPassantNotation(notation: string): boolean {
     return /^[a-h][36]$/.test(notation);
 }
 
@@ -105,7 +105,7 @@ export function isValidCastlingAvailability(castling: string): boolean {
  */
 export function isValidEnPassantTarget(enPassant: string, activeColor: string): boolean {
     if (enPassant === '-') return true;
-    if (!isValidAlgebraicNotation(enPassant)) return false;
+    if (!isValidEnPassantNotation(enPassant)) return false;
     const rank = enPassant.charAt(1);
     return (activeColor === 'w' && rank === '6') || (activeColor === 'b' && rank === '3');
 }

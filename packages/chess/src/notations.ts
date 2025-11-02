@@ -123,13 +123,6 @@ export function createFEN({
 }
 
 /**
- * Checks if a given algebraic notation is valid
- */
-export function isValidAlgebraicNotation(notation: string): boolean {
-    return /^[a-h][36]$/.test(notation);
-}
-
-/**
  * Validates whether a given FEN string is well-formed.
  */
 export function isValidFEN(fenString: string): boolean {

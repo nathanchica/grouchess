@@ -1,11 +1,5 @@
 import { createBoardFromFEN, algebraicNotationToIndex } from '../board.js';
-import {
-    createAlgebraicNotation,
-    createFEN,
-    indexToAlgebraicNotation,
-    isValidAlgebraicNotation,
-    isValidFEN,
-} from '../notations.js';
+import { createAlgebraicNotation, createFEN, indexToAlgebraicNotation, isValidFEN } from '../notations.js';
 import { getPiece } from '../pieces.js';
 import {
     type ChessBoardState,
@@ -211,27 +205,6 @@ describe('createFEN', () => {
         };
 
         expect(createFEN(state)).toBe('8/8/8/8/8/8/8/4k2K b - - 12 25');
-    });
-});
-
-describe('isValidAlgebraicNotation', () => {
-    it.each([
-        { notation: 'a3', expected: true },
-        { notation: 'h6', expected: true },
-    ])('returns $expected for $notation', ({ notation, expected }) => {
-        expect(isValidAlgebraicNotation(notation)).toBe(expected);
-    });
-
-    it.each([
-        { notation: 'a1' },
-        { notation: 'a8' },
-        { notation: 'e4' },
-        { notation: 'A3' },
-        { notation: 'i6' },
-        { notation: 'a9' },
-        { notation: 'a3 ' },
-    ])('returns false for invalid notation $notation', ({ notation }) => {
-        expect(isValidAlgebraicNotation(notation)).toBe(false);
     });
 });
 

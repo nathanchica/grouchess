@@ -7,7 +7,7 @@ import {
     createBoardStateFromFEN,
     isNonNegativeInteger,
     isPositiveInteger,
-    isValidAlgebraicNotation,
+    isValidEnPassantNotation,
     isValidCastlingAvailability,
     isValidEnPassantTarget,
     isValidPiecePlacement,
@@ -75,11 +75,11 @@ describe('createBoardStateFromFEN', () => {
     });
 });
 
-describe('isValidAlgebraicNotation', () => {
+describe('isValidEnPassantNotation', () => {
     it.each([{ notation: 'a3' }, { notation: 'h6' }, { notation: 'd3' }])(
         'returns true for valid notation $notation',
         ({ notation }) => {
-            expect(isValidAlgebraicNotation(notation)).toBe(true);
+            expect(isValidEnPassantNotation(notation)).toBe(true);
         }
     );
 
@@ -91,7 +91,7 @@ describe('isValidAlgebraicNotation', () => {
         { scenario: 'too short', notation: 'a' },
         { scenario: 'too long', notation: 'a36' },
     ])('returns false for $scenario', ({ notation }) => {
-        expect(isValidAlgebraicNotation(notation)).toBe(false);
+        expect(isValidEnPassantNotation(notation)).toBe(false);
     });
 });
 
