@@ -57,6 +57,7 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
             reportsDirectory: './coverage',
+            exclude: ['packages/chess/src/index.ts', 'packages/errors/src/index.ts'],
         },
     },
     resolve: {

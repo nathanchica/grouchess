@@ -38,6 +38,7 @@ export function createInitialCastleRights(): CastleRightsByColor {
 /**
  * Computes the legality of castling for the given color in the current position.
  * Checks for castling rights, empty squares, safety of squares, rook presence, and king not in check.
+ * Assumes that the king is on its starting square.
  */
 export function computeCastlingLegality(
     color: PieceColor,
@@ -90,6 +91,12 @@ type CastleRightsByColorChanges = Partial<Record<PieceColor, Partial<CastleRight
 
 /**
  * Computes the changes to castling rights resulting from the given move.
+ * Covers:
+ * - Moving the king revokes both castling rights for that color.
+ * - Moving a rook from its starting square revokes the corresponding castling right.
+ * - Capturing an opponent's rook on its starting square revokes that side's corresponding castling right.
+ * - Does not revoke rights for rook moves from non-starting squares (e.g. promoted rooks)
+ * - Shouldn't be able to castle with promoted rook either since that requires the original rook to be captured/moved.
  */
 export function computeCastleRightsChangesFromMove(move: Move): CastleRightsByColorChanges {
     const { startIndex, piece, type, capturedPiece, captureIndex } = move;

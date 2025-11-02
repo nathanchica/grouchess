@@ -159,14 +159,17 @@ export const PieceCaptureSchema = z.object({
 });
 export type PieceCapture = z.infer<typeof PieceCaptureSchema>;
 
+export const PositionCountsSchema = z.record(z.string(), z.number().int().positive());
+export type PositionCounts = z.infer<typeof PositionCountsSchema>;
+
 export const ChessGameSchema = z.object({
     boardState: ChessBoardStateSchema,
     gameState: ChessGameStateSchema,
     legalMovesStore: LegalMovesStoreSchema,
     moveHistory: z.array(MoveRecordSchema).describe('Ordered history of moves made in the game'),
     captures: z.array(PieceCaptureSchema).describe('List of captured pieces with their capture move indices'),
-    positionCounts: z
-        .record(z.string(), z.number().int().positive())
-        .describe('Counts of positions (FEN strings) for threefold repetition detection'),
+    positionCounts: PositionCountsSchema.describe(
+        'Counts of positions (FEN strings) for threefold repetition detection'
+    ),
 });
 export type ChessGame = z.infer<typeof ChessGameSchema>;
