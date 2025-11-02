@@ -16,3 +16,4 @@
 - Mention any opportunities for splitting code into smaller, more testable functions or modules if applicable
 - Export functions or constants if needed to facilitate testing
 - One describe block per function being tested
+- Backend tests HTTP routes using supertest, Express app is created via createApp() function from backend/src/app.ts
