@@ -24,6 +24,7 @@ export const RowColSchema = z.object({
         .max(NUM_COLS - 1),
 });
 export type RowCol = z.infer<typeof RowColSchema>;
+export type RowColDeltas = Array<[number, number]>;
 
 export const CastleSideEnum = z.enum(['short', 'long']);
 export const PieceAliasEnum = z.enum(['p', 'r', 'n', 'b', 'q', 'k', 'P', 'R', 'N', 'B', 'Q', 'K']);
