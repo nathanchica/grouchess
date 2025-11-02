@@ -2,7 +2,7 @@ import { computeNextChessGameAfterMove, createInitialChessGame } from '@grouches
 import type { ChessGame, ChessGameState, PawnPromotion } from '@grouchess/chess';
 import type { ChessGameRoom } from '@grouchess/game-room';
 
-import { GameNotStartedError, IllegalMoveError } from '../utils/errors.js';
+import { GameNotStartedError, IllegalMoveError, InvalidChessGameStateError } from '../utils/errors.js';
 
 type GameRoomId = ChessGameRoom['id'];
 
@@ -16,7 +16,19 @@ export class ChessGameService {
     }
 
     getChessGameForRoom(roomId: GameRoomId): ChessGame | undefined {
-        return this.gameRoomIdToChessGameMap.get(roomId);
+        const chessGame = this.gameRoomIdToChessGameMap.get(roomId);
+        return chessGame ? structuredClone(chessGame) : undefined;
+    }
+
+    getInProgressChessGameForRoom(roomId: GameRoomId): ChessGame {
+        const chessGame = this.getChessGameForRoom(roomId);
+        if (!chessGame) {
+            throw new GameNotStartedError();
+        }
+        if (chessGame.gameState.status !== 'in-progress') {
+            throw new InvalidChessGameStateError('Game is not in progress');
+        }
+        return chessGame;
     }
 
     deleteChessGameForRoom(roomId: GameRoomId): void {
@@ -44,12 +56,9 @@ export class ChessGameService {
     }
 
     endGameForRoom(roomId: GameRoomId, gameState: ChessGameState): ChessGame {
-        const chessGame = this.getChessGameForRoom(roomId);
-        if (!chessGame) {
-            throw new GameNotStartedError();
-        }
-
+        const chessGame = this.getInProgressChessGameForRoom(roomId);
         chessGame.gameState = gameState;
+        this.gameRoomIdToChessGameMap.set(roomId, chessGame);
         return chessGame;
     }
 }

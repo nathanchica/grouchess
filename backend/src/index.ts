@@ -4,7 +4,7 @@ import { createApp } from './app.js';
 import config from './config.js';
 import { chessIO } from './servers/chess.js';
 import { chessClockService, chessGameService, gameRoomService, playerService } from './services/index.js';
-import { createChessGameRoomSocketHandler } from './sockets/chessGameRoomSocket.js';
+import { createChessGameRoomSocketHandler } from './sockets/chess_game_room/index.js';
 
 const { PORT, HOST, CLIENT_URL } = config;
 

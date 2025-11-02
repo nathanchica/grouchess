@@ -58,6 +58,8 @@ export const OfferResponsePayloadSchema = z.object({
 });
 export type OfferResponsePayload = z.infer<typeof OfferResponsePayloadSchema>;
 
+export type ChessGameRoomClientToServerInput = MovePieceInput | SendMessageInput | TypingEventInput;
+
 /**
  * EVENTS INTERFACE DEFINITIONS
  */
