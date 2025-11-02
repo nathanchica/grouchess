@@ -18,11 +18,4 @@ export default defineConfig({
             reportsDirectory: './coverage',
         },
     },
-    resolve: {
-        alias: {
-            '@grouchess/chess': fromRoot('./packages/chess/src/index.ts'),
-            '@grouchess/errors': fromRoot('./packages/errors/src/index.ts'),
-            '@grouchess/game-room': fromRoot('./packages/game-room/src/index.ts'),
-        },
-    },
 });

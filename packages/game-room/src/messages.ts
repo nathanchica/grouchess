@@ -35,15 +35,16 @@ export const MessageSchema = z.object({
 });
 export type Message = z.infer<typeof MessageSchema>;
 
-const OFFER_MESSAGE_TYPE_TO_RESPONSES: Record<
-    ChessGameOfferMessage,
-    { accept: ChessGameOfferResponseMessage; decline: ChessGameOfferResponseMessage }
-> = {
+type OfferResponses = {
+    accept: ChessGameOfferResponseMessage;
+    decline: ChessGameOfferResponseMessage;
+};
+const OFFER_MESSAGE_TYPE_TO_RESPONSES: Record<ChessGameOfferMessage, OfferResponses> = {
     'draw-offer': { accept: 'draw-accept', decline: 'draw-decline' },
     'rematch-offer': { accept: 'rematch-accept', decline: 'rematch-decline' },
 };
 
-export function getOfferResponseTypes(offerType: ChessGameOfferMessage) {
+export function getOfferResponseTypes(offerType: ChessGameOfferMessage): OfferResponses | undefined {
     return OFFER_MESSAGE_TYPE_TO_RESPONSES[offerType];
 }
 
