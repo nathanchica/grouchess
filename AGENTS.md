@@ -15,3 +15,4 @@
 - Vi globals (e.g. `describe`, `it`, `expect`, `beforeEach`, `vi`) are available in test files without needing to import them.
 - Mention any opportunities for splitting code into smaller, more testable functions or modules if applicable
 - Export functions or constants if needed to facilitate testing
+- One describe block per function being tested
