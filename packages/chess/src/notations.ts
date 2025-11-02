@@ -20,6 +20,9 @@ function getFileFromColumn(col: number) {
     return String.fromCharCode(LOWERCASE_A_CHARCODE + col);
 }
 
+/**
+ * Converts a board index (0-63) to algebraic notation (e.g., 0 -> 'a8', 63 -> 'h1').
+ */
 export function indexToAlgebraicNotation(index: number): string {
     const { row, col } = indexToRowCol(index);
     return `${getFileFromColumn(col)}${NUM_ROWS - row}`;
@@ -143,6 +146,9 @@ export function createFEN({
     return `${piecePlacement} ${activeColor} ${castling} ${enPassant} ${halfmoveClock} ${fullmoveClock}`;
 }
 
+/**
+ * Checks if a given algebraic notation is valid
+ */
 export function isValidAlgebraicNotation(notation: string): boolean {
     return /^[a-h][36]$/.test(notation);
 }
@@ -208,6 +214,9 @@ function isNonNegativeInteger(value: string): boolean {
     return Number.isInteger(num) && num >= 0 && String(num) === value;
 }
 
+/**
+ * Validates whether a given FEN string is well-formed.
+ */
 export function isValidFEN(fenString: string): boolean {
     const fields = fenString.trim().split(/\s+/);
     if (fields.length !== 6) return false;
