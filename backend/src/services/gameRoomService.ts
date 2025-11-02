@@ -79,7 +79,11 @@ export class GameRoomService {
             if (message.id !== messageId) return message;
             if (message.authorId === playerId) throw new UnauthorizedError('Player cannot respond to their own offer');
             if (message.type !== offerMessageType) return message;
-            const newMessageType = getOfferResponseTypes(offerMessageType)[accept ? 'accept' : 'decline'];
+            const responseTypes = getOfferResponseTypes(offerMessageType);
+            if (!responseTypes) {
+                throw new Error('Invalid offer message type');
+            }
+            const newMessageType = responseTypes[accept ? 'accept' : 'decline'];
             newMessage = {
                 ...message,
                 type: newMessageType,
