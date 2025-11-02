@@ -28,6 +28,8 @@
         "typecheck:frontend": "pnpm --filter frontend typecheck",
         "typecheck:packages": "pnpm --filter \"./packages/*\" typecheck",
         "typecheck:chess": "pnpm --filter @grouchess/chess typecheck",
+        "test": "vitest run --coverage",
+        "test:run": "vitest run",
         "scaffold-package": "node scripts/scaffold-package.js",
         "prepare": "husky || true"
     },
@@ -38,6 +40,8 @@
         "@eslint/js": "^9.37.0",
         "@typescript-eslint/eslint-plugin": "^8.46.0",
         "@typescript-eslint/parser": "^8.46.0",
+        "@vitest/coverage-v8": "^4.0.6",
+        "@vitest/eslint-plugin": "^1.4.0",
         "concurrently": "^9.2.1",
         "eslint": "^9.37.0",
         "eslint-config-prettier": "^10.1.8",
@@ -48,7 +52,8 @@
         "lint-staged": "^16.2.4",
         "prettier": "^3.6.2",
         "tsc-files": "^1.1.4",
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.6"
     },
     "lint-staged": {
         "**/*.{ts,tsx}": [
