@@ -193,7 +193,9 @@ export function computeLegalMovesForIndex(
             legalMoves.push(createMove(board, startIndex, endIndex, 'long-castle'));
         }
         legalMoves = [...legalMoves, ...computeLegalMovesFromRowColDeltas(board, startIndex, color, deltas)];
-    } else if (pieceType === 'knight') {
+    } else {
+        // if not knight, something's wrong
+        invariant(pieceType === 'knight', 'Unexpected piece type');
         legalMoves = computeLegalMovesFromRowColDeltas(board, startIndex, color, KNIGHT_DELTAS);
     }
 
