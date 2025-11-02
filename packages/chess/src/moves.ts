@@ -50,7 +50,10 @@ export function createMove(board: ChessBoardType, startIndex: number, endIndex: 
     const piece = getPiece(pieceAlias);
     const { color } = piece;
 
-    let captureProps: Pick<Move, 'captureIndex' | 'capturedPiece'> = {};
+    let captureProps: Pick<Move, 'captureIndex' | 'capturedPiece'> = {
+        captureIndex: undefined,
+        capturedPiece: undefined,
+    };
     if (type === 'en-passant') {
         const { row, col } = indexToRowCol(endIndex);
         const captureIndex = rowColToIndex({ row: color === 'white' ? row + 1 : row - 1, col });
@@ -194,7 +197,6 @@ export function computeLegalMovesForIndex(
         }
         legalMoves = [...legalMoves, ...computeLegalMovesFromRowColDeltas(board, startIndex, color, deltas)];
     } else {
-        // if not knight, something's wrong
         invariant(pieceType === 'knight', 'Unexpected piece type');
         legalMoves = computeLegalMovesFromRowColDeltas(board, startIndex, color, KNIGHT_DELTAS);
     }

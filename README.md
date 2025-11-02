@@ -6,9 +6,10 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 
 ## Tech Stack
 
-- Frontend: React 19, Vite, TypeScript, Tailwind CSS 4, Socket.io-client
-- Backend: Express, Socket.io, Zod
-- Tooling: ESLint, Prettier, pnpm, Husky
+- Lanuage: TypeScript
+- Frontend: React 19, Vite, Tailwind CSS 4, Socket.io-client, React Router 7
+- Backend: Express, Socket.io
+- Tooling: Vitest, Zod 4, ESLint, Prettier, pnpm, Husky
 
 ## Features
 
@@ -44,7 +45,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 
 ## Quick Start
 
-Requirements: Node 18+ (Node 20+ recommended)
+Requirements: Node 18+ (Node 20+ recommended), pnpm 10+
 
 Install dependencies (from repo root):
 
@@ -52,7 +53,7 @@ Install dependencies (from repo root):
 pnpm install
 ```
 
-Run both dev servers:
+Run both frontend and backend servers:
 
 ```bash
 pnpm dev
