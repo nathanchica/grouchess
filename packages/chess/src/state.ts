@@ -1,10 +1,10 @@
-import { IllegalMoveError, InvalidInputError } from '@grouchess/errors';
+import { IllegalMoveError } from '@grouchess/errors';
 
-import { algebraicNotationToIndex, createBoardFromFEN, createInitialBoard } from './board.js';
+import { createInitialBoard } from './board.js';
 import { createInitialCastleRights } from './castles.js';
 import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from './draws.js';
 import { computeAllLegalMoves, isKingInCheck } from './moves.js';
-import { createAlgebraicNotation, isValidFEN } from './notations.js';
+import { createAlgebraicNotation } from './notations.js';
 import {
     ChessBoardState,
     ChessBoardType,
@@ -16,6 +16,7 @@ import {
     PieceCapture,
     PieceColor,
 } from './schema.js';
+import { createBoardStateFromFEN } from './utils/fen.js';
 import {
     getNextBoardStateAfterMove,
     getNextPositionCounts,
@@ -31,6 +32,19 @@ export function createInitialBoardState(): ChessBoardState {
         enPassantTargetIndex: null,
         halfmoveClock: 0,
         fullmoveClock: 1,
+    };
+}
+
+export function createInitialChessGame(): ChessGame {
+    const boardState: ChessBoardState = createInitialBoardState();
+    const positionKey = createRepetitionKeyFromBoardState(boardState);
+    return {
+        boardState,
+        gameState: { status: 'in-progress' },
+        legalMovesStore: computeAllLegalMoves(boardState),
+        moveHistory: [],
+        captures: [],
+        positionCounts: { [positionKey]: 1 },
     };
 }
 
@@ -50,6 +64,7 @@ export function computeGameStatus(
             check: playerTurn,
         };
     }
+
     const forcedDrawStatus = computeForcedDrawStatus(board, hasNoLegalMoves, halfmoveClock, positionCounts);
     if (forcedDrawStatus) {
         return { status: forcedDrawStatus };
@@ -61,19 +76,6 @@ export function computeGameStatus(
     }
 
     return { status: 'in-progress' };
-}
-
-export function createInitialChessGame(): ChessGame {
-    const boardState: ChessBoardState = createInitialBoardState();
-    const positionKey = createRepetitionKeyFromBoardState(boardState);
-    return {
-        boardState,
-        gameState: { status: 'in-progress' },
-        legalMovesStore: computeAllLegalMoves(boardState),
-        moveHistory: [],
-        captures: [],
-        positionCounts: { [positionKey]: 1 },
-    };
 }
 
 export function computeNextChessGameAfterMove(prevChessGame: ChessGame, move: Move): ChessGame {
@@ -127,36 +129,7 @@ export function computeNextChessGameAfterMove(prevChessGame: ChessGame, move: Mo
 }
 
 export function createChessGameFromFEN(fenString: string): ChessGame {
-    if (!isValidFEN(fenString)) {
-        throw new InvalidInputError('Invalid FEN string');
-    }
-
-    const parts = fenString.trim().split(/\s+/);
-    const [placementPart, activeColorPart, castlingPart, enPassantPart, halfmovePart, fullmovePart] = parts;
-
-    const boardState: ChessBoardState = {
-        board: createBoardFromFEN(placementPart),
-        playerTurn: activeColorPart === 'w' ? 'white' : 'black',
-        castleRightsByColor:
-            castlingPart === '-'
-                ? {
-                      white: { short: false, long: false },
-                      black: { short: false, long: false },
-                  }
-                : {
-                      white: {
-                          short: castlingPart.includes('K'),
-                          long: castlingPart.includes('Q'),
-                      },
-                      black: {
-                          short: castlingPart.includes('k'),
-                          long: castlingPart.includes('q'),
-                      },
-                  },
-        enPassantTargetIndex: enPassantPart === '-' ? null : algebraicNotationToIndex(enPassantPart),
-        halfmoveClock: parseInt(halfmovePart, 10),
-        fullmoveClock: parseInt(fullmovePart, 10),
-    };
+    const boardState: ChessBoardState = createBoardStateFromFEN(fenString);
     const positionKey = createRepetitionKeyFromBoardState(boardState);
 
     return {
