@@ -208,7 +208,7 @@ describe('computeCastleRightsChangesFromMove', () => {
         expect(computeCastleRightsChangesFromMove(move as Move)).toEqual(expected);
     });
 
-    it('ignores rook moves from non-starting squares', () => {
+    it('ignores rook moves from non-starting squares (e.g. promoted rooks)', () => {
         const move: Move = {
             startIndex: 10,
             endIndex: 18,

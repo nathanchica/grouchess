@@ -13,3 +13,5 @@
 - Aim for 100% code coverage
 - Use mocks and spies as needed to isolate units under test. The `vi.mock` and `vi.spyOn` APIs are available.
 - Vi globals (e.g. `describe`, `it`, `expect`, `beforeEach`, `vi`) are available in test files without needing to import them.
+- Mention any opportunities for splitting code into smaller, more testable functions or modules if applicable
+- Export functions or constants if needed to facilitate testing
