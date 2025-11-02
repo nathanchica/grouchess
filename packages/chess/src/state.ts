@@ -1,20 +1,11 @@
 import { IllegalMoveError, InvalidInputError } from '@grouchess/errors';
-import invariant from 'tiny-invariant';
 
-import {
-    algebraicNotationToIndex,
-    computeEnPassantTargetIndex,
-    createBoardFromFEN,
-    createInitialBoard,
-    isPromotionSquare,
-} from './board.js';
-import { computeCastleRightsChangesFromMove, createInitialCastleRights } from './castles.js';
+import { algebraicNotationToIndex, createBoardFromFEN, createInitialBoard } from './board.js';
+import { createInitialCastleRights } from './castles.js';
 import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from './draws.js';
-import { computeAllLegalMoves, computeNextChessBoardFromMove, isKingInCheck } from './moves.js';
+import { computeAllLegalMoves, isKingInCheck } from './moves.js';
 import { createAlgebraicNotation, isValidFEN } from './notations.js';
-import { getColorFromAlias } from './pieces.js';
 import {
-    CastleRightsByColor,
     ChessBoardState,
     ChessBoardType,
     ChessGame,
@@ -25,6 +16,12 @@ import {
     PieceCapture,
     PieceColor,
 } from './schema.js';
+import {
+    getNextBoardStateAfterMove,
+    getNextPositionCounts,
+    getPieceCaptureFromMove,
+    validatePromotion,
+} from './utils/moves.js';
 
 export function createInitialBoardState(): ChessBoardState {
     return {
@@ -89,53 +86,15 @@ export function computeNextChessGameAfterMove(prevChessGame: ChessGame, move: Mo
         throw new IllegalMoveError();
     }
 
-    const { board, playerTurn, castleRightsByColor, halfmoveClock, fullmoveClock } = boardState;
-    const {
-        piece: { type: pieceType, color },
-        type: moveType,
-    } = legalMove;
     const { promotion } = move;
-
-    let pieceCapture: PieceCapture | null = null;
-    if (moveType === 'capture' || moveType === 'en-passant') {
-        invariant(legalMove.capturedPiece, `Legal move type:${moveType} expected to have a capturedPiece`);
-        pieceCapture = { piece: legalMove.capturedPiece, moveIndex: moveHistory.length };
-    }
-
-    const isPawnMove = pieceType === 'pawn';
-
-    // Validate promotion info if applicable
-    if (isPawnMove && isPromotionSquare(endIndex, color)) {
-        if (!promotion) {
-            throw new InvalidInputError('Promotion piece not specified');
-        }
-        if (getColorFromAlias(promotion) !== color) {
-            throw new InvalidInputError('Promotion piece color does not match pawn color');
-        }
-    }
-
     const legalMoveWithPromotion: Move = { ...legalMove, promotion };
 
-    const rightsDiff = computeCastleRightsChangesFromMove(legalMoveWithPromotion);
-    const nextCastleRights: CastleRightsByColor = {
-        white: { ...castleRightsByColor.white, ...(rightsDiff.white ?? {}) },
-        black: { ...castleRightsByColor.black, ...(rightsDiff.black ?? {}) },
-    };
+    validatePromotion(legalMoveWithPromotion);
 
-    const nextBoardState: ChessBoardState = {
-        board: computeNextChessBoardFromMove(board, legalMoveWithPromotion),
-        playerTurn: playerTurn === 'white' ? 'black' : 'white',
-        castleRightsByColor: nextCastleRights,
-        enPassantTargetIndex: isPawnMove ? computeEnPassantTargetIndex(startIndex, endIndex) : null,
-        halfmoveClock: pieceType === 'pawn' || moveType === 'capture' ? 0 : halfmoveClock + 1,
-        fullmoveClock: playerTurn === 'black' ? fullmoveClock + 1 : fullmoveClock,
-    };
+    const pieceCapture: PieceCapture | null = getPieceCaptureFromMove(legalMove, moveHistory.length);
+    const nextBoardState: ChessBoardState = getNextBoardStateAfterMove(boardState, legalMoveWithPromotion);
     const nextLegalMovesStore: LegalMovesStore = computeAllLegalMoves(nextBoardState);
-    const positionKey = createRepetitionKeyFromBoardState(nextBoardState);
-    const nextPositionCounts =
-        nextBoardState.halfmoveClock === 0
-            ? { [positionKey]: 1 }
-            : { ...positionCounts, [positionKey]: (positionCounts[positionKey] ?? 0) + 1 };
+    const nextPositionCounts = getNextPositionCounts(positionCounts, nextBoardState);
     const nextGameState = computeGameStatus(
         nextBoardState.board,
         nextBoardState.playerTurn,
