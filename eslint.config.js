@@ -1,10 +1,13 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import vitestPlugin from '@vitest/eslint-plugin';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
 import prettierConfig from 'eslint-config-prettier';
+
+const vitestGlobals = vitestPlugin.environments.env.globals;
 
 export default [
     js.configs.recommended,
@@ -15,6 +18,7 @@ export default [
             '**/node_modules/**',
             '**/dist/**',
             '**/build/**',
+            'coverage/**',
             '**/*.min.js',
             'eslint.config.js',
             '**/*.config.js',
@@ -68,6 +72,7 @@ export default [
             react: reactPlugin,
             'react-hooks': reactHooksPlugin,
             import: importPlugin,
+            vitest: vitestPlugin,
         },
         rules: {
             ...tseslint.configs.recommended.rules,
@@ -121,6 +126,17 @@ export default [
         },
         settings: {
             react: { version: '^19.2.0' },
+        },
+    },
+    {
+        files: ['**/__tests__/**/*.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
+        languageOptions: {
+            globals: {
+                ...vitestGlobals,
+            },
+        },
+        rules: {
+            ...vitestPlugin.configs.recommended.rules,
         },
     },
     {
