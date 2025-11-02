@@ -6,13 +6,13 @@ import { registerMoveHandlers } from './handlers/moves.js';
 import { registerOffersHandlers } from './handlers/offers.js';
 import type { ChessGameRoomSocketDependencies } from './types.js';
 
-import { authenticateSocket } from '../../middleware/authenticateSocket.js';
+import { createAuthenticateSocket } from '../../middleware/authenticateSocket.js';
 import type { ChessSocketServer } from '../../servers/chess.js';
 
 export function createChessGameRoomSocketHandler(services: ChessGameRoomSocketDependencies) {
     return function initializeChessGameRoomSocket(io: ChessSocketServer) {
         // Apply authentication middleware to all connections
-        io.use(authenticateSocket);
+        io.use(createAuthenticateSocket({ tokenService: services.tokenService }));
 
         io.on('connection', (socket) => {
             // playerId and roomId provided by authentication middleware

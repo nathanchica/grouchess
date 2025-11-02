@@ -11,7 +11,6 @@ import * as z from 'zod';
 
 import { authenticateRequest } from '../middleware/authenticateRequest.js';
 import { GameRoomIsFullError } from '../utils/errors.js';
-import { generateGameRoomToken } from '../utils/token.js';
 
 export const roomRouter: Router = Router();
 
@@ -84,7 +83,7 @@ roomRouter.get('/:roomId/chess-game', authenticateRequest, (req, res) => {
  * Returns the room ID, player ID, and authentication token for the creator.
  */
 roomRouter.post('/', (req, res) => {
-    const { playerService, gameRoomService } = req.services;
+    const { playerService, gameRoomService, tokenService } = req.services;
 
     try {
         const { displayName, color, timeControlAlias, roomType } = CreateGameRoomRequestSchema.parse(req.body);
@@ -97,7 +96,7 @@ roomRouter.post('/', (req, res) => {
             creator: player,
             creatorColorInput: color,
         });
-        const token = generateGameRoomToken({ playerId: player.id, roomId });
+        const token = tokenService.generate({ playerId: player.id, roomId });
 
         const parsedResponse = CreateGameRoomResponseSchema.safeParse({
             roomId,
@@ -128,7 +127,7 @@ roomRouter.post('/', (req, res) => {
  * Returns the room ID, player ID, and authentication token for the joining player.
  */
 roomRouter.post('/join/:roomId', (req, res) => {
-    const { playerService, gameRoomService } = req.services;
+    const { playerService, gameRoomService, tokenService } = req.services;
     const { roomId } = req.params;
 
     try {
@@ -142,7 +141,7 @@ roomRouter.post('/join/:roomId', (req, res) => {
 
         const player = playerService.createPlayer(displayName);
         gameRoomService.joinGameRoom(roomId, player);
-        const token = generateGameRoomToken({ playerId: player.id, roomId });
+        const token = tokenService.generate({ playerId: player.id, roomId });
 
         const parsedResponse = JoinGameRoomResponseSchema.safeParse({
             roomId,

@@ -90,14 +90,14 @@ pnpm dev
 │     │  ├─ chessClockService.ts
 │     │  ├─ chessGameService.ts
 │     │  ├─ gameRoomService.ts
-│     │  └─ playerService.ts
+│     │  ├─ playerService.ts
+│     │  └─ tokenService.ts                   # JWT token generation/verification
 │     ├─ middleware/
 │     │  ├─ authenticateRequest.ts
 │     │  └─ authenticateSocket.ts
 │     └─ utils/
 │        ├─ errors.ts
-│        ├─ generateId.ts
-│        └─ token.ts
+│        └─ generateId.ts
 │
 ├─ frontend/                                  # Vite + React client
 │  ├─ public/                                 # Static assets (SVG pieces, sounds)
@@ -192,7 +192,7 @@ pnpm dev
     - `chessGameService.ts` (game lifecycle, move application)
     - `chessClockService.ts` (room clock state, emits `clock_update`)
     - `gameRoomService.ts` (room creation/join/updates), `playerService.ts`
-    - Auth: `backend/src/utils/token.ts`, middleware (`authenticateRequest.ts`, `authenticateSocket.ts`)
+    - Auth: `tokenService.ts`, middleware (`authenticateRequest.ts`, `authenticateSocket.ts`)
 
 - Frontend orchestration
     - Providers: `AuthProvider.tsx`, `SocketProvider.tsx`, `ChessGameRoomProvider.tsx`,

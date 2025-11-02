@@ -1,7 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { verifyGameRoomToken } from '../utils/token.js';
-
 /**
  * Authentication middleware for HTTP requests that require game room access.
  * Verifies the JWT token and ensures it matches the requested room.
@@ -16,7 +14,7 @@ export function authenticateRequest(req: Request, res: Response, next: NextFunct
         }
 
         const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-        const payload = verifyGameRoomToken(token);
+        const payload = req.services.tokenService.verify(token);
 
         if (!payload) {
             res.status(401).json({ error: 'Invalid or expired token' });

@@ -1,12 +1,12 @@
 import { createServer } from 'node:http';
 
 import { createApp } from './app.js';
-import config from './config.js';
+import { getEnv } from './config.js';
 import { chessIO } from './servers/chess.js';
-import { chessClockService, chessGameService, gameRoomService, playerService } from './services/index.js';
+import { chessClockService, chessGameService, gameRoomService, playerService, tokenService } from './services/index.js';
 import { createChessGameRoomSocketHandler } from './sockets/chess_game_room/index.js';
 
-const { PORT, HOST, CLIENT_URL } = config;
+const { PORT, HOST, CLIENT_URL } = getEnv();
 
 const app = createApp();
 const httpServer = createServer(app);
@@ -22,6 +22,7 @@ const initializeChessGameRoomSocket = createChessGameRoomSocketHandler({
     chessGameService,
     playerService,
     gameRoomService,
+    tokenService,
 });
 initializeChessGameRoomSocket(chessIO);
 

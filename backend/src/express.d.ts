@@ -1,4 +1,5 @@
 import type { ChessClockService, ChessGameService, GameRoomService, PlayerService } from './services/index.ts';
+import type { TokenService } from './services/tokenService.ts';
 
 declare global {
     namespace Express {
@@ -8,6 +9,7 @@ declare global {
                 chessGameService: ChessGameService;
                 playerService: PlayerService;
                 gameRoomService: GameRoomService;
+                tokenService: TokenService;
             };
             // Authentication data (populated by authenticateRequest middleware)
             playerId?: string;
