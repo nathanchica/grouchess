@@ -1,3 +1,8 @@
+import { hasInsufficientMatingMaterial } from '@grouchess/chess';
+import type { ChessBoardType } from '@grouchess/chess';
+import { InvalidInputError } from '@grouchess/errors';
+import type { TimeControl } from '@grouchess/game-room';
+
 vi.mock('@grouchess/chess', async () => {
     const actual = await vi.importActual<typeof import('@grouchess/chess')>('@grouchess/chess');
     return {
@@ -5,11 +10,6 @@ vi.mock('@grouchess/chess', async () => {
         hasInsufficientMatingMaterial: vi.fn(),
     };
 });
-
-import { hasInsufficientMatingMaterial } from '@grouchess/chess';
-import type { ChessBoardType } from '@grouchess/chess';
-import { InvalidInputError } from '@grouchess/errors';
-import type { TimeControl } from '@grouchess/game-room';
 
 import {
     createInitialChessClockState,
@@ -75,93 +75,87 @@ describe('createInitialChessClockState', () => {
 });
 
 describe('validateClockState', () => {
-    it('accepts a paused state with null lastUpdatedTimeMs', () => {
-        const state = buildPausedState();
-
-        expect(() => validateClockState(state)).not.toThrow();
+    it.each([
+        { scenario: 'a paused state with null lastUpdatedTimeMs', buildState: buildPausedState },
+        { scenario: 'a running state with exactly one active player', buildState: buildRunningState },
+    ])('accepts $scenario', ({ buildState }) => {
+        expect(() => validateClockState(buildState())).not.toThrow();
     });
 
-    it('accepts a running state with exactly one active player', () => {
-        const state = buildRunningState();
-
-        expect(() => validateClockState(state)).not.toThrow();
-    });
-
-    it('throws when white has negative time remaining', () => {
-        const base = buildPausedState();
-        const state = {
-            ...base,
-            white: { ...base.white, timeRemainingMs: -1 },
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when black has negative time remaining', () => {
-        const base = buildPausedState();
-        const state = {
-            ...base,
-            black: { ...base.black, timeRemainingMs: -1 },
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when baseTimeMs is negative', () => {
-        const state = {
-            ...buildPausedState(),
-            baseTimeMs: -1,
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when incrementMs is negative', () => {
-        const state = {
-            ...buildPausedState(),
-            incrementMs: -1,
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when paused but lastUpdatedTimeMs is not null', () => {
-        const state = {
-            ...buildPausedState(),
-            lastUpdatedTimeMs: 1_000,
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when running but lastUpdatedTimeMs is null', () => {
-        const base = buildRunningState();
-        const state = {
-            ...base,
-            lastUpdatedTimeMs: null,
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when running with no active players', () => {
-        const base = buildRunningState();
-        const state = {
-            ...base,
-            white: { ...base.white, isActive: false },
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
-    });
-
-    it('throws when running with both players active', () => {
-        const base = buildRunningState();
-        const state = {
-            ...base,
-            black: { ...base.black, isActive: true },
-        };
-
-        expect(() => validateClockState(state)).toThrow(InvalidInputError);
+    it.each([
+        {
+            scenario: 'white has negative time remaining',
+            buildState: () => {
+                const base = buildPausedState();
+                return {
+                    ...base,
+                    white: { ...base.white, timeRemainingMs: -1 },
+                };
+            },
+        },
+        {
+            scenario: 'black has negative time remaining',
+            buildState: () => {
+                const base = buildPausedState();
+                return {
+                    ...base,
+                    black: { ...base.black, timeRemainingMs: -1 },
+                };
+            },
+        },
+        {
+            scenario: 'baseTimeMs is negative',
+            buildState: () => ({
+                ...buildPausedState(),
+                baseTimeMs: -1,
+            }),
+        },
+        {
+            scenario: 'incrementMs is negative',
+            buildState: () => ({
+                ...buildPausedState(),
+                incrementMs: -1,
+            }),
+        },
+        {
+            scenario: 'paused but lastUpdatedTimeMs is not null',
+            buildState: () => ({
+                ...buildPausedState(),
+                lastUpdatedTimeMs: 1_000,
+            }),
+        },
+        {
+            scenario: 'running but lastUpdatedTimeMs is null',
+            buildState: () => {
+                const base = buildRunningState();
+                return {
+                    ...base,
+                    lastUpdatedTimeMs: null,
+                };
+            },
+        },
+        {
+            scenario: 'running with no active players',
+            buildState: () => {
+                const base = buildRunningState();
+                return {
+                    ...base,
+                    white: { ...base.white, isActive: false },
+                };
+            },
+        },
+        {
+            scenario: 'running with both players active',
+            buildState: () => {
+                const base = buildRunningState();
+                return {
+                    ...base,
+                    black: { ...base.black, isActive: true },
+                };
+            },
+        },
+    ])('throws when $scenario', ({ buildState }) => {
+        expect(() => validateClockState(buildState())).toThrow(InvalidInputError);
     });
 });
 
