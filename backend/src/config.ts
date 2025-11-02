@@ -44,8 +44,20 @@ const parseEnv = () => {
     }
 };
 
-// Export validated and typed environment variables
-export default parseEnv();
-
 // Export the type for use elsewhere in the application
 export type Env = z.infer<typeof envSchema>;
+
+/**
+ * Store the cached environment variables after first retrieval
+ */
+let cachedEnv: Env | undefined;
+
+/**
+ * Get the validated environment variables
+ */
+export function getEnv() {
+    if (!cachedEnv) {
+        cachedEnv = parseEnv();
+    }
+    return cachedEnv;
+}

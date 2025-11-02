@@ -12,12 +12,14 @@ import * as z from 'zod';
 
 import type { ChessSocketServer } from '../../servers/chess.js';
 import { ChessClockService, ChessGameService, GameRoomService, PlayerService } from '../../services/index.js';
+import type { TokenService } from '../../services/tokenService.js';
 
 export type ChessGameRoomSocketServices = {
     chessClockService: ChessClockService;
     chessGameService: ChessGameService;
     playerService: PlayerService;
     gameRoomService: GameRoomService;
+    tokenService: TokenService;
 };
 export type ChessGameRoomSocketDependencies = ChessGameRoomSocketServices;
 
