@@ -12,8 +12,10 @@
         }
     },
     "scripts": {
-        "build": "tsc",
-        "typecheck": "tsc --noEmit"
+        "build": "tsc -p tsconfig.build.json",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run --coverage",
+        "test:run": "vitest run"
     },
     "keywords": [
         "chess"
@@ -21,7 +23,8 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.6"
     },
     "dependencies": {
         "@grouchess/errors": "workspace:*",
