@@ -11,15 +11,20 @@ import type {
     ChessBoardType,
     Move,
     Piece,
+    PieceAlias,
     PieceCapture,
     PositionCounts,
 } from '../../schema.js';
 import {
+    computeLegalMovesFromRowColDeltas,
+    computePawnLegalMoves,
+    computeSlidingPieceLegalMoves,
     validatePromotion,
     getPieceCaptureFromMove,
     getNextPositionCounts,
     getNextCastleRightsAfterMove,
     getNextBoardStateAfterMove,
+    isKingInCheckAfterMove,
 } from '../moves.js';
 
 const createPiece = (overrides: Partial<Piece> = {}): Piece =>
@@ -42,6 +47,19 @@ const createMove = (overrides: Partial<Move> = {}): Move =>
 
 const createBoard = (): ChessBoardType => Array.from({ length: 64 }, () => null);
 
+type Placement = { row: number; col: number; alias: PieceAlias };
+
+const buildBoard = (placements: Placement[]): ChessBoardType => {
+    const board = createBoard();
+    placements.forEach(({ row, col, alias }) => {
+        const index = boardModule.rowColToIndex({ row, col });
+        if (index >= 0) {
+            board[index] = alias;
+        }
+    });
+    return board;
+};
+
 const createBoardState = (overrides: Partial<ChessBoardState> = {}): ChessBoardState =>
     ({
         board: createBoard(),
@@ -58,6 +76,197 @@ const createBoardState = (overrides: Partial<ChessBoardState> = {}): ChessBoardS
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe('isKingInCheckAfterMove', () => {
+    it.each([
+        { scenario: 'king remains safe', isInCheck: false },
+        { scenario: 'king becomes in check', isInCheck: true },
+    ])('delegates to move helpers when $scenario', ({ isInCheck }) => {
+        const board = buildBoard([{ row: 6, col: 4, alias: 'P' }]);
+        const move = createMove();
+        const computedBoard = buildBoard([{ row: 4, col: 4, alias: 'P' }]);
+        vi.spyOn(chessMovesModule, 'computeNextChessBoardFromMove').mockReturnValue(computedBoard);
+        vi.spyOn(chessMovesModule, 'isKingInCheck').mockReturnValue(isInCheck);
+
+        const result = isKingInCheckAfterMove(board, move);
+
+        expect(chessMovesModule.computeNextChessBoardFromMove).toHaveBeenCalledWith(board, move);
+        expect(chessMovesModule.isKingInCheck).toHaveBeenCalledWith(computedBoard, move.piece.color);
+        expect(result).toBe(isInCheck);
+    });
+});
+
+describe('computePawnLegalMoves', () => {
+    it.each([
+        {
+            scenario: 'white pawn can advance one or two squares from starting rank',
+            color: 'white' as const,
+            start: { row: 6, col: 3 },
+            placements: [],
+            enPassantTargetIndex: null,
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 5, col: 3 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
+            ],
+        },
+        {
+            scenario: 'black pawn is blocked forward but captures diagonally',
+            color: 'black' as const,
+            start: { row: 1, col: 4 },
+            placements: [
+                { row: 2, col: 4, alias: 'P' },
+                { row: 2, col: 3, alias: 'P' },
+            ],
+            enPassantTargetIndex: null,
+            expectedMoves: [{ endIndex: boardModule.rowColToIndex({ row: 2, col: 3 }), type: 'capture' }],
+        },
+        {
+            scenario: 'white pawn performs en passant alongside a standard advance',
+            color: 'white' as const,
+            start: { row: 3, col: 3 },
+            placements: [{ row: 3, col: 4, alias: 'p' }],
+            enPassantTargetIndex: boardModule.rowColToIndex({ row: 2, col: 4 }),
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 2, col: 3 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 2, col: 4 }), type: 'en-passant' },
+            ],
+        },
+        {
+            scenario: 'white pawn on top rank has no forward moves because rows are out of bounds',
+            color: 'white' as const,
+            start: { row: 0, col: 4 },
+            placements: [],
+            enPassantTargetIndex: null,
+            expectedMoves: [],
+        },
+        {
+            scenario: 'white pawn near left edge skips out-of-bounds diagonal and captures to the right',
+            color: 'white' as const,
+            start: { row: 1, col: 0 },
+            placements: [{ row: 0, col: 1, alias: 'p' }],
+            enPassantTargetIndex: null,
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 0, col: 0 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 0, col: 1 }), type: 'capture' },
+            ],
+        },
+    ])('returns legal moves when $scenario', ({ color, start, placements, enPassantTargetIndex, expectedMoves }) => {
+        const startAlias: PieceAlias = color === 'white' ? 'P' : 'p';
+        const board = buildBoard([
+            { row: start.row, col: start.col, alias: startAlias },
+            ...(placements as Placement[]),
+        ]);
+        const startIndex = boardModule.rowColToIndex(start);
+
+        const result = computePawnLegalMoves(board, startIndex, color, enPassantTargetIndex);
+
+        expect(result.map(({ endIndex, type }) => ({ endIndex, type }))).toEqual(expectedMoves);
+    });
+});
+
+describe('computeSlidingPieceLegalMoves', () => {
+    it.each([
+        {
+            scenario: 'bishop stops at friendly piece and captures first enemy on each ray',
+            color: 'white' as const,
+            pieceType: 'bishop' as const,
+            start: { row: 3, col: 3 },
+            placements: [
+                { row: 3, col: 3, alias: 'B' },
+                { row: 2, col: 4, alias: 'P' },
+                { row: 1, col: 1, alias: 'q' },
+                { row: 4, col: 2, alias: 'q' },
+                { row: 4, col: 4, alias: 'q' },
+            ],
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 4, col: 4 }), type: 'capture' },
+                { endIndex: boardModule.rowColToIndex({ row: 4, col: 2 }), type: 'capture' },
+                { endIndex: boardModule.rowColToIndex({ row: 2, col: 2 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 1, col: 1 }), type: 'capture' },
+            ],
+        },
+        {
+            scenario: 'rook traverses straights until blocked or capturing',
+            color: 'black' as const,
+            pieceType: 'rook' as const,
+            start: { row: 4, col: 4 },
+            placements: [
+                { row: 4, col: 4, alias: 'r' },
+                { row: 4, col: 6, alias: 'r' },
+                { row: 4, col: 2, alias: 'P' },
+                { row: 2, col: 4, alias: 'P' },
+            ],
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 4, col: 5 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 4, col: 2 }), type: 'capture' },
+                { endIndex: boardModule.rowColToIndex({ row: 5, col: 4 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 6, col: 4 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 7, col: 4 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 3, col: 4 }), type: 'standard' },
+                { endIndex: boardModule.rowColToIndex({ row: 2, col: 4 }), type: 'capture' },
+            ],
+        },
+    ])('computes sliding moves when $scenario', ({ color, pieceType, start, placements, expectedMoves }) => {
+        const board = buildBoard(placements as Placement[]);
+        const startIndex = boardModule.rowColToIndex(start);
+
+        const result = computeSlidingPieceLegalMoves(board, startIndex, color, pieceType);
+
+        expect(result.map(({ endIndex, type }) => ({ endIndex, type }))).toEqual(expectedMoves);
+    });
+});
+
+describe('computeLegalMovesFromRowColDeltas', () => {
+    it.each([
+        {
+            scenario: 'white knight captures enemy and skips friendly square',
+            color: 'white' as const,
+            start: { row: 3, col: 3 },
+            placements: [
+                { row: 3, col: 3, alias: 'N' },
+                { row: 5, col: 4, alias: 'p' },
+                { row: 4, col: 5, alias: 'P' },
+            ],
+            deltas: [
+                [2, 1],
+                [1, 2],
+                [-2, -1],
+                [-4, 0],
+            ] as [number, number][],
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 5, col: 4 }), type: 'capture' },
+                { endIndex: boardModule.rowColToIndex({ row: 1, col: 2 }), type: 'standard' },
+            ],
+        },
+        {
+            scenario: 'black knight mirrors capture logic with uppercase opponents',
+            color: 'black' as const,
+            start: { row: 4, col: 4 },
+            placements: [
+                { row: 4, col: 4, alias: 'n' },
+                { row: 2, col: 5, alias: 'P' },
+                { row: 6, col: 5, alias: 'p' },
+            ],
+            deltas: [
+                [-2, 1],
+                [2, 1],
+                [1, -2],
+            ] as [number, number][],
+            expectedMoves: [
+                { endIndex: boardModule.rowColToIndex({ row: 2, col: 5 }), type: 'capture' },
+                { endIndex: boardModule.rowColToIndex({ row: 5, col: 2 }), type: 'standard' },
+            ],
+        },
+    ])('returns moves for $scenario', ({ color, start, placements, deltas, expectedMoves }) => {
+        const board = buildBoard(placements as Placement[]);
+        const startIndex = boardModule.rowColToIndex(start);
+
+        const result = computeLegalMovesFromRowColDeltas(board, startIndex, color, deltas);
+
+        expect(result.map(({ endIndex, type }) => ({ endIndex, type }))).toEqual(expectedMoves);
+    });
 });
 
 describe('validatePromotion', () => {

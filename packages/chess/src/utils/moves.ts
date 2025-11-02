@@ -1,12 +1,153 @@
 import { InvalidInputError } from '@grouchess/errors';
 import invariant from 'tiny-invariant';
 
-import { computeEnPassantTargetIndex, isPromotionSquare } from '../board.js';
+import {
+    computeEnPassantTargetIndex,
+    indexToRowCol,
+    isPromotionSquare,
+    isRowColInBounds,
+    isRowInBounds,
+    rowColToIndex,
+} from '../board.js';
 import { computeCastleRightsChangesFromMove } from '../castles.js';
+import { BLACK_PAWN_STARTING_ROW, DIAGONAL_DELTAS, STRAIGHT_DELTAS, WHITE_PAWN_STARTING_ROW } from '../constants.js';
 import { createRepetitionKeyFromBoardState } from '../draws.js';
-import { computeNextChessBoardFromMove } from '../moves.js';
+import { createMove, computeNextChessBoardFromMove, isKingInCheck } from '../moves.js';
 import { getColorFromAlias } from '../pieces.js';
-import type { CastleRightsByColor, ChessBoardState, ChessGame, Move, PieceCapture } from '../schema.js';
+import type {
+    BoardIndex,
+    CastleRightsByColor,
+    ChessBoardState,
+    ChessBoardType,
+    ChessGame,
+    Move,
+    PieceCapture,
+    PieceColor,
+    PieceType,
+    RowColDeltas,
+} from '../schema.js';
+
+/**
+ * Determines if the king of the given color would be in check after the specified move is made.
+ */
+export function isKingInCheckAfterMove(board: ChessBoardType, move: Move): boolean {
+    const nextBoard = computeNextChessBoardFromMove(board, move);
+    return isKingInCheck(nextBoard, move.piece.color);
+}
+
+/**
+ * Computes all legal pawn moves from the given start index, considering standard moves, captures, and en passant.
+ */
+export function computePawnLegalMoves(
+    board: ChessBoardType,
+    startIndex: BoardIndex,
+    color: PieceColor,
+    enPassantTargetIndex: BoardIndex | null
+): Move[] {
+    const { row, col } = indexToRowCol(startIndex);
+    const isWhite = color === 'white';
+    const hasMoved = isWhite ? row !== WHITE_PAWN_STARTING_ROW : row !== BLACK_PAWN_STARTING_ROW;
+    const nextRow = isWhite ? row - 1 : row + 1;
+    const potentialRows = [nextRow];
+
+    // Add double-step move if pawn hasn't moved yet
+    if (!hasMoved) {
+        potentialRows.push(isWhite ? row - 2 : row + 2);
+    }
+
+    // Generate standard forward moves
+    const legalMoves: Move[] = [];
+    for (const currRow of potentialRows) {
+        if (!isRowInBounds(currRow)) continue;
+        const index = rowColToIndex({ row: currRow, col });
+        if (board[index] != null) break;
+        legalMoves.push(createMove(board, startIndex, index, 'standard'));
+    }
+
+    // Generate captures and en passant
+    if (isRowInBounds(nextRow)) {
+        for (const colDelta of [-1, 1]) {
+            const rowCol = { row: nextRow, col: col + colDelta };
+            const endIndex = rowColToIndex(rowCol);
+            if (endIndex < 0) continue;
+            const pieceAliasAtIndex = board[endIndex];
+            const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+            const isEnPassant = endIndex === enPassantTargetIndex;
+            if (isEnemyPiece || isEnPassant) {
+                legalMoves.push(createMove(board, startIndex, endIndex, isEnPassant ? 'en-passant' : 'capture'));
+            }
+        }
+    }
+
+    return legalMoves;
+}
+
+/**
+ * Computes all legal moves for sliding pieces (bishop, rook, queen) from the given start index.
+ */
+export function computeSlidingPieceLegalMoves(
+    board: ChessBoardType,
+    startIndex: BoardIndex,
+    color: PieceColor,
+    pieceType: PieceType
+): Move[] {
+    const { row, col } = indexToRowCol(startIndex);
+    let deltas: RowColDeltas = [];
+    if (['bishop', 'queen'].includes(pieceType)) {
+        deltas = [...deltas, ...DIAGONAL_DELTAS];
+    }
+    if (['rook', 'queen'].includes(pieceType)) {
+        deltas = [...deltas, ...STRAIGHT_DELTAS];
+    }
+
+    const legalMoves: Move[] = [];
+    for (const [rowDelta, colDelta] of deltas) {
+        let rowCol = { row: row + rowDelta, col: col + colDelta };
+        while (isRowColInBounds(rowCol)) {
+            const endIndex = rowColToIndex(rowCol);
+            const pieceAliasAtIndex = board[endIndex];
+
+            // Stop if we encounter a piece
+            if (pieceAliasAtIndex != null) {
+                const isEnemyPiece = getColorFromAlias(pieceAliasAtIndex) !== color;
+                if (isEnemyPiece) legalMoves.push(createMove(board, startIndex, endIndex, 'capture'));
+                break;
+            }
+
+            legalMoves.push(createMove(board, startIndex, endIndex, 'standard'));
+            rowCol = { row: rowCol.row + rowDelta, col: rowCol.col + colDelta };
+        }
+    }
+
+    return legalMoves;
+}
+
+/**
+ * Computes all legal moves for a piece from the given start index based on provided row/column deltas.
+ * Used for non-sliding pieces like king and knight.
+ */
+export function computeLegalMovesFromRowColDeltas(
+    board: ChessBoardType,
+    startIndex: BoardIndex,
+    color: PieceColor,
+    deltas: RowColDeltas
+): Move[] {
+    const { row, col } = indexToRowCol(startIndex);
+    const legalMoves: Move[] = [];
+    for (const [rowDelta, colDelta] of deltas) {
+        const rowCol = { row: row + rowDelta, col: col + colDelta };
+        const endIndex = rowColToIndex(rowCol);
+        if (endIndex < 0) continue;
+        const pieceAliasAtIndex = board[endIndex];
+        const isEmpty = pieceAliasAtIndex == null;
+        const isEnemyPiece = Boolean(pieceAliasAtIndex && getColorFromAlias(pieceAliasAtIndex) !== color);
+        if (isEmpty || isEnemyPiece) {
+            legalMoves.push(createMove(board, startIndex, endIndex, isEnemyPiece ? 'capture' : 'standard'));
+        }
+    }
+
+    return legalMoves;
+}
 
 /**
  * Validates the promotion details of a move if it is a pawn promotion move.

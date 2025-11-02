@@ -1,4 +1,4 @@
-import type { CastleRights } from './schema.js';
+import type { CastleRights, MoveType, PieceType, RowColDeltas } from './schema.js';
 
 /**
  * 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7  (0)
@@ -47,3 +47,38 @@ export const ROOK_START_INDEX_TO_CASTLE_RIGHT: Record<number, keyof CastleRights
 
 export const WHITE_PAWN_STARTING_ROW = 6;
 export const BLACK_PAWN_STARTING_ROW = 1;
+
+export const DIAGONAL_DELTAS: RowColDeltas = [
+    [1, 1], // down-right
+    [1, -1], // down-left
+    [-1, -1], // up-left
+    [-1, 1], // up-right
+];
+
+export const STRAIGHT_DELTAS: RowColDeltas = [
+    [0, 1], // right
+    [0, -1], // left
+    [1, 0], // down
+    [-1, 0], // up
+];
+
+export const KNIGHT_DELTAS: RowColDeltas = [
+    [2, 1], // down2 right1
+    [1, 2], // down1 right2
+    [-1, 2], // up1 right2
+    [-2, 1], // up2 right1
+    [-2, -1], // up2 left1
+    [-1, -2], // up1 left2
+    [1, -2], // down1 left2
+    [2, -1], // down2 left1
+];
+
+export const ATTACKERS: Record<string, Set<PieceType>> = {
+    pawn: new Set<PieceType>(['pawn']),
+    knight: new Set<PieceType>(['knight']),
+    king: new Set<PieceType>(['king']),
+    longDiagonals: new Set<PieceType>(['bishop', 'queen']),
+    longStraights: new Set<PieceType>(['rook', 'queen']),
+};
+
+export const CASTLE_TYPE_MOVES = new Set<MoveType>(['short-castle', 'long-castle']);
