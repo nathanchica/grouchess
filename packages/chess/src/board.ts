@@ -5,7 +5,7 @@ import type { ChessBoardType, PieceAlias, PieceColor, RowCol } from './schema.js
 import { NUM_SQUARES, NUM_COLS, NUM_ROWS } from './schema.js';
 
 // Standard initial FEN string for a new chess game
-const INITIAL_CHESS_BOARD_FEN_PLACEMENT = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+export const INITIAL_CHESS_BOARD_FEN_PLACEMENT = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
 export const INITIAL_CHESS_BOARD_FEN = `${INITIAL_CHESS_BOARD_FEN_PLACEMENT} w KQkq - 0 1`;
 
 /**
@@ -140,6 +140,9 @@ export function createBoardFromFEN(placementString: string): ChessBoardType {
     return board;
 }
 
+/**
+ * Creates a chess board in the initial starting position
+ */
 export function createInitialBoard(): ChessBoardType {
     return createBoardFromFEN(INITIAL_CHESS_BOARD_FEN_PLACEMENT);
 }
