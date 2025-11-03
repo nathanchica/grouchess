@@ -6,6 +6,7 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import importPlugin from 'eslint-plugin-import';
 import prettierConfig from 'eslint-config-prettier';
+import globals from 'globals';
 
 const vitestGlobals = vitestPlugin.environments.env.globals;
 
@@ -38,36 +39,8 @@ export default [
                 ecmaFeatures: { jsx: true },
             },
             globals: {
-                console: 'readonly',
-                process: 'readonly',
-                document: 'readonly',
-                navigator: 'readonly',
-                window: 'readonly',
-                setTimeout: 'readonly',
-                clearTimeout: 'readonly',
-                AbortController: 'readonly',
-                Audio: 'readonly',
-                Buffer: 'readonly',
-                Image: 'readonly',
-                HTMLAudioElement: 'readonly',
-                HTMLButtonElement: 'readonly',
-                HTMLDivElement: 'readonly',
-                HTMLFormElement: 'readonly',
-                HTMLImageElement: 'readonly',
-                HTMLInputElement: 'readonly',
-                fetch: 'readonly',
-                URL: 'readonly',
-                Response: 'readonly',
-                Request: 'readonly',
-                DOMException: 'readonly',
-                DOMRect: 'readonly',
-                KeyboardEvent: 'readonly',
-                sessionStorage: 'readonly',
-                localStorage: 'readonly',
-                performance: 'readonly',
-                requestAnimationFrame: 'readonly',
-                cancelAnimationFrame: 'readonly',
-                structuredClone: 'readonly',
+                ...globals.browser,
+                ...globals.node,
             },
         },
         plugins: {

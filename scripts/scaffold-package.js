@@ -75,20 +75,23 @@ async function main() {
             },
         },
         scripts: {
-            build: 'tsc',
+            build: 'tsc -p tsconfig.build.json',
             typecheck: 'tsc --noEmit',
+            test: 'vitest run --coverage',
+            'test:run': 'vitest run',
         },
         keywords: [packageName],
         author: '',
         license: 'ISC',
         devDependencies: {
             typescript: '^5.9.3',
+            vitest: '^4.0.6',
         },
     };
 
     fs.writeFileSync(path.join(packageDir, 'package.json'), JSON.stringify(packageJson, null, 2) + '\n');
 
-    // Create tsconfig.json (same as chess package)
+    // Create tsconfig.json
     const tsConfig = {
         compilerOptions: {
             target: 'ES2023',
@@ -117,6 +120,14 @@ async function main() {
 
     fs.writeFileSync(path.join(packageDir, 'tsconfig.json'), JSON.stringify(tsConfig, null, 4) + '\n');
 
+    // Create tsconfig.build.json
+    const tsConfigBuild = {
+        extends: './tsconfig.json',
+        exclude: ['src/**/__tests__/**/*', '../../vitest.env.d.ts'],
+    };
+
+    fs.writeFileSync(path.join(packageDir, 'tsconfig.build.json'), JSON.stringify(tsConfigBuild, null, 4) + '\n');
+
     // Create empty index.ts
     fs.writeFileSync(path.join(srcDir, 'index.ts'), '');
 
@@ -124,6 +135,7 @@ async function main() {
     console.log(`✅ Created: ${srcDir}/`);
     console.log(`✅ Created: ${packageDir}/package.json`);
     console.log(`✅ Created: ${packageDir}/tsconfig.json`);
+    console.log(`✅ Created: ${packageDir}/tsconfig.build.json`);
     console.log(`✅ Created: ${srcDir}/index.ts`);
 
     console.log(`\n🎉 Package scaffolded successfully!`);
