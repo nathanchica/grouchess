@@ -2,10 +2,20 @@ import * as z from 'zod';
 
 import { rowColToIndex, indexToRowCol } from './board.js';
 import { ALL_DIRECTION_DELTAS, KNIGHT_DELTAS } from './constants.js';
-import { NUM_SQUARES, BoardIndexSchema, type PieceType, type RowColDeltas } from './schema.js';
+import {
+    NUM_SQUARES,
+    BoardIndexSchema,
+    PieceTypeEnum,
+    type SlidingPieceType,
+    type RowColDeltas,
+    BoardIndex,
+} from './schema.js';
+
+export const NonSlidingPieceTargetsAtIndexSchema = z.set(BoardIndexSchema);
+export type NonSlidingPieceTargetsAtIndex = z.infer<typeof NonSlidingPieceTargetsAtIndexSchema>;
 
 export const NonSlidingPieceTargetsSchema = z
-    .array(z.set(BoardIndexSchema))
+    .array(NonSlidingPieceTargetsAtIndexSchema)
     .describe(
         'Precomputed targets for each square for a given piece type (i.e. targets[square] = [list of target squares])'
     );
@@ -69,11 +79,10 @@ export const STEP_DIRECTION_DELTAS: Record<StepDirection, [number, number]> = {
     'down-right': [1, 1],
 };
 
-type SlidingPieceType = Extract<PieceType, 'bishop' | 'rook' | 'queen'>;
 export const SLIDING_PIECE_TYPE_TO_STEP_DIRECTIONS = {
-    bishop: ['down-left', 'down-right', 'up-left', 'up-right'],
-    rook: ['up', 'down', 'left', 'right'],
-    queen: ['up', 'down', 'left', 'right', 'down-left', 'down-right', 'up-left', 'up-right'],
+    bishop: ['down-right', 'down-left', 'up-left', 'up-right'],
+    rook: ['right', 'left', 'down', 'up'],
+    queen: ['down-right', 'down-left', 'up-left', 'up-right', 'right', 'left', 'down', 'up'],
 } as const satisfies Record<SlidingPieceType, readonly StepDirection[]>;
 
 /**
@@ -84,7 +93,7 @@ function createEmptyResults(): NonSlidingPieceTargets {
 }
 
 /**
- * Computes precomputed move targets for a piece.
+ * Computes move targets for a piece.
  * @param rowColDeltas The row and column deltas for the piece's movement.
  * @returns A set of target squares for the piece.
  */
@@ -103,14 +112,14 @@ export function computeNonSlidingTargets(rowColDeltas: RowColDeltas): NonSliding
 }
 
 /**
- * Computes precomputed move targets for the king piece.
+ * Computes move targets for the king piece.
  */
 export function computeKingTargets(): NonSlidingPieceTargets {
     return computeNonSlidingTargets(ALL_DIRECTION_DELTAS);
 }
 
 /**
- * Computes precomputed move targets for the knight piece.
+ * Computes move targets for the knight piece.
  */
 export function computeKnightTargets(): NonSlidingPieceTargets {
     return computeNonSlidingTargets(KNIGHT_DELTAS);
@@ -123,16 +132,16 @@ function createEmptyDirectionMap<D extends readonly StepDirection[]>(directions:
     return map;
 }
 
-type TargetsFor<T extends SlidingPieceType> = T extends 'rook'
+type TargetsForSlidingPiece<T extends SlidingPieceType> = T extends 'rook'
     ? RookTargets
     : T extends 'bishop'
       ? BishopTargets
       : QueenTargets;
 
 /**
- * Computes precomputed move targets for a sliding piece.
+ * Computes move targets for a sliding piece.
  */
-export function computeSlidingTargets<T extends SlidingPieceType>(pieceType: T): TargetsFor<T> {
+export function computeSlidingTargets<T extends SlidingPieceType>(pieceType: T): TargetsForSlidingPiece<T> {
     const directions = SLIDING_PIECE_TYPE_TO_STEP_DIRECTIONS[
         pieceType
     ] as (typeof SLIDING_PIECE_TYPE_TO_STEP_DIRECTIONS)[T];
@@ -158,32 +167,32 @@ export function computeSlidingTargets<T extends SlidingPieceType>(pieceType: T):
         result[index] = directionMap;
     }
 
-    return result as TargetsFor<T>;
+    return result as TargetsForSlidingPiece<T>;
 }
 
 /**
- * Computes precomputed move targets for the bishop piece.
+ * Computes move targets for the bishop piece.
  */
 export function computeBishopTargets(): BishopTargets {
     return computeSlidingTargets('bishop');
 }
 
 /**
- * Computes precomputed move targets for the rook piece.
+ * Computes move targets for the rook piece.
  */
 export function computeRookTargets(): RookTargets {
     return computeSlidingTargets('rook');
 }
 
 /**
- * Computes precomputed move targets for the queen piece.
+ * Computes move targets for the queen piece.
  */
 export function computeQueenTargets(): QueenTargets {
     return computeSlidingTargets('queen');
 }
 
 /**
- * Computes precomputed move targets for all non-pawn piece types.
+ * Computes move targets for all non-pawn piece types.
  */
 export function computeNonPawnTargets(): PrecomputeResult {
     return {
@@ -193,4 +202,36 @@ export function computeNonPawnTargets(): PrecomputeResult {
         rook: computeRookTargets(),
         queen: computeQueenTargets(),
     };
+}
+
+export const PRECOMPUTED_NON_PAWN_TARGETS: PrecomputeResult = computeNonPawnTargets();
+
+export const PieceTypeWithTargetsEnum = PieceTypeEnum.exclude(['pawn']);
+export type PieceTypeWithTargets = z.infer<typeof PieceTypeWithTargetsEnum>;
+
+export type TargetsForPieceAtIndex<T extends PieceTypeWithTargets> = T extends 'king' | 'knight'
+    ? NonSlidingPieceTargetsAtIndex
+    : T extends 'bishop'
+      ? BishopTargetsAtIndex
+      : T extends 'rook'
+        ? RookTargetsAtIndex
+        : QueenTargetsAtIndex;
+
+export type TargetsForPieceType<T extends PieceTypeWithTargets> = T extends 'king' | 'knight'
+    ? NonSlidingPieceTargets
+    : T extends 'bishop'
+      ? BishopTargets
+      : T extends 'rook'
+        ? RookTargets
+        : QueenTargets;
+
+/**
+ * Gets the precomputed move targets for a piece type at a given square index.
+ */
+export function getTargetsAtIndex<T extends PieceTypeWithTargets>(
+    squareIndex: BoardIndex,
+    pieceType: T
+): TargetsForPieceAtIndex<T> {
+    const targetsForPiece = PRECOMPUTED_NON_PAWN_TARGETS[pieceType] as TargetsForPieceType<T>;
+    return targetsForPiece[squareIndex] as TargetsForPieceAtIndex<T>;
 }

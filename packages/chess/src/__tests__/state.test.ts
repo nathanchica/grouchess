@@ -24,12 +24,8 @@ import {
     computeNextChessGameAfterMove,
 } from '../state.js';
 import { createBoardStateFromFEN } from '../utils/fen.js';
-import {
-    getNextBoardStateAfterMove,
-    getNextPositionCounts,
-    getPieceCaptureFromMove,
-    validatePromotion,
-} from '../utils/moves.js';
+import { validatePromotion } from '../utils/moves.js';
+import { getNextBoardStateAfterMove, getNextPositionCounts, getPieceCaptureFromMove } from '../utils/state.js';
 
 vi.mock('../board.js', () => ({
     createInitialBoard: vi.fn(),
@@ -58,10 +54,13 @@ vi.mock('../utils/fen.js', () => ({
 }));
 
 vi.mock('../utils/moves.js', () => ({
+    validatePromotion: vi.fn(),
+}));
+
+vi.mock('../utils/state.js', () => ({
     getNextBoardStateAfterMove: vi.fn(),
     getNextPositionCounts: vi.fn(),
     getPieceCaptureFromMove: vi.fn(),
-    validatePromotion: vi.fn(),
 }));
 
 const createInitialBoardMock = vi.mocked(createInitialBoard);

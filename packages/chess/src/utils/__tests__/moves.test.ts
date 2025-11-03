@@ -1,33 +1,22 @@
 import { InvalidInputError } from '@grouchess/errors';
 
 import * as boardModule from '../../board.js';
-import * as castlesModule from '../../castles.js';
-import * as drawsModule from '../../draws.js';
 import * as chessMovesModule from '../../moves.js';
 import * as piecesModule from '../../pieces.js';
-import type {
-    CastleRightsByColor,
-    ChessBoardState,
-    ChessBoardType,
-    Move,
-    Piece,
-    PieceAlias,
-    PieceCapture,
-    PositionCounts,
-} from '../../schema.js';
+import { getPiece } from '../../pieces.js';
+import type { ChessBoardType, Move, Piece, PieceAlias } from '../../schema.js';
 import {
-    computeLegalMovesFromRowColDeltas,
+    createMove,
     computePawnLegalMoves,
     computeSlidingPieceLegalMoves,
+    computeLegalMovesForIndex,
     validatePromotion,
-    getPieceCaptureFromMove,
-    getNextPositionCounts,
-    getNextCastleRightsAfterMove,
-    getNextBoardStateAfterMove,
     isKingInCheckAfterMove,
 } from '../moves.js';
 
-const createPiece = (overrides: Partial<Piece> = {}): Piece =>
+const { rowColToIndex, indexToRowCol } = boardModule;
+
+const createMockPiece = (overrides: Partial<Piece> = {}): Piece =>
     ({
         alias: 'P',
         color: 'white',
@@ -36,46 +25,97 @@ const createPiece = (overrides: Partial<Piece> = {}): Piece =>
         ...overrides,
     }) as Piece;
 
-const createMove = (overrides: Partial<Move> = {}): Move =>
+const createMockMove = (overrides: Partial<Move> = {}): Move =>
     ({
         startIndex: 8,
         endIndex: 16,
         type: 'standard',
-        piece: createPiece(),
+        piece: createMockPiece(),
         ...overrides,
     }) as Move;
 
-const createBoard = (): ChessBoardType => Array.from({ length: 64 }, () => null);
+const createMockBoard = (): ChessBoardType => Array.from({ length: 64 }, () => null);
 
 type Placement = { row: number; col: number; alias: PieceAlias };
 
-const buildBoard = (placements: Placement[]): ChessBoardType => {
-    const board = createBoard();
+const buildMockBoard = (placements: Placement[]): ChessBoardType => {
+    const board = createMockBoard();
     placements.forEach(({ row, col, alias }) => {
-        const index = boardModule.rowColToIndex({ row, col });
+        const index = rowColToIndex({ row, col });
         if (index >= 0) {
             board[index] = alias;
         }
     });
     return board;
 };
+const createBoardWithKings = (whiteKingIndex = 60, blackKingIndex = 4): ChessBoardType => {
+    const whiteKingRowCol = indexToRowCol(whiteKingIndex);
+    const blackKingRowCol = indexToRowCol(blackKingIndex);
+    return buildMockBoard([
+        { ...whiteKingRowCol, alias: 'K' },
+        { ...blackKingRowCol, alias: 'k' },
+    ]);
+};
 
-const createBoardState = (overrides: Partial<ChessBoardState> = {}): ChessBoardState =>
-    ({
-        board: createBoard(),
-        playerTurn: 'white',
-        castleRightsByColor: {
-            white: { short: true, long: true },
-            black: { short: true, long: true },
-        },
-        enPassantTargetIndex: null,
-        halfmoveClock: 0,
-        fullmoveClock: 1,
-        ...overrides,
-    }) as ChessBoardState;
+const createBoardIndex = (row: number, col: number) => rowColToIndex({ row, col });
 
 afterEach(() => {
     vi.restoreAllMocks();
+});
+
+describe('createMove', () => {
+    it('creates a standard move with piece data populated', () => {
+        const board = createMockBoard();
+        board[52] = 'P';
+
+        const move = createMove(board, 52, 44, 'standard');
+
+        expect(move).toEqual({
+            startIndex: 52,
+            endIndex: 44,
+            type: 'standard',
+            piece: getPiece('P'),
+        });
+    });
+
+    it('captures piece on destination square when type is capture', () => {
+        const board = createMockBoard();
+        board[52] = 'P';
+        board[44] = 'p';
+
+        const move = createMove(board, 52, 44, 'capture');
+
+        expect(move.captureIndex).toBe(44);
+        expect(move.capturedPiece).toEqual(getPiece('p'));
+    });
+
+    it('captures adjacent pawn for en-passant moves', () => {
+        const board = createMockBoard();
+        board[28] = 'P';
+        board[29] = 'p';
+
+        const move = createMove(board, 28, 21, 'en-passant');
+
+        expect(move.captureIndex).toBe(29);
+        expect(move.capturedPiece).toEqual(getPiece('p'));
+    });
+
+    it('captures adjacent pawn for black en-passant moves', () => {
+        const board = createMockBoard();
+        board[createBoardIndex(4, 4)] = 'p';
+        board[createBoardIndex(4, 5)] = 'P';
+
+        const move = createMove(board, createBoardIndex(4, 4), createBoardIndex(5, 5), 'en-passant');
+
+        expect(move.captureIndex).toBe(createBoardIndex(4, 5));
+        expect(move.capturedPiece).toEqual(getPiece('P'));
+    });
+
+    it('throws when no piece is located at the start index', () => {
+        const board = createMockBoard();
+
+        expect(() => createMove(board, 10, 18, 'standard')).toThrow('Called createMove with no piece in startIndex');
+    });
 });
 
 describe('isKingInCheckAfterMove', () => {
@@ -83,9 +123,9 @@ describe('isKingInCheckAfterMove', () => {
         { scenario: 'king remains safe', isInCheck: false },
         { scenario: 'king becomes in check', isInCheck: true },
     ])('delegates to move helpers when $scenario', ({ isInCheck }) => {
-        const board = buildBoard([{ row: 6, col: 4, alias: 'P' }]);
-        const move = createMove();
-        const computedBoard = buildBoard([{ row: 4, col: 4, alias: 'P' }]);
+        const board = buildMockBoard([{ row: 6, col: 4, alias: 'P' }]);
+        const move = createMockMove();
+        const computedBoard = buildMockBoard([{ row: 4, col: 4, alias: 'P' }]);
         vi.spyOn(chessMovesModule, 'computeNextChessBoardFromMove').mockReturnValue(computedBoard);
         vi.spyOn(chessMovesModule, 'isKingInCheck').mockReturnValue(isInCheck);
 
@@ -106,8 +146,8 @@ describe('computePawnLegalMoves', () => {
             placements: [],
             enPassantTargetIndex: null,
             expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 5, col: 3 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 5, col: 3 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
             ],
         },
         {
@@ -119,17 +159,17 @@ describe('computePawnLegalMoves', () => {
                 { row: 2, col: 3, alias: 'P' },
             ],
             enPassantTargetIndex: null,
-            expectedMoves: [{ endIndex: boardModule.rowColToIndex({ row: 2, col: 3 }), type: 'capture' }],
+            expectedMoves: [{ endIndex: rowColToIndex({ row: 2, col: 3 }), type: 'capture' }],
         },
         {
             scenario: 'white pawn performs en passant alongside a standard advance',
             color: 'white' as const,
             start: { row: 3, col: 3 },
             placements: [{ row: 3, col: 4, alias: 'p' }],
-            enPassantTargetIndex: boardModule.rowColToIndex({ row: 2, col: 4 }),
+            enPassantTargetIndex: rowColToIndex({ row: 2, col: 4 }),
             expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 2, col: 3 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 2, col: 4 }), type: 'en-passant' },
+                { endIndex: rowColToIndex({ row: 2, col: 3 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 2, col: 4 }), type: 'en-passant' },
             ],
         },
         {
@@ -147,17 +187,17 @@ describe('computePawnLegalMoves', () => {
             placements: [{ row: 0, col: 1, alias: 'p' }],
             enPassantTargetIndex: null,
             expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 0, col: 0 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 0, col: 1 }), type: 'capture' },
+                { endIndex: rowColToIndex({ row: 0, col: 0 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 0, col: 1 }), type: 'capture' },
             ],
         },
     ])('returns legal moves when $scenario', ({ color, start, placements, enPassantTargetIndex, expectedMoves }) => {
         const startAlias: PieceAlias = color === 'white' ? 'P' : 'p';
-        const board = buildBoard([
+        const board = buildMockBoard([
             { row: start.row, col: start.col, alias: startAlias },
             ...(placements as Placement[]),
         ]);
-        const startIndex = boardModule.rowColToIndex(start);
+        const startIndex = rowColToIndex(start);
 
         const result = computePawnLegalMoves(board, startIndex, color, enPassantTargetIndex);
 
@@ -180,10 +220,10 @@ describe('computeSlidingPieceLegalMoves', () => {
                 { row: 4, col: 4, alias: 'q' },
             ],
             expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 4, col: 4 }), type: 'capture' },
-                { endIndex: boardModule.rowColToIndex({ row: 4, col: 2 }), type: 'capture' },
-                { endIndex: boardModule.rowColToIndex({ row: 2, col: 2 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 1, col: 1 }), type: 'capture' },
+                { endIndex: rowColToIndex({ row: 4, col: 4 }), type: 'capture' },
+                { endIndex: rowColToIndex({ row: 4, col: 2 }), type: 'capture' },
+                { endIndex: rowColToIndex({ row: 2, col: 2 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 1, col: 1 }), type: 'capture' },
             ],
         },
         {
@@ -198,19 +238,61 @@ describe('computeSlidingPieceLegalMoves', () => {
                 { row: 2, col: 4, alias: 'P' },
             ],
             expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 4, col: 5 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 4, col: 2 }), type: 'capture' },
-                { endIndex: boardModule.rowColToIndex({ row: 5, col: 4 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 6, col: 4 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 7, col: 4 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 3, col: 4 }), type: 'standard' },
-                { endIndex: boardModule.rowColToIndex({ row: 2, col: 4 }), type: 'capture' },
+                { endIndex: rowColToIndex({ row: 4, col: 5 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 4, col: 2 }), type: 'capture' },
+                { endIndex: rowColToIndex({ row: 5, col: 4 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 6, col: 4 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 7, col: 4 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 3, col: 4 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 2, col: 4 }), type: 'capture' },
+            ],
+        },
+        {
+            scenario: 'queen combines diagonal and straight rays with blocks and captures',
+            color: 'white' as const,
+            pieceType: 'queen' as const,
+            start: { row: 3, col: 3 },
+            placements: [
+                { row: 3, col: 3, alias: 'Q' },
+                // Diagonals
+                { row: 5, col: 5, alias: 'p' }, // down-right capture
+                { row: 5, col: 1, alias: 'P' }, // down-left friendly block
+                { row: 1, col: 1, alias: 'p' }, // up-left capture (after one empty)
+                // Straights
+                { row: 3, col: 5, alias: 'P' }, // right friendly block (after one empty)
+                { row: 3, col: 1, alias: 'p' }, // left capture (after one empty)
+                { row: 6, col: 3, alias: 'P' }, // down friendly block (after two empties)
+                { row: 2, col: 3, alias: 'p' }, // up immediate capture
+            ],
+            expectedMoves: [
+                // down-right
+                { endIndex: rowColToIndex({ row: 4, col: 4 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 5, col: 5 }), type: 'capture' },
+                // down-left
+                { endIndex: rowColToIndex({ row: 4, col: 2 }), type: 'standard' },
+                // up-left
+                { endIndex: rowColToIndex({ row: 2, col: 2 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 1, col: 1 }), type: 'capture' },
+                // up-right (no blocks to edge)
+                { endIndex: rowColToIndex({ row: 2, col: 4 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 1, col: 5 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 0, col: 6 }), type: 'standard' },
+                // right
+                { endIndex: rowColToIndex({ row: 3, col: 4 }), type: 'standard' },
+                // left
+                { endIndex: rowColToIndex({ row: 3, col: 2 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 3, col: 1 }), type: 'capture' },
+                // down
+                { endIndex: rowColToIndex({ row: 4, col: 3 }), type: 'standard' },
+                { endIndex: rowColToIndex({ row: 5, col: 3 }), type: 'standard' },
+                // up
+                { endIndex: rowColToIndex({ row: 2, col: 3 }), type: 'capture' },
             ],
         },
     ])('computes sliding moves when $scenario', ({ color, pieceType, start, placements, expectedMoves }) => {
-        const board = buildBoard(placements as Placement[]);
-        const startIndex = boardModule.rowColToIndex(start);
+        const board = buildMockBoard(placements as Placement[]);
+        const startIndex = rowColToIndex(start);
 
         const result = computeSlidingPieceLegalMoves(board, startIndex, color, pieceType);
 
@@ -218,61 +300,133 @@ describe('computeSlidingPieceLegalMoves', () => {
     });
 });
 
-describe('computeLegalMovesFromRowColDeltas', () => {
-    it.each([
-        {
-            scenario: 'white knight captures enemy and skips friendly square',
-            color: 'white' as const,
-            start: { row: 3, col: 3 },
-            placements: [
-                { row: 3, col: 3, alias: 'N' },
-                { row: 5, col: 4, alias: 'p' },
-                { row: 4, col: 5, alias: 'P' },
-            ],
-            deltas: [
-                [2, 1],
-                [1, 2],
-                [-2, -1],
-                [-4, 0],
-            ] as [number, number][],
-            expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 5, col: 4 }), type: 'capture' },
-                { endIndex: boardModule.rowColToIndex({ row: 1, col: 2 }), type: 'standard' },
-            ],
-        },
-        {
-            scenario: 'black knight mirrors capture logic with uppercase opponents',
-            color: 'black' as const,
-            start: { row: 4, col: 4 },
-            placements: [
-                { row: 4, col: 4, alias: 'n' },
-                { row: 2, col: 5, alias: 'P' },
-                { row: 6, col: 5, alias: 'p' },
-            ],
-            deltas: [
-                [-2, 1],
-                [2, 1],
-                [1, -2],
-            ] as [number, number][],
-            expectedMoves: [
-                { endIndex: boardModule.rowColToIndex({ row: 2, col: 5 }), type: 'capture' },
-                { endIndex: boardModule.rowColToIndex({ row: 5, col: 2 }), type: 'standard' },
-            ],
-        },
-    ])('returns moves for $scenario', ({ color, start, placements, deltas, expectedMoves }) => {
-        const board = buildBoard(placements as Placement[]);
-        const startIndex = boardModule.rowColToIndex(start);
+describe('computeLegalMovesForIndex', () => {
+    const noCastleRights = { short: false, long: false };
 
-        const result = computeLegalMovesFromRowColDeltas(board, startIndex, color, deltas);
+    it('returns an empty array when no piece occupies the square', () => {
+        const board = createBoardWithKings();
 
-        expect(result.map(({ endIndex, type }) => ({ endIndex, type }))).toEqual(expectedMoves);
+        expect(computeLegalMovesForIndex(10, board, noCastleRights, null)).toEqual([]);
+    });
+
+    it('generates pawn advances from the starting rank', () => {
+        const board = createBoardWithKings();
+        board[52] = 'P';
+
+        const moves = computeLegalMovesForIndex(52, board, noCastleRights, null);
+        const destinations = moves.map(({ endIndex, type }) => ({ endIndex, type }));
+
+        expect(moves).toHaveLength(2);
+        expect(destinations).toEqual(
+            expect.arrayContaining([
+                { endIndex: 44, type: 'standard' },
+                { endIndex: 36, type: 'standard' },
+            ])
+        );
+    });
+
+    it('includes en-passant captures when a target square is provided', () => {
+        const board = createBoardWithKings(60, 0);
+        board[28] = 'P';
+        board[29] = 'p';
+
+        const moves = computeLegalMovesForIndex(28, board, noCastleRights, 21);
+
+        expect(moves.some((move) => move.type === 'en-passant' && move.endIndex === 21)).toBe(true);
+        expect(moves.some((move) => move.endIndex === 20 && move.type === 'standard')).toBe(true);
+    });
+
+    it('computes sliding moves for bishops, rooks, and queens', () => {
+        const board = createBoardWithKings();
+        board[35] = 'B';
+
+        const moves = computeLegalMovesForIndex(35, board, noCastleRights, null);
+
+        expect(moves.length).toBeGreaterThan(0);
+        expect(moves.some((move) => move.endIndex === 28 && move.type === 'standard')).toBe(true);
+    });
+
+    it('computes knight moves from the delta list', () => {
+        const board = createBoardWithKings();
+        board[35] = 'N';
+
+        const moves = computeLegalMovesForIndex(35, board, noCastleRights, null);
+        const destinations = moves.map((move) => move.endIndex);
+
+        expect(moves).toHaveLength(8);
+        expect(destinations).toEqual(expect.arrayContaining([20, 18, 25, 41, 50, 52, 45, 29]));
+    });
+
+    it('includes castle moves when castling is legal', () => {
+        const board = createBoardWithKings();
+        board[56] = 'R';
+        board[63] = 'R';
+
+        const moves = computeLegalMovesForIndex(60, board, { short: true, long: true }, null);
+
+        expect(moves.some((move) => move.type === 'short-castle' && move.endIndex === 62)).toBe(true);
+        expect(moves.some((move) => move.type === 'long-castle' && move.endIndex === 58)).toBe(true);
+    });
+
+    it('includes black short castle when castling is legal', () => {
+        const board = createBoardWithKings();
+        board[7] = 'r';
+
+        const moves = computeLegalMovesForIndex(4, board, { short: true, long: false }, null);
+
+        expect(moves.some((move) => move.type === 'short-castle' && move.endIndex === 6)).toBe(true);
+    });
+
+    it('includes black long castle and standard king moves when legal', () => {
+        const board = createBoardWithKings();
+        board[0] = 'r';
+
+        const moves = computeLegalMovesForIndex(4, board, { short: false, long: true }, null);
+
+        expect(moves.some((move) => move.type === 'long-castle' && move.endIndex === 2)).toBe(true);
+        expect(moves.some((move) => move.type === 'standard' && move.endIndex === 5)).toBe(true);
+    });
+
+    it('appends standard king moves after castle moves when available', () => {
+        const board = createBoardWithKings();
+        board[56] = 'R';
+        board[63] = 'R';
+
+        const moves = computeLegalMovesForIndex(60, board, { short: true, long: true }, null);
+        const shortCastleIndex = moves.findIndex((move) => move.type === 'short-castle');
+        const longCastleIndex = moves.findIndex((move) => move.type === 'long-castle');
+        const standardMoveIndex = moves.findIndex((move) => move.type === 'standard' && move.endIndex === 59);
+
+        expect(shortCastleIndex).toBeGreaterThan(-1);
+        expect(longCastleIndex).toBeGreaterThan(-1);
+        expect(standardMoveIndex).toBeGreaterThan(Math.max(shortCastleIndex, longCastleIndex));
+    });
+
+    it('includes king capture when an adjacent enemy piece is present', () => {
+        const board = createBoardWithKings();
+        // Place a black queen next to the white king at index 60 (to the left: 59)
+        board[59] = 'q' as PieceAlias;
+
+        const moves = computeLegalMovesForIndex(60, board, { short: false, long: false }, null);
+
+        expect(moves.some((move) => move.type === 'capture' && move.endIndex === 59)).toBe(true);
+    });
+
+    it('filters out moves that would leave the king in check', () => {
+        const board = createBoardWithKings();
+        board[62] = 'N';
+        board[63] = 'r';
+
+        const moves = computeLegalMovesForIndex(62, board, noCastleRights, null);
+
+        expect(moves).toEqual([]);
     });
 });
 
 describe('validatePromotion', () => {
     it('does nothing when the piece is not a pawn', () => {
-        const move = createMove({
-            piece: createPiece({ type: 'knight', alias: 'N' }),
+        const move = createMockMove({
+            piece: createMockPiece({ type: 'knight', alias: 'N' }),
             endIndex: 7,
         });
 
@@ -282,7 +436,7 @@ describe('validatePromotion', () => {
     it('allows pawn moves that do not reach a promotion square without checking promotion details', () => {
         const isPromotionSquareSpy = vi.spyOn(boardModule, 'isPromotionSquare').mockReturnValue(false);
         const getColorSpy = vi.spyOn(piecesModule, 'getColorFromAlias');
-        const move = createMove({ piece: createPiece({ type: 'pawn', color: 'black', alias: 'p' }) });
+        const move = createMockMove({ piece: createMockPiece({ type: 'pawn', color: 'black', alias: 'p' }) });
 
         expect(() => validatePromotion(move)).not.toThrow();
         expect(isPromotionSquareSpy).toHaveBeenCalledWith(move.endIndex, move.piece.color);
@@ -291,7 +445,7 @@ describe('validatePromotion', () => {
 
     it('throws when a pawn reaches a promotion square without specifying a promotion piece', () => {
         vi.spyOn(boardModule, 'isPromotionSquare').mockReturnValue(true);
-        const move = createMove({ piece: createPiece({ type: 'pawn', alias: 'P' }), promotion: undefined });
+        const move = createMockMove({ piece: createMockPiece({ type: 'pawn', alias: 'P' }), promotion: undefined });
 
         expect(() => validatePromotion(move)).toThrow(InvalidInputError);
     });
@@ -299,8 +453,8 @@ describe('validatePromotion', () => {
     it('throws when the promotion piece has a mismatched color', () => {
         vi.spyOn(boardModule, 'isPromotionSquare').mockReturnValue(true);
         vi.spyOn(piecesModule, 'getColorFromAlias').mockReturnValue('black');
-        const move = createMove({
-            piece: createPiece({ type: 'pawn', color: 'white', alias: 'P' }),
+        const move = createMockMove({
+            piece: createMockPiece({ type: 'pawn', color: 'white', alias: 'P' }),
             promotion: 'q',
         });
 
@@ -310,221 +464,11 @@ describe('validatePromotion', () => {
     it('accepts a valid promotion piece with matching color', () => {
         vi.spyOn(boardModule, 'isPromotionSquare').mockReturnValue(true);
         vi.spyOn(piecesModule, 'getColorFromAlias').mockReturnValue('white');
-        const move = createMove({
-            piece: createPiece({ type: 'pawn', color: 'white', alias: 'P' }),
+        const move = createMockMove({
+            piece: createMockPiece({ type: 'pawn', color: 'white', alias: 'P' }),
             promotion: 'Q',
         });
 
         expect(() => validatePromotion(move)).not.toThrow();
-    });
-});
-
-describe('getPieceCaptureFromMove', () => {
-    it.each([
-        { scenario: 'regular capture', moveType: 'capture' as Move['type'] },
-        { scenario: 'en passant capture', moveType: 'en-passant' as Move['type'] },
-    ])('returns capture details for $scenario', ({ moveType }) => {
-        const capturedPiece = createPiece({ alias: 'p', color: 'black' });
-        const move = createMove({
-            type: moveType,
-            capturedPiece,
-        });
-        const expectedCapture: PieceCapture = { piece: capturedPiece, moveIndex: 3 };
-
-        const result = getPieceCaptureFromMove(move, 3);
-
-        expect(result).toEqual(expectedCapture);
-    });
-
-    it('throws when a capture move is missing the captured piece', () => {
-        const move = createMove({ type: 'capture', capturedPiece: undefined });
-
-        expect(() => getPieceCaptureFromMove(move, 5)).toThrow(/expected to have a capturedPiece/);
-    });
-
-    it('returns null for non-capturing moves', () => {
-        const move = createMove({ type: 'standard' });
-
-        expect(getPieceCaptureFromMove(move, 0)).toBeNull();
-    });
-});
-
-describe('getNextPositionCounts', () => {
-    it.each([
-        {
-            scenario: 'clears counts after a reset halfmove clock',
-            halfmoveClock: 0,
-            previousCounts: { old: 2 },
-            expectedCounts: { 'key-1': 1 },
-        },
-        {
-            scenario: 'increments existing position count',
-            halfmoveClock: 4,
-            previousCounts: { 'key-2': 2 },
-            expectedCounts: { 'key-2': 3 },
-        },
-        {
-            scenario: 'initializes count when position has not been seen',
-            halfmoveClock: 2,
-            previousCounts: {},
-            expectedCounts: { 'key-3': 1 },
-        },
-    ])('computes next position counts when $scenario', ({ halfmoveClock, previousCounts, expectedCounts }) => {
-        const keys = Object.keys(expectedCounts);
-        const keyToReturn = keys[0];
-        vi.spyOn(drawsModule, 'createRepetitionKeyFromBoardState').mockReturnValue(keyToReturn);
-        const boardState = createBoardState({ halfmoveClock });
-
-        const result = getNextPositionCounts(previousCounts as PositionCounts, boardState);
-
-        expect(drawsModule.createRepetitionKeyFromBoardState).toHaveBeenCalledWith(boardState);
-        expect(result).toEqual(expectedCounts);
-    });
-});
-
-describe('getNextCastleRightsAfterMove', () => {
-    it('merges castle-right changes into the previous rights', () => {
-        const prevRights: CastleRightsByColor = {
-            white: { short: true, long: true },
-            black: { short: false, long: true },
-        };
-        const diff = {
-            white: { short: false },
-            black: { long: false },
-        };
-        vi.spyOn(castlesModule, 'computeCastleRightsChangesFromMove').mockReturnValue(diff);
-
-        const move = createMove();
-        const result = getNextCastleRightsAfterMove(prevRights, move);
-
-        expect(castlesModule.computeCastleRightsChangesFromMove).toHaveBeenCalledWith(move);
-        expect(result).toEqual({
-            white: { short: false, long: true },
-            black: { short: false, long: false },
-        });
-    });
-
-    it('falls back to previous rights when white has no updates', () => {
-        const prevRights: CastleRightsByColor = {
-            white: { short: false, long: true },
-            black: { short: true, long: false },
-        };
-        vi.spyOn(castlesModule, 'computeCastleRightsChangesFromMove').mockReturnValue({
-            black: { short: false },
-        });
-
-        const result = getNextCastleRightsAfterMove(prevRights, createMove());
-
-        expect(result).toEqual({
-            white: { short: false, long: true },
-            black: { short: false, long: false },
-        });
-    });
-
-    it('falls back to previous rights when black has no updates', () => {
-        const prevRights: CastleRightsByColor = {
-            white: { short: true, long: false },
-            black: { short: false, long: true },
-        };
-        vi.spyOn(castlesModule, 'computeCastleRightsChangesFromMove').mockReturnValue({
-            white: { short: false },
-        });
-
-        const result = getNextCastleRightsAfterMove(prevRights, createMove());
-
-        expect(result).toEqual({
-            white: { short: false, long: false },
-            black: { short: false, long: true },
-        });
-    });
-});
-
-describe('getNextBoardStateAfterMove', () => {
-    it('computes the next state for a pawn move and resets counters', () => {
-        const prevCastleRights: CastleRightsByColor = {
-            white: { short: true, long: false },
-            black: { short: true, long: true },
-        };
-        const prevState = createBoardState({
-            board: createBoard(),
-            playerTurn: 'white',
-            castleRightsByColor: prevCastleRights,
-            halfmoveClock: 5,
-            fullmoveClock: 7,
-        });
-        const move = createMove({
-            startIndex: 8,
-            endIndex: 16,
-            type: 'standard',
-            piece: createPiece({ type: 'pawn', color: 'white', alias: 'P' }),
-        });
-        const computedBoard = createBoard();
-        vi.spyOn(chessMovesModule, 'computeNextChessBoardFromMove').mockReturnValue(computedBoard);
-        vi.spyOn(boardModule, 'computeEnPassantTargetIndex').mockReturnValue(12);
-        const rightsDiff = {
-            white: {},
-            black: { short: false },
-        };
-        vi.spyOn(castlesModule, 'computeCastleRightsChangesFromMove').mockReturnValue(rightsDiff);
-        const expectedCastleRights: CastleRightsByColor = {
-            white: { short: true, long: false },
-            black: { short: false, long: true },
-        };
-
-        const result = getNextBoardStateAfterMove(prevState, move);
-
-        expect(chessMovesModule.computeNextChessBoardFromMove).toHaveBeenCalledWith(prevState.board, move);
-        expect(castlesModule.computeCastleRightsChangesFromMove).toHaveBeenCalledWith(move);
-        expect(boardModule.computeEnPassantTargetIndex).toHaveBeenCalledWith(move.startIndex, move.endIndex);
-        expect(result).toEqual<ChessBoardState>({
-            board: computedBoard,
-            playerTurn: 'black',
-            castleRightsByColor: expectedCastleRights,
-            enPassantTargetIndex: 12,
-            halfmoveClock: 0,
-            fullmoveClock: 7,
-        });
-    });
-
-    it('increments clocks and omits en-passant target for non-pawn, non-capture moves', () => {
-        const prevCastleRights: CastleRightsByColor = {
-            white: { short: false, long: false },
-            black: { short: true, long: false },
-        };
-        const prevState = createBoardState({
-            board: createBoard(),
-            playerTurn: 'black',
-            castleRightsByColor: prevCastleRights,
-            halfmoveClock: 3,
-            fullmoveClock: 10,
-        });
-        const move = createMove({
-            type: 'standard',
-            piece: createPiece({ type: 'knight', alias: 'N', value: 3 }),
-        });
-        const computedBoard = createBoard();
-        vi.spyOn(chessMovesModule, 'computeNextChessBoardFromMove').mockReturnValue(computedBoard);
-        const enPassantSpy = vi.spyOn(boardModule, 'computeEnPassantTargetIndex');
-        const rightsDiff = {
-            white: {},
-            black: {},
-        };
-        vi.spyOn(castlesModule, 'computeCastleRightsChangesFromMove').mockReturnValue(rightsDiff);
-        const expectedCastleRights: CastleRightsByColor = {
-            white: { short: false, long: false },
-            black: { short: true, long: false },
-        };
-
-        const result = getNextBoardStateAfterMove(prevState, move);
-
-        expect(enPassantSpy).not.toHaveBeenCalled();
-        expect(result).toEqual<ChessBoardState>({
-            board: computedBoard,
-            playerTurn: 'white',
-            castleRightsByColor: expectedCastleRights,
-            enPassantTargetIndex: null,
-            halfmoveClock: 4,
-            fullmoveClock: 11,
-        });
     });
 });
