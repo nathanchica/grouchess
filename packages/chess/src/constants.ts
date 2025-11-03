@@ -73,6 +73,8 @@ export const KNIGHT_DELTAS: RowColDeltas = [
     [2, -1], // down2 left1
 ];
 
+export const ALL_DIRECTION_DELTAS = [...STRAIGHT_DELTAS, ...DIAGONAL_DELTAS];
+
 export const ATTACKERS: Record<string, Set<PieceType>> = {
     pawn: new Set<PieceType>(['pawn']),
     knight: new Set<PieceType>(['knight']),

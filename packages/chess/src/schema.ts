@@ -41,7 +41,7 @@ export type PawnPromotion = z.infer<typeof PawnPromotionEnum>;
 export const PieceSchema = z.object({
     alias: PieceAliasEnum,
     color: PieceColorEnum,
-    type: z.enum(['pawn', 'rook', 'knight', 'bishop', 'queen', 'king']),
+    type: PieceTypeEnum,
     value: z.union([z.literal(1), z.literal(3), z.literal(5), z.literal(9), z.literal(10)]),
 });
 export type Piece = z.infer<typeof PieceSchema>;
