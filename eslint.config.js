@@ -56,6 +56,8 @@ export default [
                 HTMLInputElement: 'readonly',
                 fetch: 'readonly',
                 URL: 'readonly',
+                Response: 'readonly',
+                Request: 'readonly',
                 DOMException: 'readonly',
                 DOMRect: 'readonly',
                 KeyboardEvent: 'readonly',

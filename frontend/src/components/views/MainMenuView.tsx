@@ -1,13 +1,15 @@
+import { Suspense, lazy } from 'react';
+
 import type { TimeControl } from '@grouchess/game-room';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Routes, Route } from 'react-router';
 
-import ServiceHealthCheckView from './ServiceHealthCheckView';
-
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
 import ErrorView from '../mainmenu/ErrorView';
-import WaitingRoomView from '../mainmenu/WaitingRoomView';
+
+const WaitingRoomView = lazy(() => import('../mainmenu/WaitingRoomView'));
+const GameRoomFormHealthGate = lazy(() => import('../mainmenu/GameRoomFormHealthGate'));
 
 type Props = {
     onSelfPlayStart: (timeControl: TimeControl | null) => void;
@@ -41,10 +43,12 @@ function MainMenuView({ onSelfPlayStart }: Props) {
                 </header>
 
                 <ErrorBoundary fallbackRender={ErrorView}>
-                    <Routes>
-                        <Route path="/:roomId" element={<WaitingRoomView />} />
-                        <Route path="/" element={<ServiceHealthCheckView onSelfPlayStart={onSelfPlayStart} />} />
-                    </Routes>
+                    <Suspense fallback={null}>
+                        <Routes>
+                            <Route path="/:roomId" element={<WaitingRoomView />} />
+                            <Route path="/" element={<GameRoomFormHealthGate onSelfPlayStart={onSelfPlayStart} />} />
+                        </Routes>
+                    </Suspense>
                 </ErrorBoundary>
             </div>
         </main>
