@@ -17,12 +17,8 @@ import {
     PieceColor,
 } from './schema.js';
 import { createBoardStateFromFEN } from './utils/fen.js';
-import {
-    getNextBoardStateAfterMove,
-    getNextPositionCounts,
-    getPieceCaptureFromMove,
-    validatePromotion,
-} from './utils/moves.js';
+import { validatePromotion } from './utils/moves.js';
+import { getNextBoardStateAfterMove, getNextPositionCounts, getPieceCaptureFromMove } from './utils/state.js';
 
 /**
  * Creates the initial board state for a new chess game

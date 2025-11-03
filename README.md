@@ -29,6 +29,8 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
     - Algebraic notation (SAN) and FEN generation/parsing
 - Game clocks
     - Monotonic timers in frontend
+    - Animated with requestAnimationFrame
+    - Time controls with increments
 - Sharing FEN strings of current board state
 - Loading board from FEN strings (self-play mode only)
 - Sound effects with mute/volume controls
