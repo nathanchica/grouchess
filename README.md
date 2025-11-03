@@ -137,10 +137,16 @@ pnpm dev
 │  │     ├─ pieces.ts
 │  │     ├─ schema.ts
 │  │     └─ state.ts
+│  ├─ chess-clocks/                           # Chess clock state management
+│  │  └─ src/
+│  │     ├─ schema.ts
+│  │     └─ state.ts
 │  ├─ game-room/                              # Game room models, time control, scores
 │  │  └─ src/
 │  │     ├─ schema.ts
 │  │     ├─ timeControl.ts
+│  │     ├─ messages.ts
+│  │     ├─ players.ts
 │  │     └─ scores.ts
 │  ├─ http-schemas/                           # Zod schemas for HTTP contracts
 │  │  └─ src/
@@ -150,9 +156,15 @@ pnpm dev
 │  │  └─ src/
 │  │     ├─ common.ts
 │  │     └─ chess.ts
-│  └─ errors/                                 # Shared error helpers/types
+│  ├─ errors/                                 # Shared error helpers/types
+│  │  └─ src/
+│  │     └─ index.ts
+│  └─ test-utils/                             # Mock data factories for tests
 │     └─ src/
-│        └─ index.ts
+│        ├─ chess.ts
+│        ├─ clocks.ts
+│        ├─ gameRoom.ts
+│        └─ messages.ts
 │
 ├─ docs/                                      # Project docs
 │  └─ ChessGameClock.md

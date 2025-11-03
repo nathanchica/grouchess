@@ -14,52 +14,8 @@ export { hasInsufficientMatingMaterial, isDrawStatus } from './draws.js';
 export { computeAllLegalMoves, computeNextChessBoardFromMove, isKingInCheck } from './moves.js';
 export { createFEN, isValidFEN } from './notations.js';
 export { getColorFromAlias, getPiece, isValidPieceAlias } from './pieces.js';
-export {
-    BoardIndexSchema,
-    CastleRightsSchema,
-    CastleRightsByColorSchema,
-    ChessBoardSchema,
-    ChessBoardStateSchema,
-    ChessGameSchema,
-    ChessGameStateSchema,
-    ChessGameStatusEnum,
-    EndGameReasonEnum,
-    ExpiredClockGameStatusEnum,
-    LegalMovesStoreSchema,
-    MoveSchema,
-    MoveNotationSchema,
-    MoveRecordSchema,
-    NUM_SQUARES,
-    NUM_COLS,
-    NUM_ROWS,
-    PawnPromotionEnum,
-    PieceAliasEnum,
-    PieceColorEnum,
-    PieceSchema,
-} from './schema.js';
 
-export type {
-    BoardIndex,
-    CastleRights,
-    CastleRightsByColor,
-    ChessBoardState,
-    ChessBoardType,
-    ChessGame,
-    ChessGameState,
-    ChessGameStatus,
-    EndGameReason,
-    ExpiredClockGameStatus,
-    LegalMovesStore,
-    Move,
-    MoveNotation,
-    MoveRecord,
-    MoveType,
-    PawnPromotion,
-    PieceAlias,
-    PieceColor,
-    Piece,
-    RowCol,
-} from './schema.js';
+export * from './schema.js';
 
 export {
     computeGameStatus,
