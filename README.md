@@ -40,6 +40,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 - Main menu with room creation
 - Waiting room UI for challengers
 - Health check view while waiting for backend to wake back up
+    - Uses React 19's `use()`, Suspense, and lazy loading of wake-up UI
 - Error boundary with Sentry logging
 - GitHub Action for linting, type checking, and running unit tests on PRs
 

@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 
 import { RequestTimeoutError, ServiceUnavailableError } from '@grouchess/errors';
-import type { TimeControl } from '@grouchess/game-room';
 
 import { useFetchServiceHealth } from '../../hooks/useFetchServiceHealth';
 import Spinner from '../common/Spinner';
-import GameRoomForm from '../mainmenu/GameRoomForm';
 
 const REQUEST_TIMEOUT_MS = 5000;
 const MAX_TIMEOUT_ERROR_COUNT = 12; // ~12 attempts with 5s timeout for 60s total
@@ -13,14 +11,14 @@ const MAX_WAIT_SECS = (MAX_TIMEOUT_ERROR_COUNT * REQUEST_TIMEOUT_MS) / 1000;
 const MAX_NON_TIMEOUT_ERROR_COUNT = 3; // Fail fast on non-timeout errors
 
 type Props = {
-    onSelfPlayStart: (timeControl: TimeControl | null) => void;
+    onHealthy: () => void;
 };
 
 /**
  * Polls the backend health endpoint until it becomes available.
- * While waiting, shows a friendly loading panel. Once healthy, renders the GameRoomForm.
+ * While waiting, shows a friendly loading panel. Once healthy, calls onHealthy callback.
  */
-function ServiceHealthCheckView({ onSelfPlayStart }: Props) {
+function ServiceHealthCheckView({ onHealthy }: Props) {
     const { fetchHealthStatus, error } = useFetchServiceHealth();
 
     const [isHealthy, setIsHealthy] = useState<boolean>(false);
@@ -61,9 +59,14 @@ function ServiceHealthCheckView({ onSelfPlayStart }: Props) {
         });
     }, [fetchHealthStatus, isHealthy, timeoutErrorCount, nonTimeoutErrorCount]);
 
-    if (isHealthy) {
-        return <GameRoomForm onSelfPlayStart={onSelfPlayStart} />;
-    }
+    // Notify parent when healthy so it can switch views
+    useEffect(() => {
+        if (isHealthy) {
+            onHealthy();
+        }
+    }, [isHealthy, onHealthy]);
+
+    if (isHealthy) return null;
 
     return (
         <div className="flex-1 flex items-center">
