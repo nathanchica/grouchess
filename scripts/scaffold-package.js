@@ -114,7 +114,7 @@ async function main() {
             noImplicitReturns: true,
             noFallthroughCasesInSwitch: true,
         },
-        include: ['src/**/*'],
+        include: ['src/**/*', '../../vitest.env.d.ts'],
         exclude: ['node_modules', 'dist'],
     };
 

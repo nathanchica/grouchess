@@ -315,6 +315,25 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/test-utils:
+    dependencies:
+      '@grouchess/chess':
+        specifier: workspace:*
+        version: link:../chess
+      '@grouchess/chess-clocks':
+        specifier: workspace:*
+        version: link:../chess-clocks
+      '@grouchess/game-room':
+        specifier: workspace:*
+        version: link:../game-room
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.6
+        version: 4.0.6(@types/node@24.9.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.6)(yaml@2.8.1)
+
 packages:
 
   '@babel/code-frame@7.27.1':
