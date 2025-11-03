@@ -47,6 +47,7 @@ export default [
                 clearTimeout: 'readonly',
                 AbortController: 'readonly',
                 Audio: 'readonly',
+                Buffer: 'readonly',
                 Image: 'readonly',
                 HTMLAudioElement: 'readonly',
                 HTMLButtonElement: 'readonly',
