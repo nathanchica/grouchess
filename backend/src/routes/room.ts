@@ -3,8 +3,8 @@ import {
     CreateGameRoomRequestSchema,
     CreateGameRoomResponseSchema,
     GetChessGameResponseSchema,
+    JoinGameRoomRequestSchema,
     JoinGameRoomResponseSchema,
-    PlayerDisplayNameInput,
 } from '@grouchess/http-schemas';
 import { Router } from 'express';
 import * as z from 'zod';
@@ -42,7 +42,9 @@ roomRouter.get('/:roomId/chess-game', authenticateRequest, (req, res) => {
     const { chessGameService, gameRoomService, chessClockService } = req.services;
 
     const { playerId } = req;
+
     // Should be guaranteed by authenticateRequest middleware
+    /* v8 ignore next -- @preserve */
     if (!playerId) {
         res.status(500).json({ error: 'Internal server error' });
         return;
@@ -131,13 +133,7 @@ roomRouter.post('/join/:roomId', (req, res) => {
     const { roomId } = req.params;
 
     try {
-        const { displayName } = z
-            .object({
-                displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 2').describe(
-                    'The display name of the player joining the room. Defaults to "Player 2" if not provided.'
-                ),
-            })
-            .parse(req.body);
+        const { displayName } = JoinGameRoomRequestSchema.parse(req.body);
 
         const player = playerService.createPlayer(displayName);
         gameRoomService.joinGameRoom(roomId, player);
