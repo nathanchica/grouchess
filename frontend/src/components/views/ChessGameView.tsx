@@ -1,5 +1,4 @@
-import MainSection from '../../components/MainSection';
-import PlayersInfoSection from '../../components/PlayersInfoSection';
+import MainSection from '../../components/chess_board/MainSection';
 import ChessGameRoomProvider, { type ChessGameRoomState } from '../../providers/ChessGameRoomProvider';
 import PlayerChatSocketProvider from '../../providers/PlayerChatSocketProvider';
 import ChessClocksLocalController from '../controllers/ChessClocksLocalController';
@@ -8,6 +7,7 @@ import ChessGameRoomController from '../controllers/ChessGameRoomController';
 import ChessMovesController from '../controllers/ChessMovesController';
 import SoundEffects from '../controllers/SoundEffects';
 import GameInfoPanel from '../game_info_panel/GameInfoPanel';
+import PlayersInfoSection from '../players_info_section/PlayersInfoSection';
 
 type Props = {
     initialChessGameRoomData: ChessGameRoomState;

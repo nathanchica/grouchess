@@ -1,9 +1,9 @@
 import type { PieceColor } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
-import StopwatchIcon from '../assets/icons/stopwatch.svg?react';
-import { useChessClock } from '../providers/ChessGameRoomProvider';
-import { useClockTick } from '../providers/ClockTickProvider';
+import StopwatchIcon from '../../assets/icons/stopwatch.svg?react';
+import { useChessClock } from '../../providers/ChessGameRoomProvider';
+import { useClockTick } from '../../providers/ClockTickProvider';
 
 const MS_IN_SECOND = 1000;
 const SEC_IN_MINUTE = 60;

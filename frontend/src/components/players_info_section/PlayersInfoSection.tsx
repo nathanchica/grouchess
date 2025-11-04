@@ -1,9 +1,9 @@
 import invariant from 'tiny-invariant';
 
 import PlayerCard from './PlayerCard';
-import PlayerChatPanel from './chat/PlayerChatPanel';
 
-import { useGameRoom } from '../providers/ChessGameRoomProvider';
+import { useGameRoom } from '../../providers/ChessGameRoomProvider';
+import PlayerChatPanel from '../chat/PlayerChatPanel';
 
 type Variant = 'row' | 'col';
 
