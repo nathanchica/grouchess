@@ -6,7 +6,7 @@ import { createEventHandler } from '../utils.js';
 function onMovePiece(input: MovePieceInput, context: HandlerContext) {
     const { fromIndex, toIndex, promotion } = input;
     const { io, socket, roomId, playerId, services, targets, sendErrorEvent, endChessGame } = context;
-    const { chessGameService, chessClockService, gameRoomService } = services;
+    const { chessGameService, chessClockService, gameRoomService, messageService } = services;
     const { gameRoom: gameRoomTarget } = targets;
 
     const chessGame = chessGameService.getInProgressChessGameForRoom(roomId);
@@ -27,13 +27,9 @@ function onMovePiece(input: MovePieceInput, context: HandlerContext) {
 
     // handle auto-decline of draw offer after move
     try {
-        const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
-        if (!gameRoomOffers) {
-            throw new Error('Game room offers not found');
-        }
-        const { 'draw-offer': drawOfferMessage } = gameRoomOffers;
+        const { 'draw-offer': drawOfferMessage } = messageService.getActiveOffers(roomId);
         if (drawOfferMessage && playerId !== drawOfferMessage.authorId) {
-            const message = gameRoomService.declineDraw(roomId, playerId);
+            const message = messageService.declineDraw(roomId, playerId);
             io.to(gameRoomTarget).emit('draw_declined', { message });
         }
     } catch (error) {

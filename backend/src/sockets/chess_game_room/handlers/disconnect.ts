@@ -2,7 +2,7 @@ import { HandlerContext } from '../types.js';
 import { createNoInputEventHandler } from '../utils.js';
 
 function onDisconnect({ roomId, playerId, services, createNewMessage }: HandlerContext) {
-    const { gameRoomService, playerService, chessGameService, chessClockService } = services;
+    const { gameRoomService, playerService, chessGameService, chessClockService, messageService } = services;
 
     playerService.updateStatus(playerId, false);
     createNewMessage('player-left-room');
@@ -18,6 +18,7 @@ function onDisconnect({ roomId, playerId, services, createNewMessage }: HandlerC
     if (playerIds.every((id) => playerService.getPlayerStatus(id) === 'offline')) {
         chessGameService.deleteChessGameForRoom(roomId);
         chessClockService.deleteClockForRoom(roomId);
+        messageService.deleteMessagesForRoom(roomId);
         playerIds.forEach((id) => playerService.deletePlayer(id));
         gameRoomService.deleteGameRoom(roomId);
     }

@@ -14,8 +14,8 @@ type Props = {
 };
 
 function ChessGameView({ initialChessGameRoomData: initialData }: Props) {
-    const { gameRoom, clockState } = initialData;
-    const { messages: initialMessages, type } = gameRoom;
+    const { gameRoom, clockState, messages: initialMessages } = initialData;
+    const { type } = gameRoom;
 
     // Determine if clocks should be controlled locally or by the server
     let chessClocksController;

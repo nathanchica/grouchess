@@ -39,7 +39,7 @@ roomRouter.get('/:roomId', (req, res) => {
  */
 roomRouter.get('/:roomId/chess-game', authenticateRequest, (req, res) => {
     const { roomId } = req.params;
-    const { chessGameService, gameRoomService, chessClockService } = req.services;
+    const { chessGameService, gameRoomService, chessClockService, messageService } = req.services;
 
     const { playerId } = req;
 
@@ -63,10 +63,12 @@ roomRouter.get('/:roomId/chess-game', authenticateRequest, (req, res) => {
     }
 
     const clockState = chessClockService.getClockStateForRoom(roomId);
+    const messages = messageService.getMessagesForRoom(roomId);
 
     const parsedResponse = GetChessGameResponseSchema.safeParse({
         gameRoom,
         chessGame,
+        messages,
         clockState,
         playerId,
     });
@@ -85,7 +87,7 @@ roomRouter.get('/:roomId/chess-game', authenticateRequest, (req, res) => {
  * Returns the room ID, player ID, and authentication token for the creator.
  */
 roomRouter.post('/', (req, res) => {
-    const { playerService, gameRoomService, tokenService } = req.services;
+    const { playerService, gameRoomService, tokenService, messageService } = req.services;
 
     try {
         const { displayName, color, timeControlAlias, roomType } = CreateGameRoomRequestSchema.parse(req.body);
@@ -98,6 +100,7 @@ roomRouter.post('/', (req, res) => {
             creator: player,
             creatorColorInput: color,
         });
+        messageService.initializeRoom(roomId);
         const token = tokenService.generate({ playerId: player.id, roomId });
 
         const parsedResponse = CreateGameRoomResponseSchema.safeParse({

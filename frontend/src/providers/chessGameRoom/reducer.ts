@@ -189,27 +189,6 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
                     : {}),
             };
         }
-        case 'add-message': {
-            const { message } = action;
-            const { gameRoom } = state;
-
-            const newMessage = {
-                ...message,
-                createdAt: new Date(message.createdAt),
-            };
-            // Keep messages sorted by oldest to newest
-            const sortedMessages = [...gameRoom.messages, newMessage].sort(
-                (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-            );
-
-            return {
-                ...state,
-                gameRoom: {
-                    ...gameRoom,
-                    messages: sortedMessages,
-                },
-            };
-        }
         case 'load-current-player-id': {
             const { playerId } = action;
             return {

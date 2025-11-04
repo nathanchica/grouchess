@@ -10,7 +10,13 @@ import type { Socket } from 'socket.io';
 import * as z from 'zod';
 
 import type { ChessSocketServer } from '../../servers/chess.js';
-import { ChessClockService, ChessGameService, GameRoomService, PlayerService } from '../../services/index.js';
+import {
+    ChessClockService,
+    ChessGameService,
+    GameRoomService,
+    MessageService,
+    PlayerService,
+} from '../../services/index.js';
 import type { TokenService } from '../../services/tokenService.js';
 
 export type ChessGameRoomSocketServices = {
@@ -18,6 +24,7 @@ export type ChessGameRoomSocketServices = {
     chessGameService: ChessGameService;
     playerService: PlayerService;
     gameRoomService: GameRoomService;
+    messageService: MessageService;
     tokenService: TokenService;
 };
 export type ChessGameRoomSocketDependencies = ChessGameRoomSocketServices;

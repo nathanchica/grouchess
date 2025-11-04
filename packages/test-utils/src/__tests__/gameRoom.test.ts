@@ -183,7 +183,6 @@ describe('Game Room Mock Factories', () => {
                 players: [],
                 playerIdToDisplayName: {},
                 playerIdToScore: {},
-                messages: [],
                 gameCount: 0,
             });
         });
@@ -274,7 +273,6 @@ describe('Game Room Mock Factories', () => {
                 players: [],
                 playerIdToDisplayName: {},
                 playerIdToScore: {},
-                messages: [],
                 gameCount: 0,
                 timeControl: null,
                 colorToPlayerId: {

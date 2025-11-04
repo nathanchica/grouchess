@@ -1,3 +1,4 @@
+import type { ChessGameMessage } from '@grouchess/models';
 import {
     createMockChessClockState,
     createMockChessGame,
@@ -12,6 +13,7 @@ import {
     gameRoomService,
     chessGameService,
     chessClockService,
+    messageService,
     tokenService,
     playerService,
 } from '../../services/index.js';
@@ -133,11 +135,13 @@ describe('GET /room/:roomId/chess-game', () => {
             white: { timeRemainingMs: 300000, isActive: true },
             black: { timeRemainingMs: 300000, isActive: false },
         });
+        const mockMessages: ChessGameMessage[] = [];
 
         vi.spyOn(tokenService, 'verify').mockReturnValue({ playerId: mockPlayerId, roomId: mockRoomId });
         vi.spyOn(gameRoomService, 'getGameRoomById').mockReturnValue(mockRoom);
         vi.spyOn(chessGameService, 'getChessGameForRoom').mockReturnValue(mockChessGame);
         vi.spyOn(chessClockService, 'getClockStateForRoom').mockReturnValue(mockClockState);
+        vi.spyOn(messageService, 'getMessagesForRoom').mockReturnValue(mockMessages);
 
         const response = await request(createApp())
             .get(`/room/${mockRoomId}/chess-game`)
@@ -150,6 +154,7 @@ describe('GET /room/:roomId/chess-game', () => {
                 boardState: expect.objectContaining({ playerTurn: 'white' }),
                 gameState: mockChessGame.gameState,
             }),
+            messages: [],
             clockState: expect.objectContaining({ baseTimeMs: 300000 }),
             playerId: mockPlayerId,
         });
@@ -157,6 +162,7 @@ describe('GET /room/:roomId/chess-game', () => {
         expect(gameRoomService.getGameRoomById).toHaveBeenCalledWith(mockRoomId);
         expect(chessGameService.getChessGameForRoom).toHaveBeenCalledWith(mockRoomId);
         expect(chessClockService.getClockStateForRoom).toHaveBeenCalledWith(mockRoomId);
+        expect(messageService.getMessagesForRoom).toHaveBeenCalledWith(mockRoomId);
     });
 
     it('returns 401 when Authorization header is missing', async () => {
@@ -243,11 +249,13 @@ describe('GET /room/:roomId/chess-game', () => {
     it('returns chess game state with null clock when no time control is set', async () => {
         const mockRoom = createMockChessGameRoom({ id: mockRoomId, timeControl: null });
         const mockChessGame = createMockChessGame();
+        const mockMessages: ChessGameMessage[] = [];
 
         vi.spyOn(tokenService, 'verify').mockReturnValue({ playerId: mockPlayerId, roomId: mockRoomId });
         vi.spyOn(gameRoomService, 'getGameRoomById').mockReturnValue(mockRoom);
         vi.spyOn(chessGameService, 'getChessGameForRoom').mockReturnValue(mockChessGame);
         vi.spyOn(chessClockService, 'getClockStateForRoom').mockReturnValue(null);
+        vi.spyOn(messageService, 'getMessagesForRoom').mockReturnValue(mockMessages);
 
         const response = await request(createApp())
             .get(`/room/${mockRoomId}/chess-game`)
@@ -260,6 +268,7 @@ describe('GET /room/:roomId/chess-game', () => {
                 boardState: expect.objectContaining({ playerTurn: 'white' }),
                 gameState: mockChessGame.gameState,
             }),
+            messages: [],
             clockState: null,
             playerId: mockPlayerId,
         });
@@ -269,6 +278,7 @@ describe('GET /room/:roomId/chess-game', () => {
         const mockRoom = createMockChessGameRoom({ id: mockRoomId });
         const mockChessGame = createMockChessGame();
         const mockClockState = createMockChessClockState();
+        const mockMessages: ChessGameMessage[] = [];
 
         const mockValidationError = {
             issues: [
@@ -294,6 +304,7 @@ describe('GET /room/:roomId/chess-game', () => {
         vi.spyOn(gameRoomService, 'getGameRoomById').mockReturnValue(mockRoom);
         vi.spyOn(chessGameService, 'getChessGameForRoom').mockReturnValue(mockChessGame);
         vi.spyOn(chessClockService, 'getClockStateForRoom').mockReturnValue(mockClockState);
+        vi.spyOn(messageService, 'getMessagesForRoom').mockReturnValue(mockMessages);
 
         const response = await request(createApp())
             .get(`/room/${mockRoomId}/chess-game`)
@@ -305,6 +316,7 @@ describe('GET /room/:roomId/chess-game', () => {
         expect(getChessGameSafeParseMock).toHaveBeenCalledWith({
             gameRoom: mockRoom,
             chessGame: mockChessGame,
+            messages: mockMessages,
             clockState: mockClockState,
             playerId: mockPlayerId,
         });
@@ -339,6 +351,7 @@ describe('POST /room', () => {
         createGameRoomParseMock.mockReturnValue(requestBody);
         vi.spyOn(playerService, 'createPlayer').mockReturnValue(mockPlayer);
         vi.spyOn(gameRoomService, 'createGameRoom').mockReturnValue(mockRoom);
+        vi.spyOn(messageService, 'initializeRoom').mockReturnValue(undefined);
         vi.spyOn(tokenService, 'generate').mockReturnValue(mockToken);
 
         const response = await request(createApp()).post('/room').send(requestBody);
@@ -378,6 +391,7 @@ describe('POST /room', () => {
         createGameRoomParseMock.mockReturnValue(requestBody);
         vi.spyOn(playerService, 'createPlayer').mockReturnValue(mockPlayer);
         vi.spyOn(gameRoomService, 'createGameRoom').mockReturnValue(mockRoom);
+        vi.spyOn(messageService, 'initializeRoom').mockReturnValue(undefined);
         vi.spyOn(tokenService, 'generate').mockReturnValue(mockToken);
 
         const response = await request(createApp()).post('/room').send(requestBody);

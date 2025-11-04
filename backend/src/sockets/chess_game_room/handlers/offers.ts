@@ -2,7 +2,7 @@ import { HandlerContext } from '../types.js';
 import { createNoInputEventHandler } from '../utils.js';
 
 function onOfferRematch({ io, roomId, playerId, services, targets, sendErrorEvent, createNewMessage }: HandlerContext) {
-    const { chessGameService, chessClockService, gameRoomService } = services;
+    const { chessGameService, chessClockService, gameRoomService, messageService } = services;
     const { gameRoom: gameRoomTarget } = targets;
 
     const chessGame = chessGameService.getChessGameForRoom(roomId);
@@ -16,12 +16,8 @@ function onOfferRematch({ io, roomId, playerId, services, targets, sendErrorEven
         return;
     }
 
-    const gameRoomOffers = gameRoomService.getOffersForGameRoom(roomId);
-    if (!gameRoomOffers) {
-        sendErrorEvent('Game room not found');
-        return;
-    }
-    const { 'rematch-offer': rematchOfferMessage } = gameRoomOffers;
+    const activeOffers = messageService.getActiveOffers(roomId);
+    const { 'rematch-offer': rematchOfferMessage } = activeOffers;
     if (!rematchOfferMessage) {
         createNewMessage('rematch-offer');
         return;
@@ -32,7 +28,7 @@ function onOfferRematch({ io, roomId, playerId, services, targets, sendErrorEven
     }
 
     // Both players have offered a rematch: start new game
-    const message = gameRoomService.acceptRematch(roomId, playerId);
+    const message = messageService.acceptRematch(roomId, playerId);
     if (!message) {
         sendErrorEvent('Failed to accept rematch offer');
         return;
@@ -40,6 +36,7 @@ function onOfferRematch({ io, roomId, playerId, services, targets, sendErrorEven
 
     gameRoomService.startNewGameInRoom(roomId);
     gameRoomService.swapPlayerColors(roomId);
+    messageService.clearOffersForRoom(roomId);
 
     const gameRoom = gameRoomService.getGameRoomById(roomId);
     if (!gameRoom) {
@@ -57,10 +54,10 @@ function onOfferRematch({ io, roomId, playerId, services, targets, sendErrorEven
 }
 
 function onDeclineRematch({ io, roomId, playerId, services, targets, sendErrorEvent }: HandlerContext) {
-    const { gameRoomService } = services;
+    const { messageService } = services;
     const { gameRoom: gameRoomTarget } = targets;
 
-    const message = gameRoomService.declineRematch(roomId, playerId);
+    const message = messageService.declineRematch(roomId, playerId);
     if (!message) {
         sendErrorEvent('Failed to decline rematch offer');
         return;
@@ -86,10 +83,10 @@ function onOfferDraw({ roomId, services, sendErrorEvent, createNewMessage }: Han
 }
 
 function onDeclineDraw({ io, roomId, playerId, services, targets, sendErrorEvent }: HandlerContext) {
-    const { gameRoomService } = services;
+    const { messageService } = services;
     const { gameRoom: gameRoomTarget } = targets;
 
-    const message = gameRoomService.declineDraw(roomId, playerId);
+    const message = messageService.declineDraw(roomId, playerId);
     if (!message) {
         sendErrorEvent('Failed to decline draw offer');
         return;
@@ -98,7 +95,7 @@ function onDeclineDraw({ io, roomId, playerId, services, targets, sendErrorEvent
 }
 
 function onAcceptDraw({ io, roomId, playerId, services, targets, sendErrorEvent, endChessGame }: HandlerContext) {
-    const { chessGameService, gameRoomService } = services;
+    const { chessGameService, messageService } = services;
     const { gameRoom: gameRoomTarget } = targets;
 
     const chessGame = chessGameService.getChessGameForRoom(roomId);
@@ -111,7 +108,7 @@ function onAcceptDraw({ io, roomId, playerId, services, targets, sendErrorEvent,
         return;
     }
 
-    const message = gameRoomService.acceptDraw(roomId, playerId);
+    const message = messageService.acceptDraw(roomId, playerId);
     if (!message) {
         sendErrorEvent('Failed to accept draw offer');
         return;

@@ -102,7 +102,6 @@ export function createMockGameRoom(overrides?: Partial<GameRoom>): GameRoom {
         players: [],
         playerIdToDisplayName: {},
         playerIdToScore: {},
-        messages: [],
         gameCount: 0,
         ...overrides,
     };
@@ -143,7 +142,6 @@ export function createMockChessGameRoom(overrides?: Partial<ChessGameRoom>): Che
         players: [],
         playerIdToDisplayName: {},
         playerIdToScore: {},
-        messages: [],
         gameCount: 0,
         timeControl: null,
         colorToPlayerId: {
