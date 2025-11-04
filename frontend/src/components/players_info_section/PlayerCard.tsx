@@ -3,11 +3,11 @@ import invariant from 'tiny-invariant';
 
 import ChessClock from './ChessClock';
 import PlayerScoreDisplay from './PlayerScoreDisplay';
-import InfoCard from './common/InfoCard';
 
-import { useChessGame, useGameRoom } from '../providers/ChessGameRoomProvider';
-import { useImages } from '../providers/ImagesProvider';
-import { aliasToPieceImageData } from '../utils/pieces';
+import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
+import { useImages } from '../../providers/ImagesProvider';
+import { aliasToPieceImageData } from '../../utils/pieces';
+import InfoCard from '../common/InfoCard';
 
 type Props = {
     playerId: string;

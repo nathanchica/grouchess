@@ -1,8 +1,8 @@
 import invariant from 'tiny-invariant';
 
-import ChessBoard from './chess_board/ChessBoard';
+import ChessBoard from './ChessBoard';
 
-import { useChessGame } from '../providers/ChessGameRoomProvider';
+import { useChessGame } from '../../providers/ChessGameRoomProvider';
 
 function MainSection() {
     const { chessGame } = useChessGame();

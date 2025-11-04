@@ -6,11 +6,13 @@
     "scripts": {
         "dev": "pnpm -w build:packages && vite",
         "dev:skip-packages-build": "vite",
-        "build": "pnpm -w build:packages && tsc -b && vite build",
-        "build:skip-packages-build": "tsc -b && vite build",
+        "build": "pnpm -w build:packages && tsc -b tsconfig.app.build.json && vite build",
+        "build:skip-packages-build": "tsc -b tsconfig.app.build.json && vite build",
         "lint": "eslint .",
         "preview": "vite preview",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run --coverage",
+        "test:run": "vitest run"
     },
     "dependencies": {
         "@fontsource-variable/merriweather": "^5.2.6",
@@ -38,6 +40,7 @@
         "@vitejs/plugin-react": "^5.0.4",
         "typescript": "^5.9.3",
         "vite": "^7.1.9",
-        "vite-plugin-svgr": "^4.5.0"
+        "vite-plugin-svgr": "^4.5.0",
+        "vitest": "^4.0.6"
     }
 }
