@@ -1,4 +1,5 @@
-import type { ChessBoardType, Move } from '@grouchess/models';
+import type { Move } from '@grouchess/models';
+import { createMockChessBoard } from '@grouchess/test-utils';
 
 import { computeCastlingLegality, computeCastleRightsChangesFromMove, createInitialCastleRights } from '../castles.js';
 import {
@@ -17,8 +18,6 @@ import { getPiece } from '../pieces.js';
 
 const isKingInCheckMock = vi.spyOn(moves, 'isKingInCheck');
 const isSquareAttackedMock = vi.spyOn(moves, 'isSquareAttacked');
-
-const makeEmptyBoard = (): ChessBoardType => Array(64).fill(null) as ChessBoardType;
 
 const WHITE_KING = getPiece('K');
 const BLACK_KING = getPiece('k');
@@ -50,7 +49,7 @@ describe('createInitialCastleRights', () => {
 
 describe('computeCastlingLegality', () => {
     it('returns no legal castles when rights are absent', () => {
-        const board = makeEmptyBoard();
+        const board = createMockChessBoard();
         const result = computeCastlingLegality('white', board, { short: false, long: false });
 
         expect(result).toEqual({ short: false, long: false });
@@ -58,7 +57,7 @@ describe('computeCastlingLegality', () => {
     });
 
     it('returns no legal castles when the king is in check', () => {
-        const board = makeEmptyBoard();
+        const board = createMockChessBoard();
         isKingInCheckMock.mockReturnValue(true);
 
         const result = computeCastlingLegality('black', board, { short: true, long: true });
@@ -68,8 +67,9 @@ describe('computeCastlingLegality', () => {
     });
 
     it('allows white short castle when path is empty, safe, and rook present', () => {
-        const board = makeEmptyBoard();
-        board[WHITE_SHORT_ROOK_START_INDEX] = 'R';
+        const board = createMockChessBoard({
+            [WHITE_SHORT_ROOK_START_INDEX]: 'R',
+        });
 
         const result = computeCastlingLegality('white', board, { short: true, long: false });
 
@@ -81,8 +81,9 @@ describe('computeCastlingLegality', () => {
     });
 
     it('allows black long castle when path is empty, safe, and rook present', () => {
-        const board = makeEmptyBoard();
-        board[BLACK_LONG_ROOK_START_INDEX] = 'r';
+        const board = createMockChessBoard({
+            [BLACK_LONG_ROOK_START_INDEX]: 'r',
+        });
 
         const result = computeCastlingLegality('black', board, { short: false, long: true });
 
@@ -93,8 +94,9 @@ describe('computeCastlingLegality', () => {
     });
 
     it('allows black short castle when path is empty, safe, and rook present', () => {
-        const board = makeEmptyBoard();
-        board[BLACK_SHORT_ROOK_START_INDEX] = 'r';
+        const board = createMockChessBoard({
+            [BLACK_SHORT_ROOK_START_INDEX]: 'r',
+        });
 
         const result = computeCastlingLegality('black', board, { short: true, long: false });
 
@@ -106,8 +108,9 @@ describe('computeCastlingLegality', () => {
     });
 
     it('prevents long castling when a required square is attacked', () => {
-        const board = makeEmptyBoard();
-        board[WHITE_LONG_ROOK_START_INDEX] = 'R';
+        const board = createMockChessBoard({
+            [WHITE_LONG_ROOK_START_INDEX]: 'R',
+        });
 
         isSquareAttackedMock.mockImplementation((_, index) => index === WHITE_LONG_CASTLE_SAFE_INDICES[0]);
 
@@ -118,7 +121,7 @@ describe('computeCastlingLegality', () => {
     });
 
     it('prevents castling when the rook is missing from its starting square', () => {
-        const board = makeEmptyBoard();
+        const board = createMockChessBoard();
 
         const result = computeCastlingLegality('white', board, { short: true, long: false });
 

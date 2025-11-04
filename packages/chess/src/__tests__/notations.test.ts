@@ -1,10 +1,10 @@
+import { type LegalMovesStore, type PieceAlias } from '@grouchess/models';
 import {
-    type ChessBoardState,
-    type ChessGameState,
-    type LegalMovesStore,
-    type Move,
-    type PieceAlias,
-} from '@grouchess/models';
+    createMockChessBoardState,
+    createMockChessGameState,
+    createMockLegalMovesStore,
+    createMockMove,
+} from '@grouchess/test-utils';
 
 import { createBoardFromFEN, algebraicNotationToIndex } from '../board.js';
 import { createAlgebraicNotation, createFEN, indexToAlgebraicNotation, isValidFEN } from '../notations.js';
@@ -12,13 +12,11 @@ import { getPiece } from '../pieces.js';
 
 function createLegalMovesStore(pieceAlias: PieceAlias, endIndex: number, startIndices: number[]): LegalMovesStore {
     const { type } = getPiece(pieceAlias);
-    return {
-        allMoves: [],
-        byStartIndex: {},
+    return createMockLegalMovesStore({
         typeAndEndIndexToStartIndex: {
             [`${type}:${endIndex}`]: startIndices,
         },
-    };
+    });
 }
 
 describe('indexToAlgebraicNotation', () => {
@@ -32,45 +30,45 @@ describe('indexToAlgebraicNotation', () => {
 });
 
 describe('createAlgebraicNotation', () => {
-    const defaultGameState: ChessGameState = { status: 'in-progress' };
-    const figurineGameState: ChessGameState = { status: 'in-progress' };
+    const defaultGameState = createMockChessGameState();
+    const figurineGameState = createMockChessGameState();
 
     it.each([
         {
             scenario: 'short castling',
-            move: {
+            move: createMockMove({
                 startIndex: algebraicNotationToIndex('e1'),
                 endIndex: algebraicNotationToIndex('g1'),
                 type: 'short-castle',
                 piece: getPiece('K'),
-            } satisfies Partial<Move>,
+            }),
             expected: 'O-O',
         },
         {
             scenario: 'long castling',
-            move: {
+            move: createMockMove({
                 startIndex: algebraicNotationToIndex('e8'),
                 endIndex: algebraicNotationToIndex('c8'),
                 type: 'long-castle',
                 piece: getPiece('k'),
-            } satisfies Partial<Move>,
+            }),
             expected: 'O-O-O',
         },
     ])('returns $expected for $scenario', ({ move, expected }) => {
-        const legalMovesStore: LegalMovesStore = { allMoves: [], byStartIndex: {}, typeAndEndIndexToStartIndex: {} };
-        expect(createAlgebraicNotation(move as Move, defaultGameState, legalMovesStore)).toBe(expected);
+        const legalMovesStore = createMockLegalMovesStore();
+        expect(createAlgebraicNotation(move, defaultGameState, legalMovesStore)).toBe(expected);
     });
 
     it('uses figurine notation when enabled', () => {
         const startIndex = algebraicNotationToIndex('g1');
         const endIndex = algebraicNotationToIndex('f3');
         const legalMovesStore = createLegalMovesStore('N', endIndex, [startIndex]);
-        const move: Move = {
+        const move = createMockMove({
             startIndex,
             endIndex,
             piece: getPiece('N'),
             type: 'standard',
-        };
+        });
 
         expect(createAlgebraicNotation(move, figurineGameState, legalMovesStore, true)).toBe('\u265Ef3');
     });
@@ -80,13 +78,13 @@ describe('createAlgebraicNotation', () => {
         const competingIndex = algebraicNotationToIndex('c6');
         const endIndex = algebraicNotationToIndex('d4');
         const legalMovesStore = createLegalMovesStore('R', endIndex, [startIndex, competingIndex]);
-        const move: Move = {
+        const move = createMockMove({
             startIndex,
             endIndex,
             piece: getPiece('R'),
             type: 'standard',
-        };
-        const gameState: ChessGameState = { status: 'in-progress', check: 'black' };
+        });
+        const gameState = createMockChessGameState({ status: 'in-progress', check: 'black' });
 
         expect(createAlgebraicNotation(move, gameState, legalMovesStore)).toBe('Rad4+');
     });
@@ -96,12 +94,12 @@ describe('createAlgebraicNotation', () => {
         const competingIndex = algebraicNotationToIndex('c1');
         const endIndex = algebraicNotationToIndex('g8');
         const legalMovesStore = createLegalMovesStore('b', endIndex, [startIndex, competingIndex]);
-        const move: Move = {
+        const move = createMockMove({
             startIndex,
             endIndex,
             piece: getPiece('b'),
             type: 'standard',
-        };
+        });
 
         expect(createAlgebraicNotation(move, defaultGameState, legalMovesStore)).toBe('B4g8');
     });
@@ -112,14 +110,14 @@ describe('createAlgebraicNotation', () => {
         const sameRankIndex = algebraicNotationToIndex('f4');
         const endIndex = algebraicNotationToIndex('h8');
         const legalMovesStore = createLegalMovesStore('Q', endIndex, [startIndex, sameFileIndex, sameRankIndex]);
-        const move: Move = {
+        const move = createMockMove({
             startIndex,
             endIndex,
             piece: getPiece('Q'),
             type: 'capture',
             captureIndex: algebraicNotationToIndex('h8'),
-        };
-        const gameState: ChessGameState = { status: 'checkmate', check: 'black' };
+        });
+        const gameState = createMockChessGameState({ status: 'checkmate', check: 'black' });
 
         expect(createAlgebraicNotation(move, gameState, legalMovesStore)).toBe('Qd4xh8#');
     });
@@ -128,13 +126,13 @@ describe('createAlgebraicNotation', () => {
         const startIndex = algebraicNotationToIndex('e7');
         const endIndex = algebraicNotationToIndex('e8');
         const legalMovesStore = createLegalMovesStore('P', endIndex, [startIndex]);
-        const move: Move = {
+        const move = createMockMove({
             startIndex,
             endIndex,
             piece: getPiece('P'),
             type: 'standard',
             promotion: 'q',
-        };
+        });
 
         expect(createAlgebraicNotation(move, defaultGameState, legalMovesStore)).toBe('e8=Q');
     });
@@ -143,14 +141,14 @@ describe('createAlgebraicNotation', () => {
         const startIndex = algebraicNotationToIndex('e5');
         const endIndex = algebraicNotationToIndex('d6');
         const legalMovesStore = createLegalMovesStore('P', endIndex, [startIndex]);
-        const move: Move = {
+        const move = createMockMove({
             startIndex,
             endIndex,
             piece: getPiece('P'),
             type: 'en-passant',
             captureIndex: algebraicNotationToIndex('d5'),
-        };
-        const gameState: ChessGameState = { status: 'in-progress', check: 'black' };
+        });
+        const gameState = createMockChessGameState({ status: 'in-progress', check: 'black' });
 
         expect(createAlgebraicNotation(move, gameState, legalMovesStore)).toBe('exd6+ e.p.');
     });
@@ -159,7 +157,7 @@ describe('createAlgebraicNotation', () => {
 describe('createFEN', () => {
     it('creates the initial FEN string for a new game', () => {
         const board = createBoardFromFEN('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR');
-        const state: ChessBoardState = {
+        const state = createMockChessBoardState({
             board,
             playerTurn: 'white',
             castleRightsByColor: {
@@ -169,14 +167,14 @@ describe('createFEN', () => {
             enPassantTargetIndex: null,
             halfmoveClock: 0,
             fullmoveClock: 1,
-        };
+        });
 
         expect(createFEN(state)).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
     });
 
     it('creates a FEN string with custom castling rights and en passant target', () => {
         const board = createBoardFromFEN('8/8/8/3P4/8/8/8/4k2K');
-        const state: ChessBoardState = {
+        const state = createMockChessBoardState({
             board,
             playerTurn: 'black',
             castleRightsByColor: {
@@ -186,14 +184,14 @@ describe('createFEN', () => {
             enPassantTargetIndex: algebraicNotationToIndex('e3'),
             halfmoveClock: 7,
             fullmoveClock: 42,
-        };
+        });
 
         expect(createFEN(state)).toBe('8/8/8/3P4/8/8/8/4k2K b k e3 7 42');
     });
 
     it('uses "-" when no castling rights are available', () => {
         const board = createBoardFromFEN('8/8/8/8/8/8/8/4k2K');
-        const state: ChessBoardState = {
+        const state = createMockChessBoardState({
             board,
             playerTurn: 'black',
             castleRightsByColor: {
@@ -203,7 +201,7 @@ describe('createFEN', () => {
             enPassantTargetIndex: null,
             halfmoveClock: 12,
             fullmoveClock: 25,
-        };
+        });
 
         expect(createFEN(state)).toBe('8/8/8/8/8/8/8/4k2K b - - 12 25');
     });

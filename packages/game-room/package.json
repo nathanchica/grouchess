@@ -30,6 +30,7 @@
         "@grouchess/chess": "workspace:*",
         "@grouchess/errors": "workspace:*",
         "@grouchess/models": "workspace:*",
+        "@grouchess/test-utils": "workspace:*",
         "zod": "^4.1.12"
     }
 }

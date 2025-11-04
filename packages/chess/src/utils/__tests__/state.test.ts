@@ -1,12 +1,10 @@
-import type {
-    ChessBoardState,
-    ChessBoardType,
-    CastleRightsByColor,
-    Piece,
-    PieceCapture,
-    PositionCounts,
-    Move,
-} from '@grouchess/models';
+import type { ChessBoardState, CastleRightsByColor, PieceCapture, PositionCounts, Move } from '@grouchess/models';
+import {
+    createMockPiece,
+    createMockMove,
+    createMockChessBoard,
+    createMockChessBoardState,
+} from '@grouchess/test-utils';
 
 import * as boardModule from '../../board.js';
 import * as castlesModule from '../../castles.js';
@@ -19,40 +17,6 @@ import {
     getPieceCaptureFromMove,
 } from '../state.js';
 
-const createPiece = (overrides: Partial<Piece> = {}): Piece =>
-    ({
-        alias: 'P',
-        color: 'white',
-        type: 'pawn',
-        value: 1,
-        ...overrides,
-    }) as Piece;
-
-const createMove = (overrides: Partial<Move> = {}): Move =>
-    ({
-        startIndex: 8,
-        endIndex: 16,
-        type: 'standard',
-        piece: createPiece(),
-        ...overrides,
-    }) as Move;
-
-const createBoard = (): ChessBoardType => Array.from({ length: 64 }, () => null);
-
-const createBoardState = (overrides: Partial<ChessBoardState> = {}): ChessBoardState =>
-    ({
-        board: createBoard(),
-        playerTurn: 'white',
-        castleRightsByColor: {
-            white: { short: true, long: true },
-            black: { short: true, long: true },
-        },
-        enPassantTargetIndex: null,
-        halfmoveClock: 0,
-        fullmoveClock: 1,
-        ...overrides,
-    }) as ChessBoardState;
-
 afterEach(() => {
     vi.restoreAllMocks();
 });
@@ -62,8 +26,8 @@ describe('getPieceCaptureFromMove', () => {
         { scenario: 'regular capture', moveType: 'capture' as Move['type'] },
         { scenario: 'en passant capture', moveType: 'en-passant' as Move['type'] },
     ])('returns capture details for $scenario', ({ moveType }) => {
-        const capturedPiece = createPiece({ alias: 'p', color: 'black' });
-        const move = createMove({
+        const capturedPiece = createMockPiece({ alias: 'p', color: 'black' });
+        const move = createMockMove({
             type: moveType,
             capturedPiece,
         });
@@ -75,13 +39,13 @@ describe('getPieceCaptureFromMove', () => {
     });
 
     it('throws when a capture move is missing the captured piece', () => {
-        const move = createMove({ type: 'capture', capturedPiece: undefined });
+        const move = createMockMove({ type: 'capture', capturedPiece: undefined });
 
         expect(() => getPieceCaptureFromMove(move, 5)).toThrow(/expected to have a capturedPiece/);
     });
 
     it('returns null for non-capturing moves', () => {
-        const move = createMove({ type: 'standard' });
+        const move = createMockMove({ type: 'standard' });
 
         expect(getPieceCaptureFromMove(move, 0)).toBeNull();
     });
@@ -111,7 +75,7 @@ describe('getNextPositionCounts', () => {
         const keys = Object.keys(expectedCounts);
         const keyToReturn = keys[0];
         vi.spyOn(drawsModule, 'createRepetitionKeyFromBoardState').mockReturnValue(keyToReturn);
-        const boardState = createBoardState({ halfmoveClock });
+        const boardState = createMockChessBoardState({ halfmoveClock });
 
         const result = getNextPositionCounts(previousCounts as PositionCounts, boardState);
 
@@ -132,7 +96,7 @@ describe('getNextCastleRightsAfterMove', () => {
         };
         vi.spyOn(castlesModule, 'computeCastleRightsChangesFromMove').mockReturnValue(diff);
 
-        const move = createMove();
+        const move = createMockMove();
         const result = getNextCastleRightsAfterMove(prevRights, move);
 
         expect(castlesModule.computeCastleRightsChangesFromMove).toHaveBeenCalledWith(move);
@@ -151,7 +115,7 @@ describe('getNextCastleRightsAfterMove', () => {
             black: { short: false },
         });
 
-        const result = getNextCastleRightsAfterMove(prevRights, createMove());
+        const result = getNextCastleRightsAfterMove(prevRights, createMockMove());
 
         expect(result).toEqual({
             white: { short: false, long: true },
@@ -168,7 +132,7 @@ describe('getNextCastleRightsAfterMove', () => {
             white: { short: false },
         });
 
-        const result = getNextCastleRightsAfterMove(prevRights, createMove());
+        const result = getNextCastleRightsAfterMove(prevRights, createMockMove());
 
         expect(result).toEqual({
             white: { short: false, long: false },
@@ -183,20 +147,20 @@ describe('getNextBoardStateAfterMove', () => {
             white: { short: true, long: false },
             black: { short: true, long: true },
         };
-        const prevState = createBoardState({
-            board: createBoard(),
+        const prevState = createMockChessBoardState({
+            board: createMockChessBoard(),
             playerTurn: 'white',
             castleRightsByColor: prevCastleRights,
             halfmoveClock: 5,
             fullmoveClock: 7,
         });
-        const move = createMove({
+        const move = createMockMove({
             startIndex: 8,
             endIndex: 16,
             type: 'standard',
-            piece: createPiece({ type: 'pawn', color: 'white', alias: 'P' }),
+            piece: createMockPiece({ type: 'pawn', color: 'white', alias: 'P' }),
         });
-        const computedBoard = createBoard();
+        const computedBoard = createMockChessBoard();
         vi.spyOn(chessMovesModule, 'computeNextChessBoardFromMove').mockReturnValue(computedBoard);
         vi.spyOn(boardModule, 'computeEnPassantTargetIndex').mockReturnValue(12);
         const rightsDiff = {
@@ -229,18 +193,18 @@ describe('getNextBoardStateAfterMove', () => {
             white: { short: false, long: false },
             black: { short: true, long: false },
         };
-        const prevState = createBoardState({
-            board: createBoard(),
+        const prevState = createMockChessBoardState({
+            board: createMockChessBoard(),
             playerTurn: 'black',
             castleRightsByColor: prevCastleRights,
             halfmoveClock: 3,
             fullmoveClock: 10,
         });
-        const move = createMove({
+        const move = createMockMove({
             type: 'standard',
-            piece: createPiece({ type: 'knight', alias: 'N', value: 3 }),
+            piece: createMockPiece({ type: 'knight', alias: 'N', value: 3 }),
         });
-        const computedBoard = createBoard();
+        const computedBoard = createMockChessBoard();
         vi.spyOn(chessMovesModule, 'computeNextChessBoardFromMove').mockReturnValue(computedBoard);
         const enPassantSpy = vi.spyOn(boardModule, 'computeEnPassantTargetIndex');
         const rightsDiff = {

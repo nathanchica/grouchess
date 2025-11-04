@@ -1,43 +1,11 @@
 import { InvalidInputError } from '@grouchess/errors';
-import type { ChessGame, ChessGameRoom } from '@grouchess/models';
+import type { ChessGame } from '@grouchess/models';
+import { createMockChessGameRoom } from '@grouchess/test-utils';
 
 import { computePlayerScores } from '../scores.js';
 
 const WHITE_PLAYER_ID = 'player-white';
 const BLACK_PLAYER_ID = 'player-black';
-
-function createChessGameRoom(overrides: Partial<ChessGameRoom> = {}): ChessGameRoom {
-    const baseRoom: ChessGameRoom = {
-        id: 'room-1',
-        type: 'player-vs-player',
-        players: [
-            { id: WHITE_PLAYER_ID, displayName: 'White Player' },
-            { id: BLACK_PLAYER_ID, displayName: 'Black Player' },
-        ],
-        playerIdToDisplayName: {
-            [WHITE_PLAYER_ID]: 'White Player',
-            [BLACK_PLAYER_ID]: 'Black Player',
-        },
-        playerIdToScore: { [WHITE_PLAYER_ID]: 0, [BLACK_PLAYER_ID]: 0 },
-        messages: [],
-        gameCount: 3,
-        timeControl: null,
-        colorToPlayerId: { white: WHITE_PLAYER_ID, black: BLACK_PLAYER_ID },
-    };
-
-    return {
-        ...baseRoom,
-        ...overrides,
-        playerIdToScore: {
-            ...baseRoom.playerIdToScore,
-            ...overrides.playerIdToScore,
-        },
-        colorToPlayerId: {
-            ...baseRoom.colorToPlayerId,
-            ...overrides.colorToPlayerId,
-        },
-    };
-}
 
 describe('computePlayerScores', () => {
     it.each([
@@ -52,7 +20,10 @@ describe('computePlayerScores', () => {
             expectedScore: { [WHITE_PLAYER_ID]: 0, [BLACK_PLAYER_ID]: 1 },
         },
     ])('$scenario', ({ winner, expectedScore }) => {
-        const gameRoom = createChessGameRoom();
+        const gameRoom = createMockChessGameRoom({
+            colorToPlayerId: { white: WHITE_PLAYER_ID, black: BLACK_PLAYER_ID },
+            playerIdToScore: { [WHITE_PLAYER_ID]: 0, [BLACK_PLAYER_ID]: 0 },
+        });
         const result = computePlayerScores(gameRoom, {
             status: 'checkmate',
             winner,
@@ -63,7 +34,7 @@ describe('computePlayerScores', () => {
     });
 
     it('adds half-point to both players for draw statuses', () => {
-        const gameRoom = createChessGameRoom({
+        const gameRoom = createMockChessGameRoom({
             playerIdToScore: { [WHITE_PLAYER_ID]: 2, [BLACK_PLAYER_ID]: 5 },
         });
 
@@ -77,7 +48,7 @@ describe('computePlayerScores', () => {
     });
 
     it('returns unchanged scores when the game is still in progress', () => {
-        const gameRoom = createChessGameRoom({
+        const gameRoom = createMockChessGameRoom({
             playerIdToScore: { [WHITE_PLAYER_ID]: 4, [BLACK_PLAYER_ID]: 3 },
         });
 
@@ -89,7 +60,7 @@ describe('computePlayerScores', () => {
     });
 
     it('throws when winner is missing from color mapping', () => {
-        const gameRoom = createChessGameRoom({
+        const gameRoom = createMockChessGameRoom({
             colorToPlayerId: { white: null, black: BLACK_PLAYER_ID },
         });
 

@@ -1,5 +1,6 @@
 import { InvalidInputError } from '@grouchess/errors';
-import type { ChessBoardType, Move, Piece, PieceAlias } from '@grouchess/models';
+import type { ChessBoardType, PieceAlias } from '@grouchess/models';
+import { createMockPiece, createMockMove, createMockChessBoard } from '@grouchess/test-utils';
 
 import * as boardModule from '../../board.js';
 import * as chessMovesModule from '../../moves.js';
@@ -16,30 +17,10 @@ import {
 
 const { rowColToIndex, indexToRowCol } = boardModule;
 
-const createMockPiece = (overrides: Partial<Piece> = {}): Piece =>
-    ({
-        alias: 'P',
-        color: 'white',
-        type: 'pawn',
-        value: 1,
-        ...overrides,
-    }) as Piece;
-
-const createMockMove = (overrides: Partial<Move> = {}): Move =>
-    ({
-        startIndex: 8,
-        endIndex: 16,
-        type: 'standard',
-        piece: createMockPiece(),
-        ...overrides,
-    }) as Move;
-
-const createMockBoard = (): ChessBoardType => Array.from({ length: 64 }, () => null);
-
 type Placement = { row: number; col: number; alias: PieceAlias };
 
 const buildMockBoard = (placements: Placement[]): ChessBoardType => {
-    const board = createMockBoard();
+    const board = createMockChessBoard();
     placements.forEach(({ row, col, alias }) => {
         const index = rowColToIndex({ row, col });
         if (index >= 0) {
@@ -65,7 +46,7 @@ afterEach(() => {
 
 describe('createMove', () => {
     it('creates a standard move with piece data populated', () => {
-        const board = createMockBoard();
+        const board = createMockChessBoard();
         board[52] = 'P';
 
         const move = createMove(board, 52, 44, 'standard');
@@ -79,7 +60,7 @@ describe('createMove', () => {
     });
 
     it('captures piece on destination square when type is capture', () => {
-        const board = createMockBoard();
+        const board = createMockChessBoard();
         board[52] = 'P';
         board[44] = 'p';
 
@@ -90,7 +71,7 @@ describe('createMove', () => {
     });
 
     it('captures adjacent pawn for en-passant moves', () => {
-        const board = createMockBoard();
+        const board = createMockChessBoard();
         board[28] = 'P';
         board[29] = 'p';
 
@@ -101,7 +82,7 @@ describe('createMove', () => {
     });
 
     it('captures adjacent pawn for black en-passant moves', () => {
-        const board = createMockBoard();
+        const board = createMockChessBoard();
         board[createBoardIndex(4, 4)] = 'p';
         board[createBoardIndex(4, 5)] = 'P';
 
@@ -112,7 +93,7 @@ describe('createMove', () => {
     });
 
     it('throws when no piece is located at the start index', () => {
-        const board = createMockBoard();
+        const board = createMockChessBoard();
 
         expect(() => createMove(board, 10, 18, 'standard')).toThrow('Called createMove with no piece in startIndex');
     });
