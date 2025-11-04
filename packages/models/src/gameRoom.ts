@@ -1,7 +1,7 @@
 import * as z from 'zod';
 
 import { PieceColorEnum } from './chess.js';
-import { MessageSchema } from './messages.js';
+import { MessageSchema, ChessGameMessageSchema } from './messages.js';
 import { PlayerSchema } from './players.js';
 
 export const TimeControlSchema = z.object({
@@ -33,5 +33,6 @@ export type GameRoom = z.infer<typeof GameRoomSchema>;
 export const ChessGameRoomSchema = GameRoomSchema.extend({
     timeControl: TimeControlSchema.nullable(),
     colorToPlayerId: z.record(PieceColorEnum, PlayerSchema.shape.id.nullable()),
+    messages: z.array(ChessGameMessageSchema).max(MAX_MESSAGES_PER_ROOM),
 });
 export type ChessGameRoom = z.infer<typeof ChessGameRoomSchema>;

@@ -2,7 +2,7 @@ import type {
     ChessClockState,
     ChessGameRoom,
     ChessGameStatus,
-    Message,
+    ChessGameMessage,
     Move,
     PawnPromotion,
     Player,
@@ -32,7 +32,7 @@ export type Action =
     | { type: 'end-game'; input: EndGameInput }
     | { type: 'start-self-play-room'; timeControlOption: TimeControl | null }
     | { type: 'load-room'; gameRoom: ChessGameRoom; fen?: string }
-    | { type: 'add-message'; message: Message }
+    | { type: 'add-message'; message: ChessGameMessage }
     | { type: 'load-current-player-id'; playerId: Player['id'] }
     | { type: 'set-clocks'; clockState: ChessClockState | null }
     | { type: 'reset-clocks' };

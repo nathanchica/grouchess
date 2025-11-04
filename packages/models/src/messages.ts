@@ -12,9 +12,14 @@ export const MessageTypeEnum = z.enum([
     'rematch-accept',
     'rematch-decline',
 ]);
-export const ChessGameMessageEnum = z.enum([...MessageTypeEnum.options, 'draw-offer', 'draw-decline', 'draw-accept']);
-export const ChessGameOfferMessageEnum = ChessGameMessageEnum.extract(['draw-offer', 'rematch-offer']);
-export const ChessGameOfferResponseMessageEnum = ChessGameMessageEnum.extract([
+export const ChessGameMessageTypeEnum = z.enum([
+    ...MessageTypeEnum.options,
+    'draw-offer',
+    'draw-decline',
+    'draw-accept',
+]);
+export const ChessGameOfferMessageEnum = ChessGameMessageTypeEnum.extract(['draw-offer', 'rematch-offer']);
+export const ChessGameOfferResponseMessageEnum = ChessGameMessageTypeEnum.extract([
     'draw-decline',
     'draw-accept',
     'rematch-decline',
@@ -22,15 +27,20 @@ export const ChessGameOfferResponseMessageEnum = ChessGameMessageEnum.extract([
 ]);
 
 export type MessageType = z.infer<typeof MessageTypeEnum>;
-export type ChessGameMessageType = z.infer<typeof ChessGameMessageEnum>;
+export type ChessGameMessageType = z.infer<typeof ChessGameMessageTypeEnum>;
 export type ChessGameOfferMessage = z.infer<typeof ChessGameOfferMessageEnum>;
 export type ChessGameOfferResponseMessage = z.infer<typeof ChessGameOfferResponseMessageEnum>;
 
 export const MessageSchema = z.object({
     id: z.string(),
-    type: z.union([MessageTypeEnum, ChessGameMessageEnum]),
+    type: MessageTypeEnum,
     createdAt: z.date(),
     authorId: PlayerSchema.shape.id,
     content: z.string().max(MAX_MESSAGE_LENGTH).optional(),
 });
 export type Message = z.infer<typeof MessageSchema>;
+
+export const ChessGameMessageSchema = MessageSchema.extend({
+    type: ChessGameMessageTypeEnum,
+});
+export type ChessGameMessage = z.infer<typeof ChessGameMessageSchema>;

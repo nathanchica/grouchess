@@ -1,4 +1,4 @@
-import type { ChessGameMessageType, ChessGameState, ChessGameRoom, Message, Player } from '@grouchess/models';
+import type { ChessGameMessageType, ChessGameState, ChessGameRoom, ChessGameMessage, Player } from '@grouchess/models';
 import type {
     ChessClientToServerEvents,
     ChessServerToClientEvents,
@@ -50,7 +50,7 @@ export type HandlerBaseContext = {
 
 export type HandlerContext = HandlerBaseContext & {
     sendErrorEvent: (message: string) => void;
-    createNewMessage: (messageType: ChessGameMessageType, content?: Message['content']) => void;
+    createNewMessage: (messageType: ChessGameMessageType, content?: ChessGameMessage['content']) => void;
     endChessGame: (gameState: ChessGameState, skipSettingGameState?: boolean) => void;
 };
 

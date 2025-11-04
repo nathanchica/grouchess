@@ -3,7 +3,7 @@ import {
     ChessClockStateSchema,
     ChessGameRoomSchema,
     ChessGameSchema,
-    MessageSchema,
+    ChessGameMessageSchema,
     PieceColorEnum,
     PlayerSchema,
     RoomTypeEnum,
@@ -14,9 +14,9 @@ import * as z from 'zod';
 export const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
 
 // Coerce Date fields coming over the wire as ISO strings
-const ChessGameRoomResponseSchema = ChessGameRoomSchema.extend({
+const ChessGameRoomResponseSchema = ChessGameRoomSchema.omit({ messages: true }).extend({
     messages: z.array(
-        MessageSchema.extend({
+        ChessGameMessageSchema.extend({
             createdAt: z.coerce.date(),
         })
     ),

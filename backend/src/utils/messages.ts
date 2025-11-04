@@ -1,5 +1,5 @@
 import { getChessOfferResponseContent, getOfferResponseTypes } from '@grouchess/game-room';
-import type { ChessGameMessageType, ChessGameOfferMessage, Message, Player } from '@grouchess/models';
+import type { ChessGameMessageType, ChessGameOfferMessage, ChessGameMessage, Player } from '@grouchess/models';
 
 import { UnauthorizedError } from './errors.js';
 
@@ -22,16 +22,16 @@ export function createChessGameSystemMessageContent(
 }
 
 type UpdateOfferMessageToOfferResponseArgs = {
-    messages: Message[];
+    messages: ChessGameMessage[];
     offerType: ChessGameOfferMessage;
-    offerMessageId: Message['id'];
+    offerMessageId: ChessGameMessage['id'];
     respondingPlayerId: Player['id'];
     accept: boolean;
 };
 
 type UpdateOfferMessageToOfferResponsePayload = {
-    messages: Message[];
-    responseMessage: Message;
+    messages: ChessGameMessage[];
+    responseMessage: ChessGameMessage;
 };
 
 export function updateOfferMessageToOfferResponse({
@@ -41,7 +41,7 @@ export function updateOfferMessageToOfferResponse({
     respondingPlayerId,
     accept,
 }: UpdateOfferMessageToOfferResponseArgs): UpdateOfferMessageToOfferResponsePayload {
-    let responseMessage: Message | null = null;
+    let responseMessage: ChessGameMessage | null = null;
     const newMessages = messages.map((message) => {
         if (message.id !== offerMessageId) return message;
         if (message.authorId === respondingPlayerId)

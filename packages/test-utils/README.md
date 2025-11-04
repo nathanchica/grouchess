@@ -16,6 +16,7 @@ pnpm add -D @grouchess/test-utils
 import {
     createMockPlayer,
     createMockMessage,
+    createMockChessGameMessage,
     createMockTimeControl,
     createMockGameRoom,
     createMockChessGameRoom,
@@ -45,9 +46,9 @@ const chatMessage = createMockMessage({
     content: 'Good game!',
 });
 
-// Create draw offer message
-const drawOffer = createMockMessage({
-    type: 'draw-offer',
+// Create rematch offer message
+const rematchOffer = createMockMessage({
+    type: 'rematch-offer',
     content: undefined,
 });
 
@@ -55,6 +56,21 @@ const drawOffer = createMockMessage({
 const systemMessage = createMockMessage({
     type: 'player-left-room',
     content: 'Alice has left the room',
+});
+
+// Create chess game message (includes chess-specific types like draw offers)
+const chessMessage = createMockChessGameMessage();
+
+// Create draw offer message
+const drawOffer = createMockChessGameMessage({
+    type: 'draw-offer',
+    content: undefined,
+});
+
+// Create draw accept message
+const drawAccept = createMockChessGameMessage({
+    type: 'draw-accept',
+    content: 'Draw accepted.',
 });
 
 // Create default time control (3|2 blitz)
@@ -181,7 +197,8 @@ const move = createMockMove({
 ### Game Room
 
 - `createMockPlayer(overrides?: Partial<Player>): Player`
-- `createMockMessage(overrides?: Partial<Message>): Message`
+- `createMockMessage(overrides?: Partial<Message>): Message` - Creates a message with base message types only
+- `createMockChessGameMessage(overrides?: Partial<ChessGameMessage>): ChessGameMessage` - Creates a chess game message with chess-specific types (draw offers, etc.)
 - `createMockTimeControl(overrides?: Partial<TimeControl>): TimeControl`
 - `createMockGameRoom(overrides?: Partial<GameRoom>): GameRoom`
 - `createMockChessGameRoom(overrides?: Partial<ChessGameRoom>): ChessGameRoom`
