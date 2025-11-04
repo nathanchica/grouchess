@@ -1,4 +1,4 @@
-import type { PieceAlias } from '@grouchess/chess';
+import type { PieceAlias } from '@grouchess/models';
 
 import type { DragProps } from './ChessBoard';
 

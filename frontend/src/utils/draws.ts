@@ -1,4 +1,4 @@
-import type { ChessGameStatus } from '@grouchess/chess';
+import type { ChessGameStatus } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 const DRAW_STATUS_TO_DISPLAY_TEXT: Partial<Record<ChessGameStatus, string>> = {

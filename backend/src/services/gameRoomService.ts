@@ -1,12 +1,19 @@
-import { type ChessGameState, isDrawStatus, PieceColor } from '@grouchess/chess';
+import { isDrawStatus } from '@grouchess/chess';
 import {
     getOfferResponseTypes,
     getChessOfferResponseContent,
     isOfferMessageType,
     isOfferResponseMessageType,
-    MAX_MESSAGES_PER_ROOM,
 } from '@grouchess/game-room';
-import type { ChessGameRoom, ChessGameOfferMessage, Message, Player } from '@grouchess/game-room';
+import { MAX_MESSAGES_PER_ROOM } from '@grouchess/models';
+import type {
+    ChessGameRoom,
+    ChessGameState,
+    ChessGameOfferMessage,
+    Message,
+    PieceColor,
+    Player,
+} from '@grouchess/models';
 
 import { CreateGameRoomInput } from './gameRoomService.schemas.js';
 

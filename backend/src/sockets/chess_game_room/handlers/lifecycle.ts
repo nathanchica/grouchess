@@ -1,4 +1,4 @@
-import type { ChessGameState } from '@grouchess/chess';
+import type { ChessGameState } from '@grouchess/models';
 
 import { HandlerContext } from '../types.js';
 import { createNoInputEventHandler } from '../utils.js';

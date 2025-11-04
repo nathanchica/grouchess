@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-import { isDrawStatus, type ChessGameStatus } from '@grouchess/chess';
+import { isDrawStatus } from '@grouchess/chess';
+import type { ChessGameStatus } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { useChessGame } from '../../providers/ChessGameRoomProvider';

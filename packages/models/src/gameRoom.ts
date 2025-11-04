@@ -1,9 +1,17 @@
-import { PieceColorEnum } from '@grouchess/chess';
 import * as z from 'zod';
 
+import { PieceColorEnum } from './chess.js';
 import { MessageSchema } from './messages.js';
 import { PlayerSchema } from './players.js';
-import { TimeControlSchema } from './timeControl.js';
+
+export const TimeControlSchema = z.object({
+    alias: z.string(),
+    minutes: z.number().int().nonnegative(),
+    increment: z.number().int().nonnegative(),
+    displayText: z.string(),
+    mode: z.literal('fischer').optional(),
+});
+export type TimeControl = z.infer<typeof TimeControlSchema>;
 
 export const MAX_MESSAGES_PER_ROOM = 100;
 

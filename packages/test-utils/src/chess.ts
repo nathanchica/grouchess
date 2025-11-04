@@ -14,7 +14,7 @@ import type {
     PieceCapture,
     PositionCounts,
     RowCol,
-} from '@grouchess/chess';
+} from '@grouchess/models';
 
 /**
  * Creates a mock BoardIndex (0-63)

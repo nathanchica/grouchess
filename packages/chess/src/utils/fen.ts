@@ -1,9 +1,15 @@
 import { InvalidInputError } from '@grouchess/errors';
+import {
+    NUM_COLS,
+    NUM_ROWS,
+    type CastleRightsByColor,
+    type ChessBoardState,
+    type ChessBoardType,
+} from '@grouchess/models';
 
 import { algebraicNotationToIndex, createBoardFromFEN, rowColToIndex } from '../board.js';
 import { isValidFEN } from '../notations.js';
 import { isValidPieceAlias } from '../pieces.js';
-import { NUM_COLS, NUM_ROWS, type CastleRightsByColor, type ChessBoardState, type ChessBoardType } from '../schema.js';
 
 const VALID_CASTLING_FLAGS = new Set(['K', 'Q', 'k', 'q']);
 

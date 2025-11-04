@@ -1,4 +1,4 @@
-import type { PieceColor } from '@grouchess/chess';
+import type { PieceColor } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import StopwatchIcon from '../assets/icons/stopwatch.svg?react';

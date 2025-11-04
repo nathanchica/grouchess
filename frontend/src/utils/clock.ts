@@ -1,4 +1,4 @@
-import type { ChessClockState } from '@grouchess/chess-clocks';
+import type { ChessClockState } from '@grouchess/models';
 
 // Convert a server-provided clock state's lastUpdatedTimeMs (epoch ms) to a
 // client-side performance timer baseline so that UI can do: performance.now() - lastUpdatedPerfMs.

@@ -1,3 +1,5 @@
+import type { ChessBoardType } from '@grouchess/models';
+
 import {
     INITIAL_CHESS_BOARD_FEN,
     INITIAL_CHESS_BOARD_FEN_PLACEMENT,
@@ -13,7 +15,6 @@ import {
     isRowInBounds,
     rowColToIndex,
 } from '../board.js';
-import type { ChessBoardType } from '../schema.js';
 
 const EMPTY_BOARD_FEN = '8/8/8/8/8/8/8/8';
 

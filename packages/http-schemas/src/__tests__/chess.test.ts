@@ -34,6 +34,52 @@ describe('CreateGameRoomRequestSchema', () => {
         });
     });
 
+    describe('timeControlAlias validation', () => {
+        it.each([
+            {
+                scenario: 'should accept valid time control alias',
+                input: { timeControlAlias: '3|0', roomType: 'player-vs-player' },
+                expected: '3|0',
+            },
+            {
+                scenario: 'should accept another valid time control alias',
+                input: { timeControlAlias: '3|2', roomType: 'player-vs-player' },
+                expected: '3|2',
+            },
+            {
+                scenario: 'should accept undefined timeControlAlias',
+                input: { timeControlAlias: undefined, roomType: 'player-vs-player' },
+                expected: undefined,
+            },
+            {
+                scenario: 'should accept null timeControlAlias',
+                input: { timeControlAlias: null, roomType: 'player-vs-player' },
+                expected: null,
+            },
+            {
+                scenario: 'should accept missing timeControlAlias',
+                input: { roomType: 'player-vs-player' },
+                expected: undefined,
+            },
+        ])('$scenario', ({ input, expected }) => {
+            const result = CreateGameRoomRequestSchema.parse(input);
+            expect(result.timeControlAlias).toBe(expected);
+        });
+
+        it.each([
+            {
+                scenario: 'should reject invalid time control alias',
+                input: { timeControlAlias: 'invalid', roomType: 'player-vs-player' },
+            },
+            {
+                scenario: 'should reject empty string time control alias',
+                input: { timeControlAlias: '', roomType: 'player-vs-player' },
+            },
+        ])('$scenario', ({ input }) => {
+            expect(() => CreateGameRoomRequestSchema.parse(input)).toThrow();
+        });
+    });
+
     describe('full schema validation', () => {
         it('should parse valid request with all fields', () => {
             const input = {

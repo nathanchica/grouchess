@@ -29,7 +29,7 @@
     "dependencies": {
         "@grouchess/chess": "workspace:*",
         "@grouchess/errors": "workspace:*",
-        "@grouchess/game-room": "workspace:*",
+        "@grouchess/models": "workspace:*",
         "zod": "^4.1.12"
     }
 }

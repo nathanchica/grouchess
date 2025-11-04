@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { PieceColor } from '@grouchess/chess';
+import type { PieceColor } from '@grouchess/models';
 
 const OPTIONS = [
     { label: 'White', value: 'white' },

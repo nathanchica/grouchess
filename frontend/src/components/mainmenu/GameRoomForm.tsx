@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
-import type { PieceColor } from '@grouchess/chess';
-import type { RoomType, TimeControl } from '@grouchess/game-room';
+import type { PieceColor, RoomType, TimeControl } from '@grouchess/models';
 import { useNavigate } from 'react-router';
 
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';

@@ -1,4 +1,4 @@
-import type { CastleRights, MoveType, PieceType, RowColDeltas } from './schema.js';
+import type { CastleRights, MoveType, PieceType, RowColDeltas } from '@grouchess/models';
 
 /**
  * 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7  (0)

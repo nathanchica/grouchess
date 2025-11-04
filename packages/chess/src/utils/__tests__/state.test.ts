@@ -1,7 +1,3 @@
-import * as boardModule from '../../board.js';
-import * as castlesModule from '../../castles.js';
-import * as drawsModule from '../../draws.js';
-import * as chessMovesModule from '../../moves.js';
 import type {
     ChessBoardState,
     ChessBoardType,
@@ -10,7 +6,12 @@ import type {
     PieceCapture,
     PositionCounts,
     Move,
-} from '../../schema.js';
+} from '@grouchess/models';
+
+import * as boardModule from '../../board.js';
+import * as castlesModule from '../../castles.js';
+import * as drawsModule from '../../draws.js';
+import * as chessMovesModule from '../../moves.js';
 import {
     getNextBoardStateAfterMove,
     getNextCastleRightsAfterMove,

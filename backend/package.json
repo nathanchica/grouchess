@@ -23,6 +23,7 @@
         "@grouchess/chess-clocks": "workspace:*",
         "@grouchess/game-room": "workspace:*",
         "@grouchess/http-schemas": "workspace:*",
+        "@grouchess/models": "workspace:*",
         "@grouchess/socket-events": "workspace:*",
         "base32-encode": "^2.0.0",
         "cors": "^2.8.5",

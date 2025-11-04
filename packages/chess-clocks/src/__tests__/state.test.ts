@@ -1,7 +1,6 @@
 import { hasInsufficientMatingMaterial } from '@grouchess/chess';
-import type { ChessBoardType } from '@grouchess/chess';
 import { InvalidInputError } from '@grouchess/errors';
-import type { TimeControl } from '@grouchess/game-room';
+import type { ChessBoardType, TimeControl } from '@grouchess/models';
 
 vi.mock('@grouchess/chess', async () => {
     const actual = await vi.importActual<typeof import('@grouchess/chess')>('@grouchess/chess');

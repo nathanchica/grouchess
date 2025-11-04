@@ -1,7 +1,6 @@
-import { type ChessGame, isDrawStatus } from '@grouchess/chess';
+import { isDrawStatus } from '@grouchess/chess';
 import { InvalidInputError } from '@grouchess/errors';
-
-import type { ChessGameRoom } from './schema.js';
+import type { ChessGame, ChessGameRoom } from '@grouchess/models';
 
 export function computePlayerScores(
     gameRoom: ChessGameRoom,

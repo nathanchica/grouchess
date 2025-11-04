@@ -1,7 +1,7 @@
 {
-    "name": "@grouchess/test-utils",
+    "name": "@grouchess/models",
     "version": "1.0.0",
-    "description": "Mock data factories for unit tests and other testing utils",
+    "description": "Zod schemas and TypeScript types for shared data models",
     "type": "module",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -18,15 +18,15 @@
         "test:run": "vitest run"
     },
     "keywords": [
-        "test-utils"
+        "models"
     ],
     "author": "",
     "license": "ISC",
-    "dependencies": {
-        "@grouchess/models": "workspace:*"
-    },
     "devDependencies": {
         "typescript": "^5.9.3",
         "vitest": "^4.0.6"
+    },
+    "dependencies": {
+        "zod": "^4.1.12"
     }
 }

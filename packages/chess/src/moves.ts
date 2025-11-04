@@ -1,3 +1,13 @@
+import type {
+    ChessBoardState,
+    ChessBoardType,
+    LegalMovesStore,
+    Move,
+    PieceAlias,
+    PieceColor,
+    PieceType,
+    SlidingPieceType,
+} from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { getKingIndices, indexToRowCol, rowColToIndex } from './board.js';
@@ -13,16 +23,6 @@ import {
 } from './constants.js';
 import { getPiece, getColorFromAlias, getEnemyColor } from './pieces.js';
 import { getTargetsAtIndex } from './precompute.js';
-import type {
-    ChessBoardState,
-    ChessBoardType,
-    LegalMovesStore,
-    Move,
-    PieceAlias,
-    PieceColor,
-    PieceType,
-    SlidingPieceType,
-} from './schema.js';
 import { computeLegalMovesForIndex } from './utils/moves.js';
 
 function isSquareAttackedByKingOrKnight(

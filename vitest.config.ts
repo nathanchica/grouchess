@@ -63,6 +63,7 @@ export default defineConfig({
                 'packages/errors/src/index.ts',
                 'packages/game-room/src/index.ts',
                 'packages/http-schemas/src/index.ts',
+                'packages/models/src/index.ts',
             ],
         },
         setupFiles: ['./backend/vitest.setup.ts'],

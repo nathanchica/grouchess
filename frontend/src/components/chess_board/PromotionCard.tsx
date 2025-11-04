@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react';
 
-import { type PawnPromotion } from '@grouchess/chess';
+import { type PawnPromotion } from '@grouchess/models';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';

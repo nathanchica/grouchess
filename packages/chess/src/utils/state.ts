@@ -1,10 +1,10 @@
+import type { CastleRightsByColor, ChessBoardState, ChessGame, Move, PieceCapture } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { computeEnPassantTargetIndex } from '../board.js';
 import { computeCastleRightsChangesFromMove } from '../castles.js';
 import { createRepetitionKeyFromBoardState } from '../draws.js';
 import { computeNextChessBoardFromMove } from '../moves.js';
-import type { CastleRightsByColor, ChessBoardState, ChessGame, Move, PieceCapture } from '../schema.js';
 
 /**
  * Extracts the captured piece information from a move, if applicable.

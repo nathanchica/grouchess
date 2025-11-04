@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import type { LegalMovesStore, MoveRecord, PawnPromotion } from '@grouchess/chess';
+import type { LegalMovesStore, MoveRecord, PawnPromotion } from '@grouchess/models';
 import type { MovePieceInput, PieceMovedPayload } from '@grouchess/socket-events';
 
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';

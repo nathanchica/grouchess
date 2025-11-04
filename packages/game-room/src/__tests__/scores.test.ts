@@ -1,7 +1,6 @@
-import type { ChessGame } from '@grouchess/chess';
 import { InvalidInputError } from '@grouchess/errors';
+import type { ChessGame, ChessGameRoom } from '@grouchess/models';
 
-import type { ChessGameRoom } from '../schema.js';
 import { computePlayerScores } from '../scores.js';
 
 const WHITE_PLAYER_ID = 'player-white';

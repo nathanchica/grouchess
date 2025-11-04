@@ -1,4 +1,14 @@
 import { InvalidInputError } from '@grouchess/errors';
+import type {
+    BoardIndex,
+    CastleRights,
+    ChessBoardType,
+    Move,
+    MoveType,
+    PieceAlias,
+    PieceColor,
+    SlidingPieceType,
+} from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { indexToRowCol, isPromotionSquare, isRowInBounds, rowColToIndex } from '../board.js';
@@ -15,16 +25,6 @@ import {
 import { computeNextChessBoardFromMove, isKingInCheck } from '../moves.js';
 import { getColorFromAlias, getPiece } from '../pieces.js';
 import { getTargetsAtIndex } from '../precompute.js';
-import type {
-    BoardIndex,
-    CastleRights,
-    ChessBoardType,
-    Move,
-    MoveType,
-    PieceAlias,
-    PieceColor,
-    SlidingPieceType,
-} from '../schema.js';
 
 /**
  * Creates a Move object representing a move from startIndex to endIndex of the given type.

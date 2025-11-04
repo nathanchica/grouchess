@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { type MoveNotation } from '@grouchess/chess';
+import { type MoveNotation } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import GameResultCardController from './GameResultCardController';

@@ -1,5 +1,5 @@
-import type { Message } from '@grouchess/game-room';
 import { isOfferMessageType, isOfferResponseMessageType } from '@grouchess/game-room';
+import type { Message } from '@grouchess/models';
 
 type OfferResponseActionProps = {
     onAccept: () => void;

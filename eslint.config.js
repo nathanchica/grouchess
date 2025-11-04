@@ -2,10 +2,10 @@ import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import vitestPlugin from '@vitest/eslint-plugin';
+import prettierConfig from 'eslint-config-prettier';
+import importPlugin from 'eslint-plugin-import';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import importPlugin from 'eslint-plugin-import';
-import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
 const vitestGlobals = vitestPlugin.environments.env.globals;
@@ -45,9 +45,9 @@ export default [
         },
         plugins: {
             '@typescript-eslint': tseslint,
+            import: importPlugin,
             react: reactPlugin,
             'react-hooks': reactHooksPlugin,
-            import: importPlugin,
             vitest: vitestPlugin,
         },
         rules: {
@@ -97,7 +97,7 @@ export default [
                 },
             ],
             'import/no-duplicates': 'error',
-            'import/no-unused-modules': 'off',
+            'import/no-unused-modules': 'error',
             'no-console': ['warn', { allow: ['warn', 'error'] }],
         },
         settings: {

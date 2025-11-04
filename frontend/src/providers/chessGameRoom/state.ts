@@ -1,6 +1,6 @@
 import { createInitialChessGame } from '@grouchess/chess';
 import { createInitialChessClockState } from '@grouchess/chess-clocks';
-import type { TimeControl, ChessGameRoom, Player } from '@grouchess/game-room';
+import type { TimeControl, ChessGameRoom, Player } from '@grouchess/models';
 
 import type { ChessGameRoomState } from './types';
 

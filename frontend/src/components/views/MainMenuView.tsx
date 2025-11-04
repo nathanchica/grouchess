@@ -1,6 +1,6 @@
 import { Suspense, lazy } from 'react';
 
-import type { TimeControl } from '@grouchess/game-room';
+import type { TimeControl } from '@grouchess/models';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Routes, Route } from 'react-router';
 

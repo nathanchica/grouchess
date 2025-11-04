@@ -1,10 +1,10 @@
+import type { ChessGameOfferMessage, ChessGameOfferResponseMessage } from '@grouchess/models';
+
 import {
     getChessOfferResponseContent,
     getOfferResponseTypes,
     isOfferMessageType,
     isOfferResponseMessageType,
-    type ChessGameOfferMessage,
-    type ChessGameOfferResponseMessage,
 } from '../messages.js';
 
 describe('getOfferResponseTypes', () => {

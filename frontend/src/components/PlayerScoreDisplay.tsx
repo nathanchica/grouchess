@@ -1,4 +1,4 @@
-import type { PieceColor } from '@grouchess/chess';
+import type { PieceColor } from '@grouchess/models';
 
 import ChessKingIcon from '../assets/icons/chess-king.svg?react';
 

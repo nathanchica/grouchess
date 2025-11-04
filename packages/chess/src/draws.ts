@@ -1,8 +1,8 @@
+import type { ChessBoardState, ChessBoardType, ChessGameStatus, PieceColor } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { createFEN } from './notations.js';
 import { getPiece } from './pieces.js';
-import type { ChessBoardState, ChessBoardType, ChessGameStatus, PieceColor } from './schema.js';
 
 type MaterialSummary = {
     pawns: number;

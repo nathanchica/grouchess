@@ -1,6 +1,4 @@
-import type { ChessGame } from '@grouchess/chess';
-import type { ChessClockState } from '@grouchess/chess-clocks';
-import type { ChessGameRoom, Player, TimeControl } from '@grouchess/game-room';
+import type { ChessClockState, ChessGame, ChessGameRoom, Player, TimeControl } from '@grouchess/models';
 import request from 'supertest';
 import * as z from 'zod';
 

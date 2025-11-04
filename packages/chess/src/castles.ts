@@ -1,3 +1,12 @@
+import type {
+    CastleLegality,
+    CastleRights,
+    CastleRightsByColor,
+    ChessBoardType,
+    Move,
+    PieceAlias,
+    PieceColor,
+} from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import {
@@ -15,15 +24,6 @@ import {
 } from './constants.js';
 import { isKingInCheck, isSquareAttacked } from './moves.js';
 import { getEnemyColor } from './pieces.js';
-import type {
-    CastleLegality,
-    CastleRights,
-    CastleRightsByColor,
-    ChessBoardType,
-    Move,
-    PieceAlias,
-    PieceColor,
-} from './schema.js';
 
 /**
  * Creates the initial castling rights for a new chess game.

@@ -1,4 +1,4 @@
-import type { ChessGameRoom, GameRoom, Player, TimeControl } from '@grouchess/game-room';
+import type { ChessGameRoom, GameRoom, Player, TimeControl } from '@grouchess/models';
 
 /**
  * Creates a mock Player

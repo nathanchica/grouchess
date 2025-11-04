@@ -1,6 +1,7 @@
+import type { ChessBoardState, ChessBoardType, Move, PieceAlias, PieceColor } from '@grouchess/models';
+
 import { rowColToIndex } from '../board.js';
 import { computeAllLegalMoves, computeNextChessBoardFromMove, isKingInCheck, isSquareAttacked } from '../moves.js';
-import type { ChessBoardState, ChessBoardType, Move, PieceAlias, PieceColor } from '../schema.js';
 import { createMove } from '../utils/moves.js';
 
 const createEmptyBoard = (): ChessBoardType => Array(64).fill(undefined) as ChessBoardType;

@@ -1,17 +1,7 @@
 import { useMemo, useRef, useState, type PointerEventHandler, type PointerEvent } from 'react';
 
-import {
-    getKingIndices,
-    getPiece,
-    isRowColInBounds,
-    NUM_ROWS,
-    NUM_COLS,
-    NUM_SQUARES,
-    rowColToIndex,
-    type Move,
-    type PieceAlias,
-    type RowCol,
-} from '@grouchess/chess';
+import { getKingIndices, getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
+import { NUM_ROWS, NUM_COLS, NUM_SQUARES, type Move, type PieceAlias, type RowCol } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import ChessPiece from './ChessPiece';

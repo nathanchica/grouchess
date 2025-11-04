@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { PieceColor } from '@grouchess/chess';
+import type { PieceColor } from '@grouchess/models';
 
 import FlagIcon from '../../assets/icons/flag.svg?react';
 import { useChessGame } from '../../providers/ChessGameRoomProvider';

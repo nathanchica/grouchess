@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { createInitialChessClockState } from '@grouchess/chess-clocks';
-import type { TimeControl } from '@grouchess/game-room';
 import type { GetChessGameResponse } from '@grouchess/http-schemas';
+import type { TimeControl } from '@grouchess/models';
 
 import ChessGameView from './ChessGameView';
 import MainMenuView from './MainMenuView';
