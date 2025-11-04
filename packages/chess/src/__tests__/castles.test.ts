@@ -1,3 +1,5 @@
+import type { ChessBoardType, Move } from '@grouchess/models';
+
 import { computeCastlingLegality, computeCastleRightsChangesFromMove, createInitialCastleRights } from '../castles.js';
 import {
     BLACK_SHORT_CASTLE_INDICES,
@@ -12,7 +14,6 @@ import {
 } from '../constants.js';
 import * as moves from '../moves.js';
 import { getPiece } from '../pieces.js';
-import type { ChessBoardType, Move } from '../schema.js';
 
 const isKingInCheckMock = vi.spyOn(moves, 'isKingInCheck');
 const isSquareAttackedMock = vi.spyOn(moves, 'isSquareAttacked');

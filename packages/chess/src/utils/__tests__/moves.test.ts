@@ -1,10 +1,10 @@
 import { InvalidInputError } from '@grouchess/errors';
+import type { ChessBoardType, Move, Piece, PieceAlias } from '@grouchess/models';
 
 import * as boardModule from '../../board.js';
 import * as chessMovesModule from '../../moves.js';
 import * as piecesModule from '../../pieces.js';
 import { getPiece } from '../../pieces.js';
-import type { ChessBoardType, Move, Piece, PieceAlias } from '../../schema.js';
 import {
     createMove,
     computePawnLegalMoves,

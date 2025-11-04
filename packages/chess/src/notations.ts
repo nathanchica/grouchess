@@ -1,8 +1,8 @@
+import { NUM_ROWS } from '@grouchess/models';
+import type { ChessBoardState, ChessGameState, LegalMovesStore, Move, PieceAlias } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { indexToRowCol } from './board.js';
-import { NUM_ROWS } from './schema.js';
-import type { ChessBoardState, ChessGameState, LegalMovesStore, Move, PieceAlias } from './schema.js';
 import {
     createCastlingRightsFENPart,
     createPiecePlacementFromBoard,

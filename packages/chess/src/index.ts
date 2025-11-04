@@ -15,8 +15,6 @@ export { computeAllLegalMoves, computeNextChessBoardFromMove, isKingInCheck } fr
 export { createFEN, isValidFEN } from './notations.js';
 export { getColorFromAlias, getPiece, isValidPieceAlias } from './pieces.js';
 
-export * from './schema.js';
-
 export {
     computeGameStatus,
     computeNextChessGameAfterMove,

@@ -1,4 +1,4 @@
-import type { PieceAlias, Piece, PieceColor } from './schema.js';
+import type { PieceAlias, Piece, PieceColor } from '@grouchess/models';
 
 export const WHITE_KING_START_INDEX = 60;
 export const BLACK_KING_START_INDEX = 4;

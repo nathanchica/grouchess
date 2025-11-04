@@ -1,5 +1,6 @@
+import type { PieceAlias } from '@grouchess/models';
+
 import { aliasToPieceData, getColorFromAlias, getEnemyColor, getPiece, isValidPieceAlias } from '../pieces.js';
-import type { PieceAlias } from '../schema.js';
 
 describe('getPiece', () => {
     it.each(

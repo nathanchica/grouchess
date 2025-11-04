@@ -1,13 +1,14 @@
-import { createBoardFromFEN, algebraicNotationToIndex } from '../board.js';
-import { createAlgebraicNotation, createFEN, indexToAlgebraicNotation, isValidFEN } from '../notations.js';
-import { getPiece } from '../pieces.js';
 import {
     type ChessBoardState,
     type ChessGameState,
     type LegalMovesStore,
     type Move,
     type PieceAlias,
-} from '../schema.js';
+} from '@grouchess/models';
+
+import { createBoardFromFEN, algebraicNotationToIndex } from '../board.js';
+import { createAlgebraicNotation, createFEN, indexToAlgebraicNotation, isValidFEN } from '../notations.js';
+import { getPiece } from '../pieces.js';
 
 function createLegalMovesStore(pieceAlias: PieceAlias, endIndex: number, startIndices: number[]): LegalMovesStore {
     const { type } = getPiece(pieceAlias);

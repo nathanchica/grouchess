@@ -1,8 +1,8 @@
 import { InvalidInputError } from '@grouchess/errors';
+import type { CastleRightsByColor, ChessBoardType } from '@grouchess/models';
 
 import * as boardModule from '../../board.js';
 import * as notationsModule from '../../notations.js';
-import type { CastleRightsByColor, ChessBoardType } from '../../schema.js';
 import {
     createBoardStateFromFEN,
     isNonNegativeInteger,

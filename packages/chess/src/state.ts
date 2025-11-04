@@ -1,10 +1,4 @@
 import { IllegalMoveError } from '@grouchess/errors';
-
-import { createInitialBoard } from './board.js';
-import { createInitialCastleRights } from './castles.js';
-import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from './draws.js';
-import { computeAllLegalMoves, isKingInCheck } from './moves.js';
-import { createAlgebraicNotation } from './notations.js';
 import {
     ChessBoardState,
     ChessBoardType,
@@ -15,7 +9,13 @@ import {
     MoveRecord,
     PieceCapture,
     PieceColor,
-} from './schema.js';
+} from '@grouchess/models';
+
+import { createInitialBoard } from './board.js';
+import { createInitialCastleRights } from './castles.js';
+import { computeForcedDrawStatus, createRepetitionKeyFromBoardState } from './draws.js';
+import { computeAllLegalMoves, isKingInCheck } from './moves.js';
+import { createAlgebraicNotation } from './notations.js';
 import { createBoardStateFromFEN } from './utils/fen.js';
 import { validatePromotion } from './utils/moves.js';
 import { getNextBoardStateAfterMove, getNextPositionCounts, getPieceCaptureFromMove } from './utils/state.js';

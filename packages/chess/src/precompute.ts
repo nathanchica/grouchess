@@ -1,7 +1,3 @@
-import * as z from 'zod';
-
-import { rowColToIndex, indexToRowCol } from './board.js';
-import { ALL_DIRECTION_DELTAS, KNIGHT_DELTAS } from './constants.js';
 import {
     NUM_SQUARES,
     BoardIndexSchema,
@@ -9,7 +5,11 @@ import {
     type SlidingPieceType,
     type RowColDeltas,
     BoardIndex,
-} from './schema.js';
+} from '@grouchess/models';
+import * as z from 'zod';
+
+import { rowColToIndex, indexToRowCol } from './board.js';
+import { ALL_DIRECTION_DELTAS, KNIGHT_DELTAS } from './constants.js';
 
 export const NonSlidingPieceTargetsAtIndexSchema = z.set(BoardIndexSchema);
 export type NonSlidingPieceTargetsAtIndex = z.infer<typeof NonSlidingPieceTargetsAtIndexSchema>;

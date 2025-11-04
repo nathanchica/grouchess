@@ -1,3 +1,5 @@
+import type { ChessBoardState, ChessBoardType, ChessGameStatus, PieceAlias, PieceColor } from '@grouchess/models';
+
 import { rowColToIndex } from '../board.js';
 import {
     computeForcedDrawStatus,
@@ -6,7 +8,6 @@ import {
     isDrawStatus,
 } from '../draws.js';
 import * as piecesModule from '../pieces.js';
-import type { ChessBoardState, ChessBoardType, ChessGameStatus, PieceAlias, PieceColor } from '../schema.js';
 
 const { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX } = piecesModule;
 
