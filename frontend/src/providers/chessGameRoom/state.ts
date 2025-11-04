@@ -33,7 +33,6 @@ export function createSelfPlayChessGameRoomState(timeControlOption: TimeControl 
             white: player1.id,
             black: player2.id,
         },
-        messages: [],
         gameCount: 1,
     };
 
@@ -46,6 +45,7 @@ export function createSelfPlayChessGameRoomState(timeControlOption: TimeControl 
         },
         gameRoom,
         clockState: timeControlOption ? createInitialChessClockState(timeControlOption) : null,
+        messages: [],
         currentPlayerId: player1.id,
     };
 }

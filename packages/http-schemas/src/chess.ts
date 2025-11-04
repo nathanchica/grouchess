@@ -13,18 +13,14 @@ import * as z from 'zod';
 
 export const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
 
-// Coerce Date fields coming over the wire as ISO strings
-const ChessGameRoomResponseSchema = ChessGameRoomSchema.omit({ messages: true }).extend({
+export const GetChessGameResponseSchema = z.object({
+    gameRoom: ChessGameRoomSchema,
+    chessGame: ChessGameSchema,
     messages: z.array(
         ChessGameMessageSchema.extend({
             createdAt: z.coerce.date(),
         })
     ),
-});
-
-export const GetChessGameResponseSchema = z.object({
-    gameRoom: ChessGameRoomResponseSchema,
-    chessGame: ChessGameSchema,
     clockState: ChessClockStateSchema.nullable(),
     playerId: PlayerSchema.shape.id,
 });

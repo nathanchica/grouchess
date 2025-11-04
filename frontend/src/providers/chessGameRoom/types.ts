@@ -15,6 +15,7 @@ export type ChessGameRoomState = {
     chessGame: ChessGameUI;
     gameRoom: ChessGameRoom;
     clockState: ChessClockState | null;
+    messages: ChessGameMessage[];
     currentPlayerId: Player['id'];
 };
 

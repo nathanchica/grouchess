@@ -59,8 +59,19 @@ export function createEndChessGameEvent({ services, io, roomId, targets }: Handl
 export function createSendNewMessageEvent(context: HandlerBaseContext) {
     return (messageType: ChessGameMessageType, content?: ChessGameMessage['content']) => {
         const { io, targets, services, roomId, playerId } = context;
-        const { gameRoomService } = services;
-        const message: ChessGameMessage = gameRoomService.addMessageToGameRoom(roomId, messageType, playerId, content);
+        const { messageService, gameRoomService } = services;
+        const gameRoom = gameRoomService.getGameRoomById(roomId);
+        if (!gameRoom) {
+            throw new Error('Game room not found');
+        }
+        const playerDisplayName = gameRoom.playerIdToDisplayName[playerId];
+        const message: ChessGameMessage = messageService.addMessageToRoom(
+            roomId,
+            messageType,
+            playerId,
+            playerDisplayName,
+            content
+        );
         io.to(targets.gameRoom).emit('new_message', { message });
     };
 }

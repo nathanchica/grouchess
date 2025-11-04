@@ -35,6 +35,7 @@ function ViewController() {
               clockState: initialChessGameData.clockState
                   ? rebaseServerClockToPerf(initialChessGameData.clockState)
                   : null,
+              messages: initialChessGameData.messages,
               currentPlayerId: initialChessGameData.playerId,
           }
         : null;
@@ -44,6 +45,7 @@ function ViewController() {
         setInitialChessGameData({
             chessGame: selfPlayGameRoomState.chessGame,
             gameRoom: selfPlayGameRoomState.gameRoom,
+            messages: [],
             playerId: selfPlayGameRoomState.currentPlayerId,
             clockState: timeControl ? createInitialChessClockState(timeControl) : null,
         });

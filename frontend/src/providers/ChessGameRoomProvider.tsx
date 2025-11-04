@@ -4,7 +4,6 @@ import { INITIAL_CHESS_BOARD_FEN } from '@grouchess/chess';
 import type {
     ChessClockState,
     ChessGameRoom,
-    ChessGameMessage,
     Move,
     PawnPromotion,
     PieceColor,
@@ -38,7 +37,6 @@ export type GameRoomContextType = {
     currentPlayerId: Player['id'];
     currentPlayerColor: PieceColor;
     loadRoom: (gameRoom: ChessGameRoom, fen?: string) => void;
-    addMessage: (message: ChessGameMessage) => void;
     loadCurrentPlayerId: (playerId: Player['id']) => void;
     startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
 };
@@ -116,10 +114,6 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
         dispatch({ type: 'load-room', gameRoom, fen });
     }, []);
 
-    const addMessage = useCallback((message: ChessGameMessage) => {
-        dispatch({ type: 'add-message', message });
-    }, []);
-
     const loadCurrentPlayerId = useCallback((playerId: Player['id']) => {
         dispatch({ type: 'load-current-player-id', playerId });
     }, []);
@@ -159,19 +153,10 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
             currentPlayerId: state.currentPlayerId,
             currentPlayerColor,
             loadRoom,
-            addMessage,
             loadCurrentPlayerId,
             startSelfPlayRoom,
         }),
-        [
-            state.gameRoom,
-            state.currentPlayerId,
-            currentPlayerColor,
-            loadRoom,
-            addMessage,
-            loadCurrentPlayerId,
-            startSelfPlayRoom,
-        ]
+        [state.gameRoom, state.currentPlayerId, currentPlayerColor, loadRoom, loadCurrentPlayerId, startSelfPlayRoom]
     );
 
     return (
