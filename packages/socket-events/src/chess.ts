@@ -1,6 +1,14 @@
-import { BoardIndexSchema, ChessGameStatusEnum, PawnPromotionEnum, PieceColorEnum } from '@grouchess/chess';
-import { ChessClockStateSchema } from '@grouchess/chess-clocks';
-import { ChessGameRoomSchema, MAX_MESSAGE_LENGTH, MessageTypeEnum, MessageSchema } from '@grouchess/game-room';
+import {
+    BoardIndexSchema,
+    ChessClockStateSchema,
+    ChessGameRoomSchema,
+    ChessGameStatusEnum,
+    MAX_MESSAGE_LENGTH,
+    MessageTypeEnum,
+    MessageSchema,
+    PawnPromotionEnum,
+    PieceColorEnum,
+} from '@grouchess/models';
 import * as z from 'zod';
 
 import { AuthenticatedPayload, ErrorEventPayload } from './common.js';
