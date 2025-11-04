@@ -41,9 +41,77 @@ export type GameRoomContextType = {
     startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
 };
 
-const ChessClockContext = createContext<ChessClockContextType | null>(null);
-const ChessGameContext = createContext<ChessGameContextType | null>(null);
-const GameRoomContext = createContext<GameRoomContextType | null>(null);
+export const defaultChessClockContextValue: ChessClockContextType = {
+    clockState: null,
+    setClocks: () => {},
+    resetClocks: () => {},
+};
+
+export const defaultChessGameContextValue: ChessGameContextType = {
+    chessGame: {
+        boardState: {
+            board: [],
+            playerTurn: 'white',
+            halfmoveClock: 0,
+            fullmoveClock: 1,
+            enPassantTargetIndex: null,
+            castleRightsByColor: {
+                white: {
+                    short: true,
+                    long: true,
+                },
+                black: {
+                    short: true,
+                    long: true,
+                },
+            },
+        },
+        legalMovesStore: {
+            allMoves: [],
+            byStartIndex: {},
+            typeAndEndIndexToStartIndex: {},
+        },
+        moveHistory: [],
+        captures: [],
+        gameState: {
+            status: 'in-progress',
+        },
+        positionCounts: {},
+        previousMoveIndices: [],
+        timelineVersion: 0,
+        pendingPromotion: null,
+    },
+    movePiece: () => {},
+    promotePawn: () => {},
+    cancelPromotion: () => {},
+    loadFEN: () => {},
+    endGame: () => {},
+};
+
+export const defaultGameRoomContextValue: GameRoomContextType = {
+    gameRoom: {
+        id: '',
+        players: [],
+        colorToPlayerId: {
+            white: '',
+            black: '',
+        },
+        timeControl: null,
+        type: 'self',
+        playerIdToDisplayName: {},
+        playerIdToScore: {},
+        gameCount: 0,
+    },
+    currentPlayerId: '',
+    currentPlayerColor: 'white',
+    loadRoom: () => {},
+    loadCurrentPlayerId: () => {},
+    startSelfPlayRoom: () => {},
+};
+
+const ChessClockContext = createContext<ChessClockContextType>(defaultChessClockContextValue);
+const ChessGameContext = createContext<ChessGameContextType>(defaultChessGameContextValue);
+const GameRoomContext = createContext<GameRoomContextType>(defaultGameRoomContextValue);
 
 export function useChessClock(): ChessClockContextType {
     const context = useContext(ChessClockContext);

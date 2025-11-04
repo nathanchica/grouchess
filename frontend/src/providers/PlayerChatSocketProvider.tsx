@@ -22,7 +22,7 @@ type PlayerChatSocketContextType = {
     declineRematchOffer: () => void;
 };
 
-const PlayerChatSocketContext = createContext<PlayerChatSocketContextType>({
+export const defaultPlayerChatSocketContextValue: PlayerChatSocketContextType = {
     messages: [],
     isAwaitingRematchResponse: false,
     sendStandardMessage: () => {},
@@ -31,7 +31,9 @@ const PlayerChatSocketContext = createContext<PlayerChatSocketContextType>({
     declineDrawOffer: () => {},
     acceptRematchOffer: () => {},
     declineRematchOffer: () => {},
-});
+};
+
+const PlayerChatSocketContext = createContext<PlayerChatSocketContextType>(defaultPlayerChatSocketContextValue);
 
 const MAX_MESSAGES = 100;
 

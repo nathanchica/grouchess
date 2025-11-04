@@ -9,10 +9,12 @@ type ImageContextType = {
     isReady: boolean;
 };
 
-const ImageContext = createContext<ImageContextType>({
+export const defaultImageContextValue: ImageContextType = {
     imgSrcMap: {},
     isReady: false,
-});
+};
+
+const ImageContext = createContext<ImageContextType>(defaultImageContextValue);
 
 export const useImages = (): ImageContextType => {
     const context = useContext(ImageContext);

@@ -12,12 +12,14 @@ type SocketContextType = {
     isAuthenticated: boolean;
 };
 
-const SocketContext = createContext<SocketContextType>({
+export const defaultSocketContextValue: SocketContextType = {
     socket,
     authenticateSocket: () => {},
     isConnected: false,
     isAuthenticated: false,
-});
+};
+
+const SocketContext = createContext<SocketContextType>(defaultSocketContextValue);
 
 export function useSocket() {
     const context = useContext(SocketContext);
