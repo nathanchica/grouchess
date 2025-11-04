@@ -1,3 +1,4 @@
+import { isValidTimeControlAlias } from '@grouchess/game-room';
 import {
     ChessClockStateSchema,
     ChessGameRoomSchema,
@@ -37,6 +38,9 @@ export const CreateGameRoomRequestSchema = z.object({
         'The preferred color for the creator. If not provided, a random color will be assigned.'
     ),
     timeControlAlias: TimeControlSchema.shape.alias
+        .refine((alias) => isValidTimeControlAlias(alias), {
+            message: 'Invalid time control alias',
+        })
         .nullish()
         .describe(
             'The time control setting for the room. If not provided, there will be no time control (unlimited time).'

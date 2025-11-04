@@ -9,7 +9,7 @@
 - Each package has its own test suite, and tests are typically located in a `__tests__` directory near the code being tested.
 - Test files follow the naming convention `*.test.ts`
 - When creating test cases, try to consolidate similar tests with it.each using object-based tables (e.g. `it.each([{ scenario: ..., input: ..., expected: ... }, ...])`).
-    - Avoid conditional expects e.g. if (...) { expect(...) } else { expect(...) }
+    - Avoid conditional expects e.g. if (...) { expect(...) } else { expect(...) }, split into separate test cases instead.
 - Aim for 100% code coverage
 - Use mocks and spies as needed to isolate units under test. The `vi.mock` and `vi.spyOn` APIs are available.
 - Vi globals (e.g. `describe`, `it`, `expect`, `beforeEach`, `vi`) are available in test files without needing to import them.

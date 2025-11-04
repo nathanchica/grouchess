@@ -291,6 +291,9 @@ importers:
 
   packages/http-schemas:
     dependencies:
+      '@grouchess/game-room':
+        specifier: workspace:*
+        version: link:../game-room
       '@grouchess/models':
         specifier: workspace:*
         version: link:../models

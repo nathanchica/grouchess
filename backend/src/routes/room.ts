@@ -1,4 +1,4 @@
-import { getTimeControlByAlias, isValidTimeControlAlias } from '@grouchess/game-room';
+import { getTimeControlByAlias } from '@grouchess/game-room';
 import {
     CreateGameRoomRequestSchema,
     CreateGameRoomResponseSchema,
@@ -89,10 +89,6 @@ roomRouter.post('/', (req, res) => {
 
     try {
         const { displayName, color, timeControlAlias, roomType } = CreateGameRoomRequestSchema.parse(req.body);
-        if (timeControlAlias && !isValidTimeControlAlias(timeControlAlias)) {
-            res.status(400).json({ error: 'Invalid time control alias' });
-            return;
-        }
 
         const player = playerService.createPlayer(displayName);
 

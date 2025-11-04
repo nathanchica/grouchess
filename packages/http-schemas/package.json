@@ -26,6 +26,7 @@
         "typescript": "^5.9.3"
     },
     "dependencies": {
+        "@grouchess/game-room": "workspace:*",
         "@grouchess/models": "workspace:*",
         "zod": "^4.1.12"
     }
