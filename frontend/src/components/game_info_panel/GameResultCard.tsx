@@ -1,4 +1,5 @@
-import { isDrawStatus, type ChessGameState } from '@grouchess/chess';
+import { isDrawStatus } from '@grouchess/chess';
+import type { ChessGameState } from '@grouchess/models';
 
 import HandPeaceIcon from '../../assets/icons/hand-peace.svg?react';
 import RotateLeftIcon from '../../assets/icons/rotate-left.svg?react';

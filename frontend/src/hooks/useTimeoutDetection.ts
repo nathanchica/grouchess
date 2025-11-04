@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-import type { ExpiredClockGameStatus } from '@grouchess/chess';
 import { computeGameStateBasedOnClock, createUpdatedClockState, createPausedClockState } from '@grouchess/chess-clocks';
+import type { ExpiredClockGameStatus } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { useChessClock, useChessGame } from '../providers/ChessGameRoomProvider';

@@ -1,9 +1,16 @@
 import { useCallback, useContext, useMemo, useReducer, createContext, type ReactNode } from 'react';
 
 import { INITIAL_CHESS_BOARD_FEN } from '@grouchess/chess';
-import type { Move, PawnPromotion, PieceColor } from '@grouchess/chess';
-import type { ChessClockState } from '@grouchess/chess-clocks';
-import type { ChessGameRoom, Message, Player, TimeControl } from '@grouchess/game-room';
+import type {
+    ChessClockState,
+    ChessGameRoom,
+    Message,
+    Move,
+    PawnPromotion,
+    PieceColor,
+    Player,
+    TimeControl,
+} from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { chessGameRoomReducer } from './chessGameRoom/reducer';

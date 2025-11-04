@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import type { PieceColor } from '@grouchess/chess';
 import { createStartedClockState, createPausedClockState, createUpdatedClockState } from '@grouchess/chess-clocks';
+import type { PieceColor } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { useTimeoutDetection } from '../../hooks/useTimeoutDetection';

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { ChessGameState } from '@grouchess/chess';
+import type { ChessGameState } from '@grouchess/models';
 
 import GameResultCard from './GameResultCard';
 

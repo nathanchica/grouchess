@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import type { Message } from '@grouchess/game-room';
+import type { Message } from '@grouchess/models';
 import {
     NewMessagePayloadSchema,
     OfferResponsePayloadSchema,

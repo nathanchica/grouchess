@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import type { TimeControl } from '@grouchess/game-room';
 import type { JoinGameRoomResponse } from '@grouchess/http-schemas';
+import type { TimeControl } from '@grouchess/models';
 import { useNavigate } from 'react-router';
 
 import DisplayNameForm from './DisplayNameForm';

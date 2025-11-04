@@ -1,6 +1,6 @@
 import type { PointerEventHandler } from 'react';
 
-import type { Piece } from '@grouchess/chess';
+import type { Piece } from '@grouchess/models';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 
-import { indexToRowCol, NUM_COLS, NUM_ROWS, type PieceColor, type PawnPromotion } from '@grouchess/chess';
+import { indexToRowCol } from '@grouchess/chess';
+import { NUM_COLS, NUM_ROWS, type PieceColor, type PawnPromotion } from '@grouchess/models';
 
 import PromotionCard from './PromotionCard';
 

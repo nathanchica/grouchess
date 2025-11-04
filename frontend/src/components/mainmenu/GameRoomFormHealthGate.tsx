@@ -1,6 +1,6 @@
 import { lazy, use, useState } from 'react';
 
-import type { TimeControl } from '@grouchess/game-room';
+import type { TimeControl } from '@grouchess/models';
 
 import GameRoomForm from './GameRoomForm';
 

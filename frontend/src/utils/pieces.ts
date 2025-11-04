@@ -1,4 +1,4 @@
-import type { PawnPromotion, PieceAlias, PieceColor } from '@grouchess/chess';
+import type { PawnPromotion, PieceAlias, PieceColor } from '@grouchess/models';
 
 type PieceSvgSet = 'cburnett' | 'staunty';
 

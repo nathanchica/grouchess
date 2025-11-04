@@ -1,6 +1,13 @@
-import type { ChessGameStatus, Move, PawnPromotion } from '@grouchess/chess';
-import type { ChessClockState } from '@grouchess/chess-clocks';
-import type { ChessGameRoom, Message, Player, TimeControl } from '@grouchess/game-room';
+import type {
+    ChessClockState,
+    ChessGameRoom,
+    ChessGameStatus,
+    Message,
+    Move,
+    PawnPromotion,
+    Player,
+    TimeControl,
+} from '@grouchess/models';
 
 import type { ChessGameUI } from '../../utils/types';
 

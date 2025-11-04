@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import type { TimeControl } from '@grouchess/game-room';
 import type { GetTimeControlOptionsResponse } from '@grouchess/http-schemas';
+import type { TimeControl } from '@grouchess/models';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const TIME_CONTROL_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/time-control` : null;

@@ -4,7 +4,6 @@ import {
     createChessGameFromFEN,
     getPiece,
     isPromotionSquare,
-    type ExpiredClockGameStatus,
 } from '@grouchess/chess';
 import {
     computeGameStateBasedOnClock,
@@ -12,6 +11,7 @@ import {
     createUpdatedClockState,
 } from '@grouchess/chess-clocks';
 import { computePlayerScores } from '@grouchess/game-room';
+import type { ExpiredClockGameStatus } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { createSelfPlayChessGameRoomState } from './state';
