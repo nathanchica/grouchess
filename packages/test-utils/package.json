@@ -23,9 +23,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@grouchess/chess": "workspace:*",
-        "@grouchess/chess-clocks": "workspace:*",
-        "@grouchess/game-room": "workspace:*"
+        "@grouchess/models": "workspace:*"
     },
     "devDependencies": {
         "typescript": "^5.9.3",

@@ -330,15 +330,9 @@ importers:
 
   packages/test-utils:
     dependencies:
-      '@grouchess/chess':
+      '@grouchess/models':
         specifier: workspace:*
-        version: link:../chess
-      '@grouchess/chess-clocks':
-        specifier: workspace:*
-        version: link:../chess-clocks
-      '@grouchess/game-room':
-        specifier: workspace:*
-        version: link:../game-room
+        version: link:../models
     devDependencies:
       typescript:
         specifier: ^5.9.3

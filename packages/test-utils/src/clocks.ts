@@ -1,4 +1,4 @@
-import type { ChessClockState } from '@grouchess/chess-clocks';
+import type { ChessClockState } from '@grouchess/models';
 
 /**
  * Creates a mock ChessClockState

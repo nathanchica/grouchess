@@ -1,4 +1,4 @@
-import type { Message } from '@grouchess/game-room';
+import type { Message } from '@grouchess/models';
 
 /**
  * Creates a mock Message
