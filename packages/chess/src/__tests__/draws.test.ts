@@ -1,4 +1,5 @@
-import type { ChessBoardState, ChessBoardType, ChessGameStatus, PieceAlias, PieceColor } from '@grouchess/models';
+import type { ChessGameStatus, PieceAlias, PieceColor } from '@grouchess/models';
+import { createMockChessBoard, createMockChessBoardState } from '@grouchess/test-utils';
 
 import { rowColToIndex } from '../board.js';
 import {
@@ -10,36 +11,6 @@ import {
 import * as piecesModule from '../pieces.js';
 
 const { WHITE_KING_START_INDEX, BLACK_KING_START_INDEX } = piecesModule;
-
-type PiecePlacement = {
-    index: number;
-    alias: PieceAlias;
-};
-
-const buildBoard = (pieces: PiecePlacement[] = []): ChessBoardType => {
-    const board = Array<ChessBoardType[number]>(64).fill(null);
-    board[WHITE_KING_START_INDEX] = 'K';
-    board[BLACK_KING_START_INDEX] = 'k';
-
-    pieces.forEach(({ index, alias }) => {
-        board[index] = alias;
-    });
-
-    return board as ChessBoardType;
-};
-
-const createBoardState = (overrides: Partial<ChessBoardState> = {}): ChessBoardState => ({
-    board: buildBoard(),
-    playerTurn: 'white',
-    castleRightsByColor: {
-        white: { short: false, long: false },
-        black: { short: false, long: false },
-    },
-    enPassantTargetIndex: null,
-    halfmoveClock: 0,
-    fullmoveClock: 1,
-    ...overrides,
-});
 
 describe('isDrawStatus', () => {
     it.each([
@@ -67,7 +38,11 @@ describe('isDrawStatus', () => {
 describe('createRepetitionKeyFromBoardState', () => {
     it('extracts the FEN components relevant to repetition detection', () => {
         const enPassantTargetIndex = rowColToIndex({ row: 2, col: 3 });
-        const boardState = createBoardState({
+        const boardState = createMockChessBoardState({
+            board: createMockChessBoard({
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+            }),
             playerTurn: 'black',
             enPassantTargetIndex,
             castleRightsByColor: {
@@ -84,114 +59,155 @@ describe('createRepetitionKeyFromBoardState', () => {
 
 describe('hasInsufficientMatingMaterial', () => {
     it.each([
-        { scenario: 'bare kings only', pieces: [] as PiecePlacement[], expected: true },
+        {
+            scenario: 'bare kings only',
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k' } as Record<
+                number,
+                PieceAlias
+            >,
+            expected: true,
+        },
         {
             scenario: 'major material present for white',
-            pieces: [{ index: 52, alias: 'P' }] as PiecePlacement[],
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k', 52: 'P' } as Record<
+                number,
+                PieceAlias
+            >,
             expected: false,
         },
         {
             scenario: 'single minor piece per side',
-            pieces: [
-                { index: 58, alias: 'B' },
-                { index: 1, alias: 'n' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                58: 'B',
+                1: 'n',
+            } as Record<number, PieceAlias>,
             expected: true,
         },
         {
             scenario: 'white two knights versus bare king',
-            pieces: [
-                { index: 57, alias: 'N' },
-                { index: 50, alias: 'N' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                57: 'N',
+                50: 'N',
+            } as Record<number, PieceAlias>,
             expected: true,
         },
         {
             scenario: 'black two knights versus bare king',
-            pieces: [
-                { index: 1, alias: 'n' },
-                { index: 2, alias: 'n' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                1: 'n',
+                2: 'n',
+            } as Record<number, PieceAlias>,
             expected: true,
         },
         {
             scenario: 'both sides have multiple minor pieces',
-            pieces: [
-                { index: 57, alias: 'N' },
-                { index: 58, alias: 'B' },
-                { index: 1, alias: 'n' },
-                { index: 2, alias: 'b' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                57: 'N',
+                58: 'B',
+                1: 'n',
+                2: 'b',
+            } as Record<number, PieceAlias>,
             expected: false,
         },
         {
             scenario: 'white has a pawn',
             color: 'white' as PieceColor,
-            pieces: [{ index: 52, alias: 'P' }] as PiecePlacement[],
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k', 52: 'P' } as Record<
+                number,
+                PieceAlias
+            >,
             expected: false,
         },
         {
             scenario: 'white only has a king',
             color: 'white' as PieceColor,
-            pieces: [] as PiecePlacement[],
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k' } as Record<
+                number,
+                PieceAlias
+            >,
             expected: true,
         },
         {
             scenario: 'white king and single bishop',
             color: 'white' as PieceColor,
-            pieces: [{ index: 58, alias: 'B' }] as PiecePlacement[],
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k', 58: 'B' } as Record<
+                number,
+                PieceAlias
+            >,
             expected: true,
         },
         {
             scenario: 'white king and two knights',
             color: 'white' as PieceColor,
-            pieces: [
-                { index: 57, alias: 'N' },
-                { index: 50, alias: 'N' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                57: 'N',
+                50: 'N',
+            } as Record<number, PieceAlias>,
             expected: true,
         },
         {
             scenario: 'white king with bishop and knight',
             color: 'white' as PieceColor,
-            pieces: [
-                { index: 57, alias: 'N' },
-                { index: 58, alias: 'B' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                57: 'N',
+                58: 'B',
+            } as Record<number, PieceAlias>,
             expected: false,
         },
         {
             scenario: 'white king with rook',
             color: 'white' as PieceColor,
-            pieces: [{ index: 63, alias: 'R' }] as PiecePlacement[],
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k', 63: 'R' } as Record<
+                number,
+                PieceAlias
+            >,
             expected: false,
         },
         {
             scenario: 'white king with queen',
             color: 'white' as PieceColor,
-            pieces: [{ index: 59, alias: 'Q' }] as PiecePlacement[],
+            boardOverrides: { [WHITE_KING_START_INDEX]: 'K', [BLACK_KING_START_INDEX]: 'k', 59: 'Q' } as Record<
+                number,
+                PieceAlias
+            >,
             expected: false,
         },
         {
             scenario: 'black king and two knights',
             color: 'black' as PieceColor,
-            pieces: [
-                { index: 1, alias: 'n' },
-                { index: 2, alias: 'n' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                1: 'n',
+                2: 'n',
+            } as Record<number, PieceAlias>,
             expected: true,
         },
         {
             scenario: 'black king with bishop and knight',
             color: 'black' as PieceColor,
-            pieces: [
-                { index: 1, alias: 'n' },
-                { index: 2, alias: 'b' },
-            ] as PiecePlacement[],
+            boardOverrides: {
+                [WHITE_KING_START_INDEX]: 'K',
+                [BLACK_KING_START_INDEX]: 'k',
+                1: 'n',
+                2: 'b',
+            } as Record<number, PieceAlias>,
             expected: false,
         },
-    ])('$scenario', ({ pieces, color, expected }) => {
-        const board = buildBoard(pieces);
+    ])('$scenario', ({ boardOverrides, color, expected }) => {
+        const board = createMockChessBoard(boardOverrides);
         expect(hasInsufficientMatingMaterial(board, color)).toBe(expected);
     });
 
@@ -209,7 +225,11 @@ describe('hasInsufficientMatingMaterial', () => {
             return originalGetPiece(alias);
         });
 
-        const board = buildBoard([{ index: 52, alias: 'P' }]);
+        const board = createMockChessBoard({
+            [WHITE_KING_START_INDEX]: 'K',
+            [BLACK_KING_START_INDEX]: 'k',
+            52: 'P',
+        });
 
         expect(() => hasInsufficientMatingMaterial(board)).toThrow("Unexpected piece type 'archer'");
 
@@ -219,29 +239,47 @@ describe('hasInsufficientMatingMaterial', () => {
 
 describe('computeForcedDrawStatus', () => {
     it('returns stalemate when no legal moves remain', () => {
-        const board = buildBoard();
+        const board = createMockChessBoard({
+            [WHITE_KING_START_INDEX]: 'K',
+            [BLACK_KING_START_INDEX]: 'k',
+        });
         expect(computeForcedDrawStatus(board, true, 0, {})).toBe('stalemate');
     });
 
     it('returns a 50-move draw when halfmove clock reaches the threshold', () => {
-        const board = buildBoard([{ index: 52, alias: 'P' }]);
+        const board = createMockChessBoard({
+            [WHITE_KING_START_INDEX]: 'K',
+            [BLACK_KING_START_INDEX]: 'k',
+            52: 'P',
+        });
         expect(computeForcedDrawStatus(board, false, 100, {})).toBe('50-move-draw');
     });
 
     it('returns insufficient material when neither side can checkmate', () => {
-        const board = buildBoard();
+        const board = createMockChessBoard({
+            [WHITE_KING_START_INDEX]: 'K',
+            [BLACK_KING_START_INDEX]: 'k',
+        });
         expect(computeForcedDrawStatus(board, false, 20, {})).toBe('insufficient-material');
     });
 
     it('returns threefold repetition when a position occurs three times', () => {
-        const board = buildBoard([{ index: 52, alias: 'P' }]);
+        const board = createMockChessBoard({
+            [WHITE_KING_START_INDEX]: 'K',
+            [BLACK_KING_START_INDEX]: 'k',
+            52: 'P',
+        });
         expect(computeForcedDrawStatus(board, false, 12, { '4k3/8/8/8/8/8/8/4K3 w - -': 3 })).toBe(
             'threefold-repetition'
         );
     });
 
     it('returns null when no forced draw condition applies', () => {
-        const board = buildBoard([{ index: 52, alias: 'P' }]);
+        const board = createMockChessBoard({
+            [WHITE_KING_START_INDEX]: 'K',
+            [BLACK_KING_START_INDEX]: 'k',
+            52: 'P',
+        });
         expect(computeForcedDrawStatus(board, false, 10, { '4k3/8/8/8/8/8/8/4K3 w - -': 2 })).toBeNull();
     });
 });

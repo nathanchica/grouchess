@@ -1,13 +1,13 @@
-import type { ChessBoardState, ChessBoardType, Move, PieceAlias, PieceColor } from '@grouchess/models';
+import type { ChessBoardType, Move, PieceAlias, PieceColor } from '@grouchess/models';
+import { createMockChessBoard, createMockChessBoardState } from '@grouchess/test-utils';
 
 import { rowColToIndex } from '../board.js';
 import { computeAllLegalMoves, computeNextChessBoardFromMove, isKingInCheck, isSquareAttacked } from '../moves.js';
 import { createMove } from '../utils/moves.js';
 
-const createEmptyBoard = (): ChessBoardType => Array(64).fill(undefined) as ChessBoardType;
 const createBoardIndex = (row: number, col: number) => rowColToIndex({ row, col });
 const createBoardWithKings = (whiteKingIndex = 60, blackKingIndex = 4): ChessBoardType => {
-    const board = createEmptyBoard();
+    const board = createMockChessBoard();
     board[whiteKingIndex] = 'K';
     board[blackKingIndex] = 'k';
     return board;
@@ -52,7 +52,7 @@ describe('isSquareAttacked', () => {
             pieces: [{ alias: 'r', position: createBoardIndex(0, 4) }],
         },
     ])('detects attack for $scenario', ({ attackerColor, squareIndex, pieces }) => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         pieces.forEach(({ alias, position }) => {
             board[position] = alias as PieceAlias;
         });
@@ -61,7 +61,7 @@ describe('isSquareAttacked', () => {
     });
 
     it('returns false when a sliding attacker is blocked by another piece', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[createBoardIndex(0, 4)] = 'r';
         board[createBoardIndex(2, 4)] = 'P';
 
@@ -69,7 +69,7 @@ describe('isSquareAttacked', () => {
     });
 
     it('returns false when no attacker of the requested color is present', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[createBoardIndex(2, 3)] = 'N';
 
         expect(isSquareAttacked(board, createBoardIndex(4, 4), 'black')).toBe(false);
@@ -102,7 +102,7 @@ describe('isKingInCheck', () => {
 
 describe('computeNextChessBoardFromMove', () => {
     it('moves a piece to the destination square for standard moves', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[57] = 'N';
         const move = createMove(board, 57, 42, 'standard');
 
@@ -111,11 +111,11 @@ describe('computeNextChessBoardFromMove', () => {
         expect(nextBoard[57]).toBeUndefined();
         expect(nextBoard[42]).toBe('N');
         expect(board[57]).toBe('N');
-        expect(board[42]).toBeUndefined();
+        expect(board[42]).toBeNull();
     });
 
     it('captures pieces on the destination square', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[57] = 'N';
         board[42] = 'p';
         const move = createMove(board, 57, 42, 'capture');
@@ -128,7 +128,7 @@ describe('computeNextChessBoardFromMove', () => {
     });
 
     it('removes the captured pawn for en-passant moves', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[28] = 'P';
         board[29] = 'p';
         const move = createMove(board, 28, 21, 'en-passant');
@@ -141,7 +141,7 @@ describe('computeNextChessBoardFromMove', () => {
     });
 
     it('moves the rook appropriately for white short castling', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[60] = 'K';
         board[63] = 'R';
         const move = createMove(board, 60, 62, 'short-castle');
@@ -155,7 +155,7 @@ describe('computeNextChessBoardFromMove', () => {
     });
 
     it('moves the rook appropriately for black long castling', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[4] = 'k';
         board[0] = 'r';
         const move = createMove(board, 4, 2, 'long-castle');
@@ -169,7 +169,7 @@ describe('computeNextChessBoardFromMove', () => {
     });
 
     it('moves the rook appropriately for black short castling', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[4] = 'k';
         board[7] = 'r';
         const move = createMove(board, 4, 6, 'short-castle');
@@ -183,7 +183,7 @@ describe('computeNextChessBoardFromMove', () => {
     });
 
     it('moves the rook appropriately for white long castling', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[60] = 'K';
         board[56] = 'R';
         const move = createMove(board, 60, 58, 'long-castle');
@@ -197,7 +197,7 @@ describe('computeNextChessBoardFromMove', () => {
     });
 
     it('applies promotion when a pawn promotes on the destination square', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[8] = 'P';
         const move: Move = { ...createMove(board, 8, 0, 'standard'), promotion: 'Q' };
 
@@ -210,7 +210,7 @@ describe('computeNextChessBoardFromMove', () => {
 
 describe('computeAllLegalMoves', () => {
     it('aggregates moves for the active player and builds lookup maps', () => {
-        const board = createEmptyBoard();
+        const board = createMockChessBoard();
         board[60] = 'K';
         board[4] = 'k';
         board[createBoardIndex(6, 2)] = 'N';
@@ -218,7 +218,7 @@ describe('computeAllLegalMoves', () => {
         board[48] = 'P';
         board[40] = 'n';
 
-        const boardState: ChessBoardState = {
+        const boardState = createMockChessBoardState({
             board,
             playerTurn: 'white',
             castleRightsByColor: {
@@ -228,7 +228,7 @@ describe('computeAllLegalMoves', () => {
             enPassantTargetIndex: null,
             halfmoveClock: 0,
             fullmoveClock: 1,
-        };
+        });
 
         const legalMovesStore = computeAllLegalMoves(boardState);
 

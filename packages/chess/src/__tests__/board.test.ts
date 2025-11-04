@@ -1,4 +1,4 @@
-import type { ChessBoardType } from '@grouchess/models';
+import { createMockChessBoard } from '@grouchess/test-utils';
 
 import {
     INITIAL_CHESS_BOARD_FEN,
@@ -17,8 +17,6 @@ import {
 } from '../board.js';
 
 const EMPTY_BOARD_FEN = '8/8/8/8/8/8/8/8';
-
-const makeEmptyBoard = (): ChessBoardType => Array(64).fill(undefined) as ChessBoardType;
 
 describe('INITIAL_CHESS_BOARD_FEN', () => {
     it('matches the standard initial position', () => {
@@ -90,9 +88,10 @@ describe('rowColToIndex', () => {
 
 describe('getKingIndices', () => {
     it('returns both king indices when both kings are present', () => {
-        const board = makeEmptyBoard();
-        board[4] = 'k';
-        board[60] = 'K';
+        const board = createMockChessBoard({
+            4: 'k',
+            60: 'K',
+        });
 
         expect(getKingIndices(board)).toEqual({
             white: 60,
@@ -101,15 +100,17 @@ describe('getKingIndices', () => {
     });
 
     it('throws when white king is missing', () => {
-        const board = makeEmptyBoard();
-        board[4] = 'k';
+        const board = createMockChessBoard({
+            4: 'k',
+        });
 
         expect(() => getKingIndices(board)).toThrow('White king not found');
     });
 
     it('throws when black king is missing', () => {
-        const board = makeEmptyBoard();
-        board[60] = 'K';
+        const board = createMockChessBoard({
+            60: 'K',
+        });
 
         expect(() => getKingIndices(board)).toThrow('Black king not found');
     });

@@ -29,6 +29,7 @@
     "dependencies": {
         "@grouchess/errors": "workspace:*",
         "@grouchess/models": "workspace:*",
+        "@grouchess/test-utils": "workspace:*",
         "tiny-invariant": "^1.3.3",
         "zod": "^4.1.12"
     }

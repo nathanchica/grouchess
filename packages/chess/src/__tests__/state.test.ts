@@ -1,7 +1,6 @@
 import { IllegalMoveError } from '@grouchess/errors';
 import type {
     CastleRightsByColor,
-    ChessBoardState,
     ChessBoardType,
     ChessGame,
     LegalMovesStore,
@@ -10,6 +9,12 @@ import type {
     PieceCapture,
     PositionCounts,
 } from '@grouchess/models';
+import {
+    createMockChessBoard,
+    createMockChessBoardState,
+    createMockLegalMovesStore,
+    createMockMove,
+} from '@grouchess/test-utils';
 
 import { createInitialBoard } from '../board.js';
 import { createInitialCastleRights } from '../castles.js';
@@ -76,37 +81,6 @@ const getNextPositionCountsMock = vi.mocked(getNextPositionCounts);
 const getPieceCaptureFromMoveMock = vi.mocked(getPieceCaptureFromMove);
 const validatePromotionMock = vi.mocked(validatePromotion);
 
-const makeBoard = (): ChessBoardType => Array(64).fill(null) as ChessBoardType;
-
-const makeBoardState = (overrides: Partial<ChessBoardState> = {}): ChessBoardState => ({
-    board: makeBoard(),
-    playerTurn: 'white',
-    castleRightsByColor: {
-        white: { short: true, long: true },
-        black: { short: true, long: true },
-    },
-    enPassantTargetIndex: null,
-    halfmoveClock: 0,
-    fullmoveClock: 1,
-    ...overrides,
-});
-
-const createLegalMovesStore = (moves: Move[] = []): LegalMovesStore => {
-    const byStartIndex = moves.reduce<LegalMovesStore['byStartIndex']>((acc, move) => {
-        const key = String(move.startIndex);
-        if (!acc[key]) {
-            acc[key] = [];
-        }
-        acc[key].push(move);
-        return acc;
-    }, {});
-    return {
-        allMoves: moves,
-        byStartIndex,
-        typeAndEndIndexToStartIndex: {},
-    };
-};
-
 let defaultBoard: ChessBoardType;
 let defaultCastleRights: CastleRightsByColor;
 let defaultLegalMovesStore: LegalMovesStore;
@@ -114,12 +88,12 @@ let defaultLegalMovesStore: LegalMovesStore;
 beforeEach(() => {
     vi.resetAllMocks();
 
-    defaultBoard = makeBoard();
+    defaultBoard = createMockChessBoard();
     defaultCastleRights = {
         white: { short: true, long: true },
         black: { short: true, long: true },
     };
-    defaultLegalMovesStore = createLegalMovesStore();
+    defaultLegalMovesStore = createMockLegalMovesStore();
 
     createInitialBoardMock.mockReturnValue(defaultBoard);
     createInitialCastleRightsMock.mockReturnValue(defaultCastleRights);
@@ -147,7 +121,7 @@ describe('createInitialBoardState', () => {
 
 describe('createInitialChessGame', () => {
     it('returns an in-progress game seeded with the initial board state', () => {
-        const expectedBoardState = makeBoardState({
+        const expectedBoardState = createMockChessBoardState({
             board: defaultBoard,
             castleRightsByColor: defaultCastleRights,
         });
@@ -169,8 +143,8 @@ describe('createInitialChessGame', () => {
 
 describe('computeGameStatus', () => {
     it('returns checkmate when king is in check with no legal moves', () => {
-        const board = makeBoard();
-        const legalMovesStore = createLegalMovesStore();
+        const board = createMockChessBoard();
+        const legalMovesStore = createMockLegalMovesStore();
         isKingInCheckMock.mockReturnValueOnce(true);
         computeForcedDrawStatusMock.mockReturnValueOnce(null);
 
@@ -185,8 +159,8 @@ describe('computeGameStatus', () => {
     });
 
     it('awards checkmate to white when black is checkmated', () => {
-        const board = makeBoard();
-        const legalMovesStore = createLegalMovesStore();
+        const board = createMockChessBoard();
+        const legalMovesStore = createMockLegalMovesStore();
         isKingInCheckMock.mockReturnValueOnce(true);
         computeForcedDrawStatusMock.mockReturnValueOnce(null);
 
@@ -201,8 +175,8 @@ describe('computeGameStatus', () => {
     });
 
     it('returns the forced draw status when available', () => {
-        const board = makeBoard();
-        const legalMovesStore = createLegalMovesStore();
+        const board = createMockChessBoard();
+        const legalMovesStore = createMockLegalMovesStore();
         isKingInCheckMock.mockReturnValueOnce(false);
         computeForcedDrawStatusMock.mockReturnValueOnce('stalemate');
 
@@ -212,15 +186,17 @@ describe('computeGameStatus', () => {
     });
 
     it('flags check while the game remains in progress', () => {
-        const board = makeBoard();
-        const legalMovesStore = createLegalMovesStore([
-            {
-                startIndex: 12,
-                endIndex: 20,
-                type: 'standard',
-                piece: { alias: 'P', color: 'white', type: 'pawn', value: 1 },
-            },
-        ]);
+        const board = createMockChessBoard();
+        const legalMovesStore = createMockLegalMovesStore({
+            allMoves: [
+                {
+                    startIndex: 12,
+                    endIndex: 20,
+                    type: 'standard',
+                    piece: { alias: 'P', color: 'white', type: 'pawn', value: 1 },
+                },
+            ],
+        });
         isKingInCheckMock.mockReturnValueOnce(true);
         computeForcedDrawStatusMock.mockReturnValueOnce(null);
 
@@ -233,15 +209,17 @@ describe('computeGameStatus', () => {
     });
 
     it('remains in progress when no check or forced draw applies', () => {
-        const board = makeBoard();
-        const legalMovesStore = createLegalMovesStore([
-            {
-                startIndex: 10,
-                endIndex: 18,
-                type: 'standard',
-                piece: { alias: 'N', color: 'white', type: 'knight', value: 3 },
-            },
-        ]);
+        const board = createMockChessBoard();
+        const legalMovesStore = createMockLegalMovesStore({
+            allMoves: [
+                {
+                    startIndex: 10,
+                    endIndex: 18,
+                    type: 'standard',
+                    piece: { alias: 'N', color: 'white', type: 'knight', value: 3 },
+                },
+            ],
+        });
         isKingInCheckMock.mockReturnValueOnce(false);
         computeForcedDrawStatusMock.mockReturnValueOnce(null);
 
@@ -252,19 +230,19 @@ describe('computeGameStatus', () => {
 });
 
 describe('computeNextChessGameAfterMove', () => {
-    const createMove = (overrides: Partial<Move> = {}): Move => ({
-        startIndex: 12,
-        endIndex: 28,
-        type: 'standard',
-        piece: { alias: 'P', color: 'white', type: 'pawn', value: 1 },
-        ...overrides,
-    });
-
     const buildPrevGame = (overrides: Partial<ChessGame> = {}): ChessGame => {
-        const legalMove = createMove();
-        const legalMovesStore = createLegalMovesStore([legalMove]);
+        const legalMove = createMockMove({
+            startIndex: 12,
+            endIndex: 28,
+            type: 'standard',
+            piece: { alias: 'P', color: 'white', type: 'pawn', value: 1 },
+        });
+        const legalMovesStore = createMockLegalMovesStore({
+            allMoves: [legalMove],
+            byStartIndex: { '12': [legalMove] },
+        });
         const baseGame: ChessGame = {
-            boardState: makeBoardState(),
+            boardState: createMockChessBoardState(),
             gameState: { status: 'in-progress' },
             legalMovesStore,
             moveHistory: [],
@@ -278,19 +256,29 @@ describe('computeNextChessGameAfterMove', () => {
     };
 
     it('computes the next game snapshot and appends captures', () => {
-        const legalMove = createMove();
+        const legalMove = createMockMove({
+            startIndex: 12,
+            endIndex: 28,
+            type: 'standard',
+            piece: { alias: 'P', color: 'white', type: 'pawn', value: 1 },
+        });
         const prevGame = buildPrevGame({
-            legalMovesStore: createLegalMovesStore([legalMove]),
+            legalMovesStore: createMockLegalMovesStore({
+                allMoves: [legalMove],
+                byStartIndex: { '12': [legalMove] },
+            }),
             moveHistory: [
                 {
-                    move: createMove({ startIndex: 8, endIndex: 16 }),
+                    move: createMockMove({ startIndex: 8, endIndex: 16 }),
                     notation: { san: 'e4', figurine: '♙e4' },
                 },
             ],
         });
         const incomingMove: Move = { ...legalMove, promotion: 'Q' };
-        const nextBoardState = makeBoardState({ playerTurn: 'black', halfmoveClock: 1 });
-        const nextLegalMovesStore = createLegalMovesStore([createMove({ startIndex: 52, endIndex: 36 })]);
+        const nextBoardState = createMockChessBoardState({ playerTurn: 'black', halfmoveClock: 1 });
+        const nextLegalMovesStore = createMockLegalMovesStore({
+            allMoves: [createMockMove({ startIndex: 52, endIndex: 36 })],
+        });
         const nextPositionCounts: PositionCounts = { next: 1 };
         const pieceCapture: PieceCapture = {
             piece: { alias: 'p', color: 'black', type: 'pawn', value: 1 },
@@ -352,14 +340,18 @@ describe('computeNextChessGameAfterMove', () => {
     });
 
     it('throws when the move is not legal', () => {
+        const legalMove = createMockMove({ startIndex: 0, endIndex: 2 });
         const prevGame = buildPrevGame({
-            legalMovesStore: createLegalMovesStore([createMove({ startIndex: 0, endIndex: 2 })]),
+            legalMovesStore: createMockLegalMovesStore({
+                allMoves: [legalMove],
+                byStartIndex: { '0': [legalMove] },
+            }),
         });
 
         expect(() =>
             computeNextChessGameAfterMove(
                 prevGame,
-                createMove({
+                createMockMove({
                     startIndex: 0,
                     endIndex: 1,
                 })
@@ -369,7 +361,12 @@ describe('computeNextChessGameAfterMove', () => {
     });
 
     it('preserves the captures reference when no capture is produced', () => {
-        const legalMove = createMove();
+        const legalMove = createMockMove({
+            startIndex: 12,
+            endIndex: 28,
+            type: 'standard',
+            piece: { alias: 'P', color: 'white', type: 'pawn', value: 1 },
+        });
         const captures: PieceCapture[] = [
             {
                 piece: { alias: 'p', color: 'black', type: 'pawn', value: 1 },
@@ -377,12 +374,15 @@ describe('computeNextChessGameAfterMove', () => {
             },
         ];
         const prevGame = buildPrevGame({
-            legalMovesStore: createLegalMovesStore([legalMove]),
+            legalMovesStore: createMockLegalMovesStore({
+                allMoves: [legalMove],
+                byStartIndex: { '12': [legalMove] },
+            }),
             captures,
         });
         const incomingMove = legalMove;
-        const nextBoardState = makeBoardState({ playerTurn: 'black' });
-        const nextLegalMovesStore = createLegalMovesStore();
+        const nextBoardState = createMockChessBoardState({ playerTurn: 'black' });
+        const nextLegalMovesStore = createMockLegalMovesStore();
         const nextPositionCounts: PositionCounts = { next: 2 };
 
         getPieceCaptureFromMoveMock.mockReturnValueOnce(null);
@@ -404,15 +404,17 @@ describe('computeNextChessGameAfterMove', () => {
 
 describe('createChessGameFromFEN', () => {
     it('creates a game from the provided FEN string', () => {
-        const fenBoardState = makeBoardState({ playerTurn: 'black', halfmoveClock: 7, fullmoveClock: 12 });
-        const fenLegalMovesStore = createLegalMovesStore([
-            {
-                startIndex: 54,
-                endIndex: 46,
-                type: 'standard',
-                piece: { alias: 'p', color: 'black', type: 'pawn', value: 1 },
-            },
-        ]);
+        const fenBoardState = createMockChessBoardState({ playerTurn: 'black', halfmoveClock: 7, fullmoveClock: 12 });
+        const fenLegalMovesStore = createMockLegalMovesStore({
+            allMoves: [
+                {
+                    startIndex: 54,
+                    endIndex: 46,
+                    type: 'standard',
+                    piece: { alias: 'p', color: 'black', type: 'pawn', value: 1 },
+                },
+            ],
+        });
 
         createBoardStateFromFENMock.mockReturnValueOnce(fenBoardState);
         computeAllLegalMovesMock.mockReturnValueOnce(fenLegalMovesStore);
