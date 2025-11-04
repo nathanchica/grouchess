@@ -8,8 +8,11 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 
 - Language: TypeScript
 - Frontend: React 19, Vite, Tailwind CSS 4, Socket.io-client, React Router 7
+    - State management: React Context + Hooks
+    - Testing: Vitest, vitest-browser-react
 - Backend: Express, Socket.io
-- Tooling: Vitest, Zod 4, supertest, ESLint, Prettier, pnpm, Husky, Sentry, depcheck
+    - Testing: Vitest, supertest
+- Tooling: Zod 4, ESLint, Prettier, pnpm, Husky, Sentry, depcheck
 - Hosting: Vercel (frontend), Render (backend)
 
 ## Features

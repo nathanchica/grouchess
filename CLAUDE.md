@@ -26,5 +26,6 @@
 - Focus on behavior and user experience rather than implementation details
     - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
     - Test user interactions (clicks, typing, etc.) and their effects on the component state and UI
+        - Use userEvent from 'vitest/browser' for simulating user interactions
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, etc.)
