@@ -1,4 +1,9 @@
-import type { ChessClockState, ChessGame, ChessGameRoom, Player, TimeControl } from '@grouchess/models';
+import {
+    createMockChessClockState,
+    createMockChessGame,
+    createMockChessGameRoom,
+    createMockPlayer,
+} from '@grouchess/test-utils';
 import request from 'supertest';
 import * as z from 'zod';
 
@@ -50,88 +55,13 @@ vi.mock('@grouchess/http-schemas', async (importOriginal) => {
 
 const ZodError = z.ZodError;
 
-// Mock data factories
-function createMockTimeControl(overrides?: Partial<TimeControl>): TimeControl {
-    return {
-        alias: '5|0',
-        minutes: 5,
-        increment: 0,
-        displayText: '5 min',
-        ...overrides,
-    };
-}
-
-function createMockPlayer(overrides?: Partial<Player>): Player {
-    return {
-        id: 'player-123',
-        displayName: 'Player 1',
-        ...overrides,
-    };
-}
-
-function createMockRoom(overrides?: Partial<ChessGameRoom>): ChessGameRoom {
-    const player = createMockPlayer();
-    return {
-        id: 'room-456',
-        timeControl: createMockTimeControl(),
-        players: [player],
-        playerIdToDisplayName: { [player.id]: player.displayName },
-        playerIdToScore: { [player.id]: 0 },
-        colorToPlayerId: { white: player.id, black: null },
-        messages: [],
-        gameCount: 1,
-        type: 'player-vs-player' as const,
-        ...overrides,
-    };
-}
-
-function createMockChessGame(overrides?: Partial<ChessGame>): ChessGame {
-    return {
-        boardState: {
-            board: Array(64).fill(null),
-            playerTurn: 'white' as const,
-            castleRightsByColor: {
-                white: { short: true, long: true },
-                black: { short: true, long: true },
-            },
-            enPassantTargetIndex: null,
-            halfmoveClock: 0,
-            fullmoveClock: 1,
-        },
-        gameState: {
-            status: 'in-progress' as const,
-        },
-        legalMovesStore: {
-            allMoves: [],
-            byStartIndex: {},
-            typeAndEndIndexToStartIndex: {},
-        },
-        moveHistory: [],
-        captures: [],
-        positionCounts: {},
-        ...overrides,
-    };
-}
-
-function createMockClockState(overrides?: Partial<ChessClockState>): ChessClockState {
-    return {
-        white: { timeRemainingMs: 300000, isActive: true },
-        black: { timeRemainingMs: 300000, isActive: false },
-        lastUpdatedTimeMs: Date.now(),
-        baseTimeMs: 300000,
-        incrementMs: 0,
-        isPaused: false,
-        ...overrides,
-    };
-}
-
 describe('GET /room/:roomId', () => {
     afterEach(() => {
         vi.restoreAllMocks();
     });
 
     it('returns room info when room exists', async () => {
-        const mockRoom = createMockRoom({ id: 'test-room-123' });
+        const mockRoom = createMockChessGameRoom({ id: 'test-room-123' });
 
         vi.spyOn(gameRoomService, 'getGameRoomById').mockReturnValue(mockRoom);
 
@@ -156,7 +86,7 @@ describe('GET /room/:roomId', () => {
     });
 
     it('returns room info with null timeControl when room has no time control', async () => {
-        const mockRoom = createMockRoom({
+        const mockRoom = createMockChessGameRoom({
             id: 'test-room-456',
             timeControl: null,
             players: [],
@@ -196,9 +126,13 @@ describe('GET /room/:roomId/chess-game', () => {
     });
 
     it('returns chess game state when authenticated and all data exists', async () => {
-        const mockRoom = createMockRoom({ id: mockRoomId });
+        const mockRoom = createMockChessGameRoom({ id: mockRoomId });
         const mockChessGame = createMockChessGame();
-        const mockClockState = createMockClockState();
+        const mockClockState = createMockChessClockState({
+            baseTimeMs: 300000,
+            white: { timeRemainingMs: 300000, isActive: true },
+            black: { timeRemainingMs: 300000, isActive: false },
+        });
 
         vi.spyOn(tokenService, 'verify').mockReturnValue({ playerId: mockPlayerId, roomId: mockRoomId });
         vi.spyOn(gameRoomService, 'getGameRoomById').mockReturnValue(mockRoom);
@@ -267,7 +201,7 @@ describe('GET /room/:roomId/chess-game', () => {
     });
 
     it('returns 404 when chess game does not exist for the room', async () => {
-        const mockRoom = createMockRoom({
+        const mockRoom = createMockChessGameRoom({
             id: mockRoomId,
             timeControl: null,
             players: [],
@@ -290,7 +224,7 @@ describe('GET /room/:roomId/chess-game', () => {
     });
 
     it('returns chess game state with null clock when no time control is set', async () => {
-        const mockRoom = createMockRoom({ id: mockRoomId, timeControl: null });
+        const mockRoom = createMockChessGameRoom({ id: mockRoomId, timeControl: null });
         const mockChessGame = createMockChessGame();
 
         vi.spyOn(tokenService, 'verify').mockReturnValue({ playerId: mockPlayerId, roomId: mockRoomId });
@@ -315,9 +249,9 @@ describe('GET /room/:roomId/chess-game', () => {
     });
 
     it('returns 500 when schema validation fails', async () => {
-        const mockRoom = createMockRoom({ id: mockRoomId });
+        const mockRoom = createMockChessGameRoom({ id: mockRoomId });
         const mockChessGame = createMockChessGame();
-        const mockClockState = createMockClockState();
+        const mockClockState = createMockChessClockState();
 
         const mockValidationError = {
             issues: [
@@ -382,7 +316,7 @@ describe('POST /room', () => {
         };
 
         const mockPlayer = createMockPlayer({ id: 'new-player-123', displayName: 'Test Player' });
-        const mockRoom = createMockRoom({ id: 'new-room-456' });
+        const mockRoom = createMockChessGameRoom({ id: 'new-room-456' });
         const mockToken = 'generated-token-abc';
 
         createGameRoomParseMock.mockReturnValue(requestBody);
@@ -421,7 +355,7 @@ describe('POST /room', () => {
         };
 
         const mockPlayer = createMockPlayer({ id: 'new-player-123', displayName: 'Test Player' });
-        const mockRoom = createMockRoom({ id: 'new-room-456', timeControl: null });
+        const mockRoom = createMockChessGameRoom({ id: 'new-room-456', timeControl: null });
         const mockToken = 'generated-token-abc';
 
         createGameRoomParseMock.mockReturnValue(requestBody);
@@ -483,7 +417,7 @@ describe('POST /room', () => {
         };
 
         const mockPlayer = createMockPlayer();
-        const mockRoom = createMockRoom();
+        const mockRoom = createMockChessGameRoom();
         const mockToken = 'generated-token';
 
         const mockValidationError = {
