@@ -9,7 +9,8 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
 - Language: TypeScript
 - Frontend: React 19, Vite, Tailwind CSS 4, Socket.io-client, React Router 7
 - Backend: Express, Socket.io
-- Tooling: Vitest, Zod 4, supertest, ESLint, Prettier, pnpm, Husky
+- Tooling: Vitest, Zod 4, supertest, ESLint, Prettier, pnpm, Husky, depcheck
+- Hosting: Vercel (frontend), Render (backend)
 
 ## Features
 
@@ -159,6 +160,9 @@ pnpm dev
 │  ├─ errors/                                 # Shared error helpers/types
 │  │  └─ src/
 │  │     └─ index.ts
+│  ├─ models/                                 # Shared Zod schemas and TypeScript types
+│  │  └─ src/
+│  │     └─ index.ts
 │  └─ test-utils/                             # Mock data factories for tests
 │     └─ src/
 │        ├─ chess.ts
@@ -183,13 +187,13 @@ pnpm dev
         - `createFEN`, `isValidFEN`
     - Draws and castling: `packages/chess/src/draws.ts`, `packages/chess/src/castles.ts`
         - `isDrawStatus`, `computeCastleRightsChangesFromMove`
-    - Types/schemas: `packages/chess/src/schema.ts` (Zod + TypeScript types)
 
 - Game room & time controls (shared): `packages/game-room`
-    - Models: `packages/game-room/src/schema.ts` (players, messages, room types)
     - Time control helpers: `packages/game-room/src/timeControl.ts`
         - `SUPPORTED_TIME_CONTROLS`, `getTimeControlByAlias`, `isValidTimeControlAlias`
     - Scoring: `packages/game-room/src/scores.ts` (`computePlayerScores`)
+
+- Shared models (Zod schemas) & types: `packages/models`
 
 - Socket events (shared): `packages/socket-events`
     - Event contracts and payload schemas: `packages/socket-events/src/chess.ts`, `packages/socket-events/src/common.ts`
