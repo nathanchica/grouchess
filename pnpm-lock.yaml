@@ -91,6 +91,9 @@ importers:
       '@grouchess/socket-events':
         specifier: workspace:*
         version: link:../packages/socket-events
+      '@grouchess/test-utils':
+        specifier: workspace:*
+        version: link:../packages/test-utils
       base32-encode:
         specifier: ^2.0.0
         version: 2.0.0
