@@ -1,5 +1,4 @@
-import type { ChessGameState } from '@grouchess/chess';
-import type { ChessGameMessageType, ChessGameRoom, Message, Player } from '@grouchess/game-room';
+import type { ChessGameMessageType, ChessGameState, ChessGameRoom, Message, Player } from '@grouchess/models';
 import type {
     ChessClientToServerEvents,
     ChessServerToClientEvents,

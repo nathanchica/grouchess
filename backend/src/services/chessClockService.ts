@@ -1,12 +1,10 @@
-import type { PieceColor } from '@grouchess/chess';
 import {
     createInitialChessClockState,
     createUpdatedClockState,
     createPausedClockState,
     createStartedClockState,
-    type ChessClockState,
 } from '@grouchess/chess-clocks';
-import type { TimeControl } from '@grouchess/game-room';
+import type { ChessClockState, PieceColor, TimeControl } from '@grouchess/models';
 
 export class ChessClockService {
     private gameRoomIdToClockStateMap: Map<string, ChessClockState> = new Map();

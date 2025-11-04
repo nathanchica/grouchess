@@ -1,6 +1,5 @@
 import { computeNextChessGameAfterMove, createInitialChessGame } from '@grouchess/chess';
-import type { ChessGame, ChessGameState, PawnPromotion } from '@grouchess/chess';
-import type { ChessGameRoom } from '@grouchess/game-room';
+import type { ChessGame, ChessGameRoom, ChessGameState, PawnPromotion } from '@grouchess/models';
 
 import { GameNotStartedError, IllegalMoveError, InvalidChessGameStateError } from '../utils/errors.js';
 

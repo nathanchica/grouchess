@@ -1,4 +1,4 @@
-import type { Player, PlayerStatus } from '@grouchess/game-room';
+import type { Player, PlayerStatus } from '@grouchess/models';
 
 import { generateId } from '../utils/generateId.js';
 

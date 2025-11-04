@@ -1,5 +1,4 @@
-import { PieceColorEnum } from '@grouchess/chess';
-import { RoomTypeEnum, PlayerSchema, TimeControlSchema } from '@grouchess/game-room';
+import { RoomTypeEnum, PieceColorEnum, PlayerSchema, TimeControlSchema } from '@grouchess/models';
 import * as z from 'zod';
 
 export const CreateGameRoomSchema = z.object({

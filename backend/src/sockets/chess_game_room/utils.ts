@@ -1,6 +1,5 @@
-import type { ChessGameState } from '@grouchess/chess';
-import { computeGameStateBasedOnClock, type ChessClockState } from '@grouchess/chess-clocks';
-import type { Message, ChessGameMessageType } from '@grouchess/game-room';
+import { computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
+import type { ChessClockState, ChessGameState, Message, ChessGameMessageType } from '@grouchess/models';
 import { type ChessGameRoomClientToServerInput } from '@grouchess/socket-events';
 import * as z from 'zod';
 
