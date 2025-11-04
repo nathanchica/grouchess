@@ -27,6 +27,7 @@ const parseEnv = () => {
     try {
         return envSchema.parse(process.env);
     } catch (error) {
+        /* v8 ignore else -- @preserve */
         if (error instanceof z.ZodError) {
             const errorMessage = error.issues
                 .map((issue) => {
@@ -40,6 +41,8 @@ const parseEnv = () => {
                     `Please check your .env file and ensure all required variables are set correctly.`
             );
         }
+        // Defensive re-throw for unexpected errors
+        /* v8 ignore next -- @preserve */
         throw error;
     }
 };
