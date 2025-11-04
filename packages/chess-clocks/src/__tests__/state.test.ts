@@ -1,6 +1,6 @@
 import { hasInsufficientMatingMaterial } from '@grouchess/chess';
 import { InvalidInputError } from '@grouchess/errors';
-import type { ChessBoardType, TimeControl } from '@grouchess/models';
+import { createMockTimeControl, createMockChessBoard } from '@grouchess/test-utils';
 
 vi.mock('@grouchess/chess', async () => {
     const actual = await vi.importActual<typeof import('@grouchess/chess')>('@grouchess/chess');
@@ -25,14 +25,8 @@ afterEach(() => {
     vi.resetAllMocks();
 });
 
-const createTimeControl = (minutes: number, increment: number): TimeControl => ({
-    alias: `${minutes}|${increment}`,
-    minutes,
-    increment,
-    displayText: `${minutes}|${increment}`,
-});
-
-const buildPausedState = () => createInitialChessClockState(createTimeControl(5, 3));
+const buildPausedState = () =>
+    createInitialChessClockState(createMockTimeControl({ alias: '5|3', minutes: 5, increment: 3, displayText: '5|3' }));
 const buildRunningState = () => {
     const base = buildPausedState();
     return {
@@ -43,11 +37,10 @@ const buildRunningState = () => {
         black: { ...base.black, isActive: false },
     };
 };
-const createBoard = (): ChessBoardType => Array(64).fill(null);
 
 describe('createInitialChessClockState', () => {
     it('initializes both clocks with the same base time and paused state', () => {
-        const timeControl = createTimeControl(5, 3);
+        const timeControl = createMockTimeControl({ alias: '5|3', minutes: 5, increment: 3, displayText: '5|3' });
 
         const state = createInitialChessClockState(timeControl);
 
@@ -62,7 +55,7 @@ describe('createInitialChessClockState', () => {
     });
 
     it('supports zero base time and increment values', () => {
-        const timeControl = createTimeControl(0, 0);
+        const timeControl = createMockTimeControl({ alias: '0|0', minutes: 0, increment: 0, displayText: '0|0' });
 
         const state = createInitialChessClockState(timeControl);
 
@@ -357,7 +350,7 @@ describe('createUpdatedClockState', () => {
 
 describe('computeGameStateBasedOnClock', () => {
     it('returns null when the clock is paused', () => {
-        const board = createBoard();
+        const board = createMockChessBoard();
         const state = buildPausedState();
 
         const result = computeGameStateBasedOnClock(state, board);
@@ -367,7 +360,7 @@ describe('computeGameStateBasedOnClock', () => {
     });
 
     it('returns null when both players still have time remaining', () => {
-        const board = createBoard();
+        const board = createMockChessBoard();
         const state = buildRunningState();
 
         const result = computeGameStateBasedOnClock(state, board);
@@ -377,7 +370,7 @@ describe('computeGameStateBasedOnClock', () => {
     });
 
     it('reports a time-out when a player flags and the opponent can mate', () => {
-        const board = createBoard();
+        const board = createMockChessBoard();
         const base = buildRunningState();
         const state = {
             ...base,
@@ -394,7 +387,7 @@ describe('computeGameStateBasedOnClock', () => {
     });
 
     it('reports insufficient material when the opponent cannot mate', () => {
-        const board = createBoard();
+        const board = createMockChessBoard();
         const base = buildRunningState();
         const state = {
             ...base,
