@@ -1,9 +1,6 @@
 import { hasInsufficientMatingMaterial } from '@grouchess/chess';
-import type { ChessBoardType, ChessGameState, PieceColor } from '@grouchess/chess';
 import { InvalidInputError } from '@grouchess/errors';
-import type { TimeControl } from '@grouchess/game-room';
-
-import type { ChessClockState } from './schema.js';
+import type { ChessBoardType, ChessClockState, ChessGameState, PieceColor, TimeControl } from '@grouchess/models';
 
 export const MS_PER_SECOND = 1000;
 export const MS_PER_MINUTE = 60 * MS_PER_SECOND;
