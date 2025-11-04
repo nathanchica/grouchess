@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import type { Message } from '@grouchess/models';
+import type { ChessGameMessage } from '@grouchess/models';
 import {
     NewMessagePayloadSchema,
     OfferResponsePayloadSchema,
@@ -12,7 +12,7 @@ import invariant from 'tiny-invariant';
 import { useSocket } from './SocketProvider';
 
 type PlayerChatSocketContextType = {
-    messages: Message[];
+    messages: ChessGameMessage[];
     isAwaitingRematchResponse: boolean;
     sendStandardMessage: (content: string) => void;
     sendRematchOffer: () => void;
@@ -38,7 +38,7 @@ const MAX_MESSAGES = 100;
 /**
  * Limits messages to the most recent MAX_MESSAGES entries and sorts them by oldest first.
  */
-function formatMessages(messages: Message[]): Message[] {
+function formatMessages(messages: ChessGameMessage[]): ChessGameMessage[] {
     return [...messages].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).slice(-MAX_MESSAGES);
 }
 
@@ -49,13 +49,13 @@ export function usePlayerChatSocket(): PlayerChatSocketContextType {
 }
 
 type Props = {
-    initialMessages: Message[];
+    initialMessages: ChessGameMessage[];
     children: ReactNode;
 };
 
 function PlayerChatSocketProvider({ initialMessages, children }: Props) {
     const { socket } = useSocket();
-    const [messages, setMessages] = useState<Message[]>(initialMessages);
+    const [messages, setMessages] = useState<ChessGameMessage[]>(initialMessages);
     const [isAwaitingRematchResponse, setIsAwaitingRematchResponse] = useState<boolean>(false);
 
     const sendStandardMessage = useCallback(

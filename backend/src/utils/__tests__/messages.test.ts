@@ -1,5 +1,5 @@
 import type { ChessGameOfferMessage } from '@grouchess/models';
-import { createMockMessage } from '@grouchess/test-utils';
+import { createMockChessGameMessage } from '@grouchess/test-utils';
 
 import { UnauthorizedError } from '../errors.js';
 import { createChessGameSystemMessageContent, updateOfferMessageToOfferResponse } from '../messages.js';
@@ -63,13 +63,13 @@ describe('updateOfferMessageToOfferResponse', () => {
                 expectedContent: 'Draw declined.',
             },
         ])('should handle $scenario a draw offer', ({ accept, expectedType, expectedContent }) => {
-            const offerMessage = createMockMessage({
+            const offerMessage = createMockChessGameMessage({
                 id: 'msg-1',
                 type: 'draw-offer',
                 authorId: offerAuthorId,
                 content: undefined,
             });
-            const otherMessage = createMockMessage({
+            const otherMessage = createMockChessGameMessage({
                 id: 'msg-2',
                 type: 'standard',
                 content: 'Hello',
@@ -115,7 +115,7 @@ describe('updateOfferMessageToOfferResponse', () => {
                 expectedContent: 'Rematch declined.',
             },
         ])('should handle $scenario a rematch offer', ({ accept, expectedType, expectedContent }) => {
-            const offerMessage = createMockMessage({
+            const offerMessage = createMockChessGameMessage({
                 id: 'msg-1',
                 type: 'rematch-offer',
                 authorId: offerAuthorId,
@@ -148,7 +148,7 @@ describe('updateOfferMessageToOfferResponse', () => {
 
     describe('error cases', () => {
         it('should throw UnauthorizedError when player tries to respond to their own offer', () => {
-            const offerMessage = createMockMessage({
+            const offerMessage = createMockChessGameMessage({
                 id: 'msg-1',
                 type: 'draw-offer',
                 authorId: offerAuthorId,
@@ -168,7 +168,7 @@ describe('updateOfferMessageToOfferResponse', () => {
         });
 
         it('should throw error when offer message is not found', () => {
-            const offerMessage = createMockMessage({
+            const offerMessage = createMockChessGameMessage({
                 id: 'msg-1',
                 type: 'draw-offer',
                 authorId: offerAuthorId,
@@ -188,7 +188,7 @@ describe('updateOfferMessageToOfferResponse', () => {
         });
 
         it('should throw error when message type does not match offer type', () => {
-            const offerMessage = createMockMessage({
+            const offerMessage = createMockChessGameMessage({
                 id: 'msg-1',
                 type: 'draw-offer', // Type is draw-offer
                 authorId: offerAuthorId,
@@ -208,7 +208,7 @@ describe('updateOfferMessageToOfferResponse', () => {
         });
 
         it('should throw error for invalid offer message type', () => {
-            const invalidOfferMessage = createMockMessage({
+            const invalidOfferMessage = createMockChessGameMessage({
                 id: 'msg-1',
                 type: 'chat' as ChessGameOfferMessage, // Invalid offer type
                 authorId: offerAuthorId,
@@ -230,14 +230,14 @@ describe('updateOfferMessageToOfferResponse', () => {
 
     describe('multiple messages', () => {
         it('should only update the target offer message and leave other messages unchanged', () => {
-            const message1 = createMockMessage({ id: 'msg-1', type: 'standard', content: 'Hi' });
-            const offerMessage = createMockMessage({
+            const message1 = createMockChessGameMessage({ id: 'msg-1', type: 'standard', content: 'Hi' });
+            const offerMessage = createMockChessGameMessage({
                 id: 'msg-2',
                 type: 'draw-offer',
                 authorId: offerAuthorId,
                 content: undefined,
             });
-            const message3 = createMockMessage({ id: 'msg-3', type: 'standard', content: 'Bye' });
+            const message3 = createMockChessGameMessage({ id: 'msg-3', type: 'standard', content: 'Bye' });
             const messages = [message1, offerMessage, message3];
 
             const result = updateOfferMessageToOfferResponse({

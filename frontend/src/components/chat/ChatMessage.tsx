@@ -1,5 +1,5 @@
 import { isOfferMessageType, isOfferResponseMessageType } from '@grouchess/game-room';
-import type { Message } from '@grouchess/models';
+import type { ChessGameMessage } from '@grouchess/models';
 
 type OfferResponseActionProps = {
     onAccept: () => void;
@@ -20,7 +20,7 @@ function formatTime(date: Date): string {
 }
 
 type Props = {
-    message: Message;
+    message: ChessGameMessage;
     currentPlayerId: string;
     onDrawAccept: () => void;
     onDrawDecline: () => void;

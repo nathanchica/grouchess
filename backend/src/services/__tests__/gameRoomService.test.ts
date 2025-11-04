@@ -1,4 +1,4 @@
-import type { ChessGameRoom, Message, Player } from '@grouchess/models';
+import type { ChessGameRoom, ChessGameMessage, Player } from '@grouchess/models';
 import { createMockPlayer, createMockTimeControl, createMockChessGameState } from '@grouchess/test-utils';
 
 import { GameRoomIsFullError, UnauthorizedError } from '../../utils/errors.js';
@@ -168,7 +168,7 @@ describe('GameRoomService.getOffersForGameRoom', () => {
         });
 
         const offers = service.getOffersForGameRoom(room.id);
-        offers!['draw-offer'] = { id: 'msg-1' } as Message;
+        offers!['draw-offer'] = { id: 'msg-1' } as ChessGameMessage;
 
         const offersAgain = service.getOffersForGameRoom(room.id);
         expect(offersAgain!['draw-offer']).toBeNull();
@@ -301,7 +301,7 @@ describe('GameRoomService.addMessageToGameRoom', () => {
         });
 
         // Add 102 messages (MAX_MESSAGES_PER_ROOM is 100)
-        const messages: Message[] = [];
+        const messages: ChessGameMessage[] = [];
         for (let i = 0; i < 102; i++) {
             messages.push(service.addMessageToGameRoom(room.id, 'standard', 'p1', `Message ${i}`));
         }

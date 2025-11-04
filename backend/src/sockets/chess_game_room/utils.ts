@@ -1,5 +1,5 @@
 import { computeGameStateBasedOnClock } from '@grouchess/chess-clocks';
-import type { ChessClockState, ChessGameState, Message, ChessGameMessageType } from '@grouchess/models';
+import type { ChessClockState, ChessGameState, ChessGameMessage, ChessGameMessageType } from '@grouchess/models';
 import { type ChessGameRoomClientToServerInput } from '@grouchess/socket-events';
 import * as z from 'zod';
 
@@ -57,10 +57,10 @@ export function createEndChessGameEvent({ services, io, roomId, targets }: Handl
  * Creates a function to create a new message and emit a `new_message` payload to everyone in the game room.
  */
 export function createSendNewMessageEvent(context: HandlerBaseContext) {
-    return (messageType: ChessGameMessageType, content?: Message['content']) => {
+    return (messageType: ChessGameMessageType, content?: ChessGameMessage['content']) => {
         const { io, targets, services, roomId, playerId } = context;
         const { gameRoomService } = services;
-        const message: Message = gameRoomService.addMessageToGameRoom(roomId, messageType, playerId, content);
+        const message: ChessGameMessage = gameRoomService.addMessageToGameRoom(roomId, messageType, playerId, content);
         io.to(targets.gameRoom).emit('new_message', { message });
     };
 }

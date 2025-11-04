@@ -5,7 +5,7 @@ import type {
     ChessGameRoom,
     ChessGameState,
     ChessGameOfferMessage,
-    Message,
+    ChessGameMessage,
     PieceColor,
     Player,
 } from '@grouchess/models';
@@ -19,7 +19,7 @@ import { createChessGameSystemMessageContent, updateOfferMessageToOfferResponse 
 const MESSAGE_ID_LENGTH = 12;
 const MAX_ID_GEN_RETRIES = 10;
 
-type ChessGameOffers = Record<ChessGameOfferMessage, Message | null>;
+type ChessGameOffers = Record<ChessGameOfferMessage, ChessGameMessage | null>;
 
 export class GameRoomService {
     private gameRoomIdToGameRoom: Map<ChessGameRoom['id'], ChessGameRoom> = new Map();
@@ -56,7 +56,7 @@ export class GameRoomService {
         return id;
     }
 
-    private createMessageId(roomId: ChessGameRoom['id']): Message['id'] {
+    private createMessageId(roomId: ChessGameRoom['id']): ChessGameMessage['id'] {
         const gameRoom = this.getMutableGameRoomById(roomId);
         const existingIds = new Set(gameRoom.messages.map((msg) => msg.id));
         return generateUniqueMessageId(existingIds, { length: MESSAGE_ID_LENGTH, maxAttempts: MAX_ID_GEN_RETRIES });
@@ -67,7 +67,7 @@ export class GameRoomService {
         playerId: string,
         offerMessageType: ChessGameOfferMessage,
         accept: boolean
-    ): Message {
+    ): ChessGameMessage {
         const gameRoom = this.getMutableGameRoomById(roomId);
         const gameRoomOffers = this.getMutableOffersByRoomId(roomId);
 
@@ -141,10 +141,10 @@ export class GameRoomService {
 
     addMessageToGameRoom(
         roomId: string,
-        messageType: Message['type'],
+        messageType: ChessGameMessage['type'],
         authorId: Player['id'],
         content?: string
-    ): Message {
+    ): ChessGameMessage {
         const gameRoom = this.getMutableGameRoomById(roomId);
 
         if (isOfferResponseMessageType(messageType)) {
@@ -156,7 +156,7 @@ export class GameRoomService {
                 ? content
                 : createChessGameSystemMessageContent(messageType, gameRoom.playerIdToDisplayName[authorId]);
 
-        const message: Message = {
+        const message: ChessGameMessage = {
             id: this.createMessageId(roomId),
             type: messageType,
             authorId,
@@ -244,19 +244,19 @@ export class GameRoomService {
         this.gameRoomIdToGameRoom.set(roomId, gameRoom);
     }
 
-    declineDraw(roomId: string, playerId: string): Message {
+    declineDraw(roomId: string, playerId: string): ChessGameMessage {
         return this.respondToOffer(roomId, playerId, 'draw-offer', false);
     }
 
-    acceptDraw(roomId: string, playerId: string): Message {
+    acceptDraw(roomId: string, playerId: string): ChessGameMessage {
         return this.respondToOffer(roomId, playerId, 'draw-offer', true);
     }
 
-    declineRematch(roomId: string, playerId: string): Message {
+    declineRematch(roomId: string, playerId: string): ChessGameMessage {
         return this.respondToOffer(roomId, playerId, 'rematch-offer', false);
     }
 
-    acceptRematch(roomId: string, playerId: string): Message {
+    acceptRematch(roomId: string, playerId: string): ChessGameMessage {
         return this.respondToOffer(roomId, playerId, 'rematch-offer', true);
     }
 

@@ -4,8 +4,8 @@ import {
     ChessGameRoomSchema,
     ChessGameStatusEnum,
     MAX_MESSAGE_LENGTH,
-    MessageTypeEnum,
-    MessageSchema,
+    ChessGameMessageTypeEnum,
+    ChessGameMessageSchema,
     PawnPromotionEnum,
     PieceColorEnum,
 } from '@grouchess/models';
@@ -24,13 +24,13 @@ export const PieceMovedPayloadSchema = MovePieceInputSchema;
 export type PieceMovedPayload = z.infer<typeof PieceMovedPayloadSchema>;
 
 export const SendMessageInputSchema = z.object({
-    type: MessageTypeEnum,
+    type: z.literal(ChessGameMessageTypeEnum.enum.standard),
     content: z.string().max(MAX_MESSAGE_LENGTH).optional(),
 });
 export type SendMessageInput = z.infer<typeof SendMessageInputSchema>;
 
 // Coerce Date fields coming over the wire as ISO strings
-const SocketMessageSchema = MessageSchema.extend({
+const SocketMessageSchema = ChessGameMessageSchema.extend({
     createdAt: z.coerce.date(),
 });
 

@@ -25,10 +25,10 @@ describe('createMockMessage', () => {
 
     it('should apply custom type', () => {
         const message = createMockMessage({
-            type: 'draw-offer',
+            type: 'rematch-offer',
         });
 
-        expect(message.type).toBe('draw-offer');
+        expect(message.type).toBe('rematch-offer');
     });
 
     it('should apply custom authorId', () => {
@@ -83,9 +83,6 @@ describe('createMockMessage', () => {
 
     it.each([
         { type: 'standard' as const },
-        { type: 'draw-offer' as const },
-        { type: 'draw-accept' as const },
-        { type: 'draw-decline' as const },
         { type: 'rematch-offer' as const },
         { type: 'rematch-accept' as const },
         { type: 'rematch-decline' as const },
@@ -97,26 +94,6 @@ describe('createMockMessage', () => {
         expect(message.type).toBe(type);
     });
 
-    it('should create draw offer message', () => {
-        const message = createMockMessage({
-            type: 'draw-offer',
-            content: undefined,
-        });
-
-        expect(message.type).toBe('draw-offer');
-        expect(message.content).toBeUndefined();
-    });
-
-    it('should create draw accept message', () => {
-        const message = createMockMessage({
-            type: 'draw-accept',
-            content: 'Draw accepted.',
-        });
-
-        expect(message.type).toBe('draw-accept');
-        expect(message.content).toBe('Draw accepted.');
-    });
-
     it('should create rematch offer message', () => {
         const message = createMockMessage({
             type: 'rematch-offer',
@@ -125,6 +102,16 @@ describe('createMockMessage', () => {
 
         expect(message.type).toBe('rematch-offer');
         expect(message.content).toBeUndefined();
+    });
+
+    it('should create rematch accept message', () => {
+        const message = createMockMessage({
+            type: 'rematch-accept',
+            content: 'Rematch accepted.',
+        });
+
+        expect(message.type).toBe('rematch-accept');
+        expect(message.content).toBe('Rematch accepted.');
     });
 
     it('should create player left system message', () => {
@@ -191,9 +178,9 @@ describe('createMockMessage', () => {
             }),
             createMockMessage({
                 id: '3',
-                type: 'draw-offer',
+                type: 'player-left-room',
                 authorId: 'alice',
-                content: undefined,
+                content: 'Alice has left the room.',
                 createdAt: new Date('2024-01-01T10:05:00.000Z'),
             }),
         ];
@@ -201,6 +188,6 @@ describe('createMockMessage', () => {
         expect(messages).toHaveLength(3);
         expect(messages[0].content).toBe('Good luck!');
         expect(messages[1].content).toBe('Thanks, you too!');
-        expect(messages[2].type).toBe('draw-offer');
+        expect(messages[2].type).toBe('player-left-room');
     });
 });
