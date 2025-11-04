@@ -3,11 +3,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
-
-const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+import { playwright } from '@vitest/browser-playwright';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import svgr from 'vite-plugin-svgr';
 
 const resolvePackageAliases = (): Record<string, string> => {
-    const packagesDirUrl = new URL('./packages/', import.meta.url);
+    const packagesDirUrl = new URL('../packages/', import.meta.url);
     const packagesDir = fileURLToPath(packagesDirUrl);
     const aliases: Record<string, string> = {};
 
@@ -47,28 +49,34 @@ const findSourceEntry = (packageDirPath: string): string | null => {
 };
 
 export default defineConfig({
-    root: projectRoot,
+    plugins: [react(), tailwindcss(), svgr()],
+    optimizeDeps: {
+        include: [
+            'react',
+            'react-dom',
+            'react-dom/client',
+            '@sentry/react',
+            'react-error-boundary',
+            'react-router',
+            'socket.io-client',
+        ],
+    },
     test: {
-        environment: 'node',
-        pool: 'threads',
         globals: true,
-        include: ['**/__tests__/**/*.test.ts', 'backend/**/*.test.ts'],
-        exclude: ['frontend/**', '**/node_modules/**'],
+        setupFiles: ['./vitest.setup.ts'],
+        include: ['**/__tests__/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
             reportsDirectory: './coverage',
-            exclude: [
-                'packages/chess/src/index.ts',
-                'packages/chess-clocks/src/index.ts',
-                'packages/errors/src/index.ts',
-                'packages/game-room/src/index.ts',
-                'packages/http-schemas/src/index.ts',
-                'packages/models/src/index.ts',
-                'packages/test-utils/src/index.ts',
-            ],
+            include: ['src/**/*.{ts,tsx}'],
+            exclude: ['src/main.tsx', 'src/**/*.d.ts'],
         },
-        setupFiles: ['./backend/vitest.setup.ts'],
+        browser: {
+            provider: playwright(),
+            enabled: true,
+            instances: [{ browser: 'chromium' }],
+        },
     },
     resolve: {
         alias: resolvePackageAliases(),

@@ -19,3 +19,12 @@
 - Backend tests HTTP routes using supertest, Express app is created via createApp() function from backend/src/app.ts
 - Use mock data factories from `@grouchess/test-utils` where applicable.
     - See ./packages/test-utils/README.md for available factories and usage examples.
+
+### Frontend Testing
+
+- Use vitest along with vitest-browser-react (browser mode) for testing React components
+- Focus on behavior and user experience rather than implementation details
+    - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
+    - Test user interactions (clicks, typing, etc.) and their effects on the component state and UI
+    - Test edge cases and error states
+    - Avoid testing internal implementation details (e.g., internal state variables, CSS, etc.)
