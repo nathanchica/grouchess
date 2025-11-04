@@ -1,4 +1,4 @@
-import { TimeControlSchema } from '@grouchess/game-room';
+import { TimeControlSchema } from '@grouchess/models';
 import * as z from 'zod';
 
 export const GetTimeControlOptionsResponseSchema = z.object({

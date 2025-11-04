@@ -279,15 +279,9 @@ importers:
 
   packages/http-schemas:
     dependencies:
-      '@grouchess/chess':
+      '@grouchess/models':
         specifier: workspace:*
-        version: link:../chess
-      '@grouchess/chess-clocks':
-        specifier: workspace:*
-        version: link:../chess-clocks
-      '@grouchess/game-room':
-        specifier: workspace:*
-        version: link:../game-room
+        version: link:../models
       zod:
         specifier: ^4.1.12
         version: 4.1.12

@@ -26,9 +26,7 @@
         "typescript": "^5.9.3"
     },
     "dependencies": {
-        "@grouchess/chess": "workspace:*",
-        "@grouchess/chess-clocks": "workspace:*",
-        "@grouchess/game-room": "workspace:*",
+        "@grouchess/models": "workspace:*",
         "zod": "^4.1.12"
     }
 }

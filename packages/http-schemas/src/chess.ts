@@ -1,12 +1,13 @@
-import { ChessGameSchema, PieceColorEnum } from '@grouchess/chess';
-import { ChessClockStateSchema } from '@grouchess/chess-clocks';
 import {
+    ChessClockStateSchema,
     ChessGameRoomSchema,
+    ChessGameSchema,
     MessageSchema,
+    PieceColorEnum,
     PlayerSchema,
     RoomTypeEnum,
     TimeControlSchema,
-} from '@grouchess/game-room';
+} from '@grouchess/models';
 import * as z from 'zod';
 
 export const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
