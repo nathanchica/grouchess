@@ -1,6 +1,6 @@
 import type { Player, PlayerStatus } from '@grouchess/models';
 
-import { generateId } from '../utils/generateId.js';
+import { generateUniqueMessageId } from '../utils/generateId.js';
 
 export class PlayerService {
     private playerIdToPlayer: Map<Player['id'], Player> = new Map();
@@ -16,10 +16,8 @@ export class PlayerService {
     }
 
     createPlayer(displayName: Player['displayName']): Player {
-        let id = generateId();
-        while (this.playerIdToPlayer.has(id)) {
-            id = generateId();
-        }
+        const existingIds = new Set(this.playerIdToPlayer.keys());
+        const id = generateUniqueMessageId(existingIds);
         const player: Player = { id, displayName, status: 'offline' };
         this.playerIdToPlayer.set(id, player);
         this.playerIdToStatus.set(id, 'offline');
