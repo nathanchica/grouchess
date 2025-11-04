@@ -1,10 +1,5 @@
 import { isDrawStatus } from '@grouchess/chess';
-import {
-    getOfferResponseTypes,
-    getChessOfferResponseContent,
-    isOfferMessageType,
-    isOfferResponseMessageType,
-} from '@grouchess/game-room';
+import { isOfferMessageType, isOfferResponseMessageType } from '@grouchess/game-room';
 import { MAX_MESSAGES_PER_ROOM } from '@grouchess/models';
 import type {
     ChessGameRoom,
@@ -17,8 +12,9 @@ import type {
 
 import { CreateGameRoomInput } from './gameRoomService.schemas.js';
 
-import { GameRoomIsFullError, UnauthorizedError } from '../utils/errors.js';
-import { generateId } from '../utils/generateId.js';
+import { GameRoomIsFullError } from '../utils/errors.js';
+import { generateUniqueMessageId } from '../utils/generateId.js';
+import { createChessGameSystemMessageContent, updateOfferMessageToOfferResponse } from '../utils/messages.js';
 
 const MESSAGE_ID_LENGTH = 12;
 const MAX_ID_GEN_RETRIES = 10;
@@ -39,6 +35,8 @@ export class GameRoomService {
 
     private getMutableOffersByRoomId(roomId: string): ChessGameOffers {
         const offers = this.gameRoomIdToPlayerOffers.get(roomId);
+        // Defensive check, should never happen since we always initialize offers when creating a room
+        /* v8 ignore next -- @preserve */
         if (!offers) {
             throw new Error('Game room offers not found');
         }
@@ -52,17 +50,16 @@ export class GameRoomService {
         };
     }
 
-    private generateUniqueMessageId(existingIds: Set<string>): string {
-        let id: string;
-        let attempts = 0;
-        do {
-            id = generateId(MESSAGE_ID_LENGTH);
-            attempts++;
-        } while (existingIds.has(id) && attempts < MAX_ID_GEN_RETRIES);
-        if (existingIds.has(id)) {
-            throw new Error('Failed to generate a unique message ID after maximum retries');
-        }
+    private createGameRoomId(): ChessGameRoom['id'] {
+        const existingIds = new Set(this.gameRoomIdToGameRoom.keys());
+        let id = generateUniqueMessageId(existingIds);
         return id;
+    }
+
+    private createMessageId(roomId: ChessGameRoom['id']): Message['id'] {
+        const gameRoom = this.getMutableGameRoomById(roomId);
+        const existingIds = new Set(gameRoom.messages.map((msg) => msg.id));
+        return generateUniqueMessageId(existingIds, { length: MESSAGE_ID_LENGTH, maxAttempts: MAX_ID_GEN_RETRIES });
     }
 
     private respondToOffer(
@@ -81,41 +78,25 @@ export class GameRoomService {
         }
         const { id: messageId } = offerMessage;
 
-        let newMessage: Message | null = null;
-        gameRoom.messages = messages.map((message) => {
-            if (message.id !== messageId) return message;
-            if (message.authorId === playerId) throw new UnauthorizedError('Player cannot respond to their own offer');
-            if (message.type !== offerMessageType) return message;
-            const responseTypes = getOfferResponseTypes(offerMessageType);
-            if (!responseTypes) {
-                throw new Error('Invalid offer message type');
-            }
-            const newMessageType = responseTypes[accept ? 'accept' : 'decline'];
-            newMessage = {
-                ...message,
-                type: newMessageType,
-                content: getChessOfferResponseContent(newMessageType),
-            };
-            return newMessage;
+        const { messages: updatedMessages, responseMessage } = updateOfferMessageToOfferResponse({
+            messages,
+            offerType: offerMessageType,
+            offerMessageId: messageId,
+            respondingPlayerId: playerId,
+            accept,
         });
 
-        if (!newMessage) {
-            throw new Error('Failed to find and respond to the offer message');
-        }
-
+        gameRoom.messages = updatedMessages;
         this.gameRoomIdToGameRoom.set(roomId, gameRoom);
 
         gameRoomOffers[offerMessageType] = null;
-
         this.gameRoomIdToPlayerOffers.set(roomId, gameRoomOffers);
-        return newMessage;
+
+        return responseMessage;
     }
 
     createGameRoom({ timeControl, roomType, creator, creatorColorInput }: CreateGameRoomInput): ChessGameRoom {
-        let id = generateId();
-        while (this.gameRoomIdToGameRoom.has(id)) {
-            id = generateId();
-        }
+        const id = this.createGameRoomId();
 
         const creatorColor = creatorColorInput ?? (Math.random() < 0.5 ? 'white' : 'black');
         const gameRoom: ChessGameRoom = {
@@ -166,22 +147,17 @@ export class GameRoomService {
     ): Message {
         const gameRoom = this.getMutableGameRoomById(roomId);
 
-        let contentValue = content;
-        if (messageType === 'draw-offer') {
-            contentValue = `${gameRoom.playerIdToDisplayName[authorId]} is offering a draw...`;
-        } else if (messageType === 'rematch-offer') {
-            contentValue = `${gameRoom.playerIdToDisplayName[authorId]} is offering a rematch...`;
-        } else if (isOfferResponseMessageType(messageType)) {
-            contentValue = getChessOfferResponseContent(messageType);
-        } else if (messageType === 'player-left-room') {
-            contentValue = `${gameRoom.playerIdToDisplayName[authorId]} has left the room.`;
-        } else if (messageType === 'player-rejoined-room') {
-            contentValue = `${gameRoom.playerIdToDisplayName[authorId]} has rejoined the room.`;
+        if (isOfferResponseMessageType(messageType)) {
+            throw new Error('Cannot directly add an offer response message. Must use respondToOffer method.');
         }
 
-        const existingIds = new Set(gameRoom.messages.map((msg) => msg.id));
+        const contentValue =
+            messageType === 'standard'
+                ? content
+                : createChessGameSystemMessageContent(messageType, gameRoom.playerIdToDisplayName[authorId]);
+
         const message: Message = {
-            id: this.generateUniqueMessageId(existingIds),
+            id: this.createMessageId(roomId),
             type: messageType,
             authorId,
             content: contentValue,
