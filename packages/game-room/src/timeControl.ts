@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import { TimeControl } from '@grouchess/models';
 
 export const SUPPORTED_TIME_CONTROLS: TimeControl[] = [
     { alias: '1|0', minutes: 1, increment: 0, displayText: '1 min' },
@@ -24,14 +24,3 @@ export function getTimeControlByAlias(alias: string): TimeControl | null {
 export function isValidTimeControlAlias(alias: string): boolean {
     return Object.hasOwn(timeControlByAlias, alias);
 }
-
-export const TimeControlSchema = z.object({
-    alias: z.string().refine((alias) => isValidTimeControlAlias(alias), {
-        message: 'Invalid time control alias',
-    }),
-    minutes: z.number().int().nonnegative(),
-    increment: z.number().int().nonnegative(),
-    displayText: z.string(),
-    mode: z.literal('fischer').optional(),
-});
-export type TimeControl = z.infer<typeof TimeControlSchema>;
