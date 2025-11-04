@@ -53,7 +53,7 @@ vi.mock('@grouchess/http-schemas', async (importOriginal) => {
     };
 });
 
-const ZodError = z.ZodError;
+const { ZodError } = z;
 
 describe('GET /room/:roomId', () => {
     afterEach(() => {
@@ -175,6 +175,23 @@ describe('GET /room/:roomId/chess-game', () => {
 
         expect(response.status).toBe(401);
         expect(response.body).toEqual({ error: 'Invalid or expired token' });
+    });
+
+    it('returns 500 when tokenService throws an error', async () => {
+        const unexpectedError = new Error('Token verification failed');
+        vi.spyOn(tokenService, 'verify').mockImplementation(() => {
+            throw unexpectedError;
+        });
+
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const response = await request(createApp())
+            .get(`/room/${mockRoomId}/chess-game`)
+            .set('Authorization', `Bearer ${validToken}`);
+
+        expect(response.status).toBe(500);
+        expect(response.body).toEqual({ error: 'Authentication failed' });
+        expect(errorSpy).toHaveBeenCalledWith('Request authentication error:', unexpectedError);
     });
 
     it('returns 403 when token is for a different room', async () => {

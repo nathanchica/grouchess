@@ -22,14 +22,6 @@ export class GameNotStartedError extends Error {
     }
 }
 
-export class InvalidInputError extends Error {
-    constructor(message: string) {
-        super(`Invalid input: ${message}`);
-        this.name = 'InvalidInputError';
-        Object.setPrototypeOf(this, InvalidInputError.prototype);
-    }
-}
-
 export class UnauthorizedError extends Error {
     constructor(message: string) {
         super(message);
