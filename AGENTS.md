@@ -58,7 +58,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             it('is accessible', async () => {
                 const { getByRole, getByLabelText } = render(
                     <Modal isOpen={true} title="Settings">
-                    <SettingsForm />
+                        <SettingsForm />
                     </Modal>
                 )
 
