@@ -6,7 +6,7 @@ type PlayOptions = {
     playbackRate?: number;
 };
 
-type SoundContextValue = {
+export type SoundContextValue = {
     play: (sound: SoundName, options?: PlayOptions) => void;
     enabled: boolean;
     setEnabled: (nextEnabled: boolean) => void;
@@ -85,7 +85,7 @@ const buildInitialPools = (): AudioPoolMap => {
     }, {});
 };
 
-const SoundContext = createContext<SoundContextValue | null>(null);
+export const SoundContext = createContext<SoundContextValue | null>(null);
 
 export function useSound(): SoundContextValue {
     const context = useContext(SoundContext);

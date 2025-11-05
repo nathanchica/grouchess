@@ -2,14 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import invariant from 'tiny-invariant';
 
-type ClockTickContextType = {
+export type ClockTickContextType = {
     nowMs: number;
     start: () => void;
     stop: () => void;
     isRunning: boolean;
 };
 
-const ClockTickContext = createContext<ClockTickContextType | null>(null);
+export const ClockTickContext = createContext<ClockTickContextType | null>(null);
 
 export function useClockTick(): ClockTickContextType {
     const context = useContext(ClockTickContext);

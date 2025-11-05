@@ -11,7 +11,7 @@ import invariant from 'tiny-invariant';
 
 import { useSocket } from './SocketProvider';
 
-type PlayerChatSocketContextType = {
+export type PlayerChatSocketContextType = {
     messages: ChessGameMessage[];
     isAwaitingRematchResponse: boolean;
     sendStandardMessage: (content: string) => void;
@@ -22,16 +22,7 @@ type PlayerChatSocketContextType = {
     declineRematchOffer: () => void;
 };
 
-const PlayerChatSocketContext = createContext<PlayerChatSocketContextType>({
-    messages: [],
-    isAwaitingRematchResponse: false,
-    sendStandardMessage: () => {},
-    sendRematchOffer: () => {},
-    acceptDrawOffer: () => {},
-    declineDrawOffer: () => {},
-    acceptRematchOffer: () => {},
-    declineRematchOffer: () => {},
-});
+export const PlayerChatSocketContext = createContext<PlayerChatSocketContextType | null>(null);
 
 const MAX_MESSAGES = 100;
 
