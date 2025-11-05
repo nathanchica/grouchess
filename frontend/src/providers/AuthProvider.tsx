@@ -8,20 +8,12 @@ type AuthData = {
     token: string | null;
 };
 
-type AuthContextType = AuthData & {
+export type AuthContextType = AuthData & {
     loadData: (authData: AuthData) => void;
     clearAuth: () => void;
 };
 
-export const defaultAuthContextValue: AuthContextType = {
-    roomId: null,
-    playerId: null,
-    token: null,
-    loadData: () => {},
-    clearAuth: () => {},
-};
-
-const AuthContext = createContext<AuthContextType>(defaultAuthContextValue);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function useAuth() {
     const context = useContext(AuthContext);

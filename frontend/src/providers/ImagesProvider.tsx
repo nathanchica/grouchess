@@ -4,7 +4,7 @@ import invariant from 'tiny-invariant';
 
 import { preloadToObjectURLs, decodeImage, type ImgSrcMap } from '../utils/preload';
 
-type ImageContextType = {
+export type ImageContextType = {
     imgSrcMap: ImgSrcMap;
     isReady: boolean;
 };
@@ -14,7 +14,7 @@ export const defaultImageContextValue: ImageContextType = {
     isReady: false,
 };
 
-const ImageContext = createContext<ImageContextType>(defaultImageContextValue);
+const ImageContext = createContext<ImageContextType | null>(null);
 
 export const useImages = (): ImageContextType => {
     const context = useContext(ImageContext);

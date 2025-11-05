@@ -5,21 +5,14 @@ import invariant from 'tiny-invariant';
 
 import { socket, type SocketType } from '../socket';
 
-type SocketContextType = {
+export type SocketContextType = {
     socket: SocketType;
     authenticateSocket: (token: string, onAuthenticated?: ({ playerId }: { playerId: string }) => void) => void;
     isConnected: boolean;
     isAuthenticated: boolean;
 };
 
-export const defaultSocketContextValue: SocketContextType = {
-    socket,
-    authenticateSocket: () => {},
-    isConnected: false,
-    isAuthenticated: false,
-};
-
-const SocketContext = createContext<SocketContextType>(defaultSocketContextValue);
+const SocketContext = createContext<SocketContextType | null>(null);
 
 export function useSocket() {
     const context = useContext(SocketContext);

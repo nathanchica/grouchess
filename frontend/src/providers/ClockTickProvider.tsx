@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import invariant from 'tiny-invariant';
 
-type ClockTickContextType = {
+export type ClockTickContextType = {
     nowMs: number;
     start: () => void;
     stop: () => void;

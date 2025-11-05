@@ -6,7 +6,7 @@ type PlayOptions = {
     playbackRate?: number;
 };
 
-type SoundContextValue = {
+export type SoundContextValue = {
     play: (sound: SoundName, options?: PlayOptions) => void;
     enabled: boolean;
     setEnabled: (nextEnabled: boolean) => void;

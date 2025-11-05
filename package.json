@@ -34,7 +34,7 @@
         "test:run": "pnpm test:run:node && pnpm test:browser",
         "test:node": "vitest run --coverage",
         "test:run:node": "vitest run",
-        "test:browser": "pnpm --filter frontend test",
+        "test:browser": "pnpm --filter frontend test:run",
         "test:watch:browser": "pnpm --filter frontend test:watch",
         "scaffold-package": "node scripts/scaffold-package.js",
         "prepare": "husky || true"
