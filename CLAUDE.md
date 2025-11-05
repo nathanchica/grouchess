@@ -132,3 +132,32 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     it('calls validateEmail function');
     it('sets isSubmitting state to true');
     ```
+
+- Use `vi.stubEnv` to mock environment variables when needed
+- Mocking fetches:
+
+    ```ts
+    import type { Mock } from 'vitest';
+
+    let fetchSpy: Mock<typeof fetch>;
+
+    beforeEach(() => {
+        fetchSpy = vi.spyOn(window, 'fetch');
+    });
+
+    afterEach(() => {
+        fetchSpy.mockRestore();
+    });
+
+    it('fetches data successfully', async () => {
+        fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ data: 'test' }), { status: 200 }));
+
+        // ...test implementation
+    });
+
+    it('handles fetch error', async () => {
+        fetchSpy.mockRejectedValueOnce(new Error('Network error'));
+
+        // ...test implementation
+    });
+    ```
