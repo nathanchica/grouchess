@@ -66,6 +66,14 @@ Run both frontend and backend servers:
 pnpm dev
 ```
 
+Run tests:
+
+```bash
+pnpm test                   # runs all tests with coverage report
+pnpm test:run               # runs all tests without coverage report
+pnpm test:watch:browser     # runs frontend browser tests in watch mode (see isolated components in a browser)
+```
+
 ## File Structure
 
 ```

@@ -31,10 +31,11 @@
         "typecheck:packages": "pnpm --filter \"./packages/*\" typecheck",
         "typecheck:chess": "pnpm --filter @grouchess/chess typecheck",
         "test": "pnpm test:node && pnpm test:browser",
-        "test:run": "pnpm test:run:node && pnpm test:browser",
+        "test:run": "pnpm test:run:node && pnpm test:run:browser",
         "test:node": "vitest run --coverage",
         "test:run:node": "vitest run",
-        "test:browser": "pnpm --filter frontend test:run",
+        "test:run:browser": "pnpm --filter frontend test:run",
+        "test:browser": "pnpm --filter frontend test",
         "test:watch:browser": "pnpm --filter frontend test:watch",
         "scaffold-package": "node scripts/scaffold-package.js",
         "prepare": "husky || true"

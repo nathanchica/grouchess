@@ -4,6 +4,9 @@ type Props = {
 };
 
 /**
+ * Decorative spinner component with light and dark variants and three sizes.
+ * Should use role="status" on a parent element to indicate loading state to screen readers.
+ *
  * From https://flowbite.com/docs/components/spinner/
  */
 function Spinner({ variant = 'light', size = 'sm' }: Props) {
@@ -19,7 +22,6 @@ function Spinner({ variant = 'light', size = 'sm' }: Props) {
     return (
         <svg
             aria-hidden="true"
-            role="status"
             className={`inline ${sizeVariants[size]} ${colorVariants[variant]} animate-spin`}
             viewBox="0 0 100 101"
             fill="none"
