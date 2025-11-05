@@ -22,7 +22,7 @@ export type PlayerChatSocketContextType = {
     declineRematchOffer: () => void;
 };
 
-const PlayerChatSocketContext = createContext<PlayerChatSocketContextType | null>(null);
+export const PlayerChatSocketContext = createContext<PlayerChatSocketContextType | null>(null);
 
 const MAX_MESSAGES = 100;
 

@@ -12,7 +12,7 @@ export type SocketContextType = {
     isAuthenticated: boolean;
 };
 
-const SocketContext = createContext<SocketContextType | null>(null);
+export const SocketContext = createContext<SocketContextType | null>(null);
 
 export function useSocket() {
     const context = useContext(SocketContext);

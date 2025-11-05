@@ -89,26 +89,33 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, etc.)
 
-- There are mock providers available for common contexts used in the frontend
+- There are mock context value factories available for common contexts used in the frontend
     - These can be found in the `__mocks__` directories next to the corresponding providers
-    - Use these mocks to easily set up context values for testing components that rely on those contexts
+    - To test components that depend on context, wrap them in the Provider with mock values
+    - Context objects are exported from their respective provider files
     - example:
 
         ```ts
-        import { usePlayerChatSocket } from '../../../providers/PlayerChatSocketProvider';
+        import { PlayerChatSocketContext } from '../../../providers/PlayerChatSocketProvider';
+        import { createMockPlayerChatSocketContextValues } from '../../../providers/__mocks__/PlayerChatSocketProvider';
 
-        vi.mock('../../../providers/PlayerChatSocketProvider', async (importOriginal) => {
-            const originalModule = await importOriginal<typeof import('../../../providers/PlayerChatSocketProvider')>();
-            return {
-                ...originalModule,
-                usePlayerChatSocket: vi.fn(),
-            };
-        });
-
-        const createUsePlayerChatSocketMock = (overrides = {}) => {
-            const contextValues = createMockPlayerChatSocketContextValues(overrides);
-            return vi.mocked(usePlayerChatSocket).mockReturnValue(contextValues);
+        const renderPlayerChatPanel = ({ propOverrides = {}, contextOverrides = {} } = {}) => {
+            const contextValue = createMockPlayerChatSocketContextValues(contextOverrides);
+            return render(
+                <PlayerChatSocketContext.Provider value={contextValue}>
+                    <PlayerChatPanel {...defaultProps} {...propOverrides} />
+                </PlayerChatSocketContext.Provider>
+            );
         };
+
+        // Usage in tests:
+        it('sends message when Enter key is pressed', async () => {
+            const sendStandardMessage = vi.fn();
+            await renderPlayerChatPanel({
+                contextOverrides: { sendStandardMessage }
+            });
+            // ... test implementation
+        });
         ```
 
 - Use meaningful test descriptions that explain the expected behavior, not implementation details:

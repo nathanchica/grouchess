@@ -9,7 +9,7 @@ export type ClockTickContextType = {
     isRunning: boolean;
 };
 
-const ClockTickContext = createContext<ClockTickContextType | null>(null);
+export const ClockTickContext = createContext<ClockTickContextType | null>(null);
 
 export function useClockTick(): ClockTickContextType {
     const context = useContext(ClockTickContext);

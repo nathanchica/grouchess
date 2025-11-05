@@ -2,40 +2,27 @@ import { createMockChessGameMessage } from '@grouchess/test-utils';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
-import { usePlayerChatSocket } from '../../../providers/PlayerChatSocketProvider';
+import { PlayerChatSocketContext } from '../../../providers/PlayerChatSocketProvider';
 import { createMockPlayerChatSocketContextValues } from '../../../providers/__mocks__/PlayerChatSocketProvider';
 import PlayerChatPanel from '../PlayerChatPanel';
-
-vi.mock('../../../providers/PlayerChatSocketProvider', async (importOriginal) => {
-    const originalModule = await importOriginal<typeof import('../../../providers/PlayerChatSocketProvider')>();
-    return {
-        ...originalModule,
-        usePlayerChatSocket: vi.fn(),
-    };
-});
-
-const createUsePlayerChatSocketMock = (overrides = {}) => {
-    const contextValues = createMockPlayerChatSocketContextValues(overrides);
-    return vi.mocked(usePlayerChatSocket).mockReturnValue(contextValues);
-};
 
 const defaultProps = {
     currentPlayerId: 'player-1',
 };
 
-beforeEach(() => {
-    createUsePlayerChatSocketMock();
-});
-
-afterEach(() => {
-    vi.clearAllMocks();
-});
+const renderPlayerChatPanel = ({ propOverrides = {}, contextOverrides = {} } = {}) => {
+    const contextValue = createMockPlayerChatSocketContextValues(contextOverrides);
+    return render(
+        <PlayerChatSocketContext.Provider value={contextValue}>
+            <PlayerChatPanel {...defaultProps} {...propOverrides} />
+        </PlayerChatSocketContext.Provider>
+    );
+};
 
 describe('PlayerChatPanel', () => {
     describe('rendering', () => {
         it('renders empty message list when no messages', async () => {
-            createUsePlayerChatSocketMock({ messages: [] });
-            const { getByPlaceholder } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { getByPlaceholder } = await renderPlayerChatPanel({ contextOverrides: { messages: [] } });
             await expect.element(getByPlaceholder('Message')).toBeInTheDocument();
         });
 
@@ -45,8 +32,7 @@ describe('PlayerChatPanel', () => {
                 createMockChessGameMessage({ content: 'Second message', id: 'msg-2' }),
                 createMockChessGameMessage({ content: 'Third message', id: 'msg-3' }),
             ];
-            createUsePlayerChatSocketMock({ messages });
-            const { getByText } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { getByText } = await renderPlayerChatPanel({ contextOverrides: { messages } });
             await expect.element(getByText('First message')).toBeInTheDocument();
             await expect.element(getByText('Second message')).toBeInTheDocument();
             await expect.element(getByText('Third message')).toBeInTheDocument();
@@ -54,20 +40,22 @@ describe('PlayerChatPanel', () => {
 
         it('passes correct props to ChatMessage components', async () => {
             const message = createMockChessGameMessage({ content: 'Test message', id: 'msg-1' });
-            createUsePlayerChatSocketMock({ messages: [message] });
-            const { getByText } = await render(<PlayerChatPanel currentPlayerId="player-1" />);
+            const { getByText } = await renderPlayerChatPanel({
+                propOverrides: { currentPlayerId: 'player-1' },
+                contextOverrides: { messages: [message] },
+            });
             await expect.element(getByText('Test message')).toBeInTheDocument();
         });
     });
 
     describe('message input', () => {
         it('renders input field with placeholder', async () => {
-            const { getByPlaceholder } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { getByPlaceholder } = await renderPlayerChatPanel();
             await expect.element(getByPlaceholder('Message')).toBeInTheDocument();
         });
 
         it('enforces max message length of 140 characters', async () => {
-            await render(<PlayerChatPanel {...defaultProps} />);
+            await renderPlayerChatPanel();
             const longMessage = 'a'.repeat(150);
             const input = page.getByPlaceholder('Message');
             await input.fill(longMessage);
@@ -77,18 +65,18 @@ describe('PlayerChatPanel', () => {
 
     describe('character counter', () => {
         it('does not show character counter when input is empty', async () => {
-            const { getByText } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { getByText } = await renderPlayerChatPanel();
             await expect.element(getByText(/\/140/)).not.toBeInTheDocument();
         });
 
         it('shows character counter when input has text', async () => {
-            const { getByText } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { getByText } = await renderPlayerChatPanel();
             await page.getByPlaceholder('Message').fill('Hello');
             await expect.element(getByText('5/140')).toBeInTheDocument();
         });
 
         it('updates character counter as user types', async () => {
-            const { getByText } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { getByText } = await renderPlayerChatPanel();
             const input = page.getByPlaceholder('Message');
 
             await input.fill('Hello');
@@ -102,10 +90,9 @@ describe('PlayerChatPanel', () => {
     describe('message submission', () => {
         it('sends message when Enter key is pressed', async () => {
             const sendStandardMessage = vi.fn();
-            createUsePlayerChatSocketMock({
-                sendStandardMessage,
+            await renderPlayerChatPanel({
+                contextOverrides: { sendStandardMessage },
             });
-            await render(<PlayerChatPanel {...defaultProps} />);
             const input = page.getByPlaceholder('Message');
             await input.fill('Test message');
             await userEvent.keyboard('{Enter}');
@@ -114,10 +101,9 @@ describe('PlayerChatPanel', () => {
 
         it('clears input after sending message', async () => {
             const sendStandardMessage = vi.fn();
-            createUsePlayerChatSocketMock({
-                sendStandardMessage,
+            await renderPlayerChatPanel({
+                contextOverrides: { sendStandardMessage },
             });
-            await render(<PlayerChatPanel {...defaultProps} />);
             const input = page.getByPlaceholder('Message');
             await input.fill('Test message');
             await userEvent.keyboard('{Enter}');
@@ -126,10 +112,9 @@ describe('PlayerChatPanel', () => {
 
         it('trims whitespace before sending message', async () => {
             const sendStandardMessage = vi.fn();
-            createUsePlayerChatSocketMock({
-                sendStandardMessage,
+            await renderPlayerChatPanel({
+                contextOverrides: { sendStandardMessage },
             });
-            await render(<PlayerChatPanel {...defaultProps} />);
             const input = page.getByPlaceholder('Message');
             await input.fill('  Test message  ');
             await userEvent.keyboard('{Enter}');
@@ -144,10 +129,9 @@ describe('PlayerChatPanel', () => {
             { scenario: 'mixed whitespace', input: '  \t\n  ' },
         ])('does not send message for $scenario', async ({ input }) => {
             const sendStandardMessage = vi.fn();
-            createUsePlayerChatSocketMock({
-                sendStandardMessage,
+            await renderPlayerChatPanel({
+                contextOverrides: { sendStandardMessage },
             });
-            await render(<PlayerChatPanel {...defaultProps} />);
             const inputField = page.getByPlaceholder('Message');
             await inputField.fill(input);
             await userEvent.keyboard('{Enter}');
@@ -156,10 +140,10 @@ describe('PlayerChatPanel', () => {
 
         it('does not send message when currentPlayerId is not set', async () => {
             const sendStandardMessage = vi.fn();
-            createUsePlayerChatSocketMock({
-                sendStandardMessage,
+            await renderPlayerChatPanel({
+                propOverrides: { currentPlayerId: '' },
+                contextOverrides: { sendStandardMessage },
             });
-            await render(<PlayerChatPanel currentPlayerId="" />);
             const input = page.getByPlaceholder('Message');
             await input.fill('Test message');
             await userEvent.keyboard('{Enter}');
@@ -169,13 +153,16 @@ describe('PlayerChatPanel', () => {
 
     describe('auto-scroll behavior', () => {
         it('scrolls to bottom when messages change', async () => {
-            const { rerender, getByText } = await render(<PlayerChatPanel {...defaultProps} />);
+            const { rerender, getByText } = await renderPlayerChatPanel();
 
             // Add messages
             const messages = [createMockChessGameMessage({ content: 'New message', id: 'msg-1' })];
-            createUsePlayerChatSocketMock({ messages });
 
-            await rerender(<PlayerChatPanel {...defaultProps} />);
+            await rerender(
+                <PlayerChatSocketContext.Provider value={createMockPlayerChatSocketContextValues({ messages })}>
+                    <PlayerChatPanel {...defaultProps} />
+                </PlayerChatSocketContext.Provider>
+            );
 
             // The scrollIntoView is called on the ref element
             // We can verify the message is rendered
@@ -195,15 +182,17 @@ describe('PlayerChatPanel', () => {
                 id: 'msg-1',
             });
 
-            createUsePlayerChatSocketMock({
-                messages: [message],
-                acceptDrawOffer,
-                declineDrawOffer,
-                acceptRematchOffer,
-                declineRematchOffer,
+            await renderPlayerChatPanel({
+                propOverrides: { currentPlayerId: 'different-player' },
+                contextOverrides: {
+                    messages: [message],
+                    acceptDrawOffer,
+                    declineDrawOffer,
+                    acceptRematchOffer,
+                    declineRematchOffer,
+                },
             });
 
-            await render(<PlayerChatPanel currentPlayerId="different-player" />);
             await page.getByRole('button', { name: 'Accept draw offer' }).click();
             expect(acceptDrawOffer).toHaveBeenCalledTimes(1);
         });
@@ -214,10 +203,10 @@ describe('PlayerChatPanel', () => {
                 id: 'msg-1',
                 authorId: 'player-1',
             });
-            createUsePlayerChatSocketMock({
-                messages: [message],
+            const { getByText } = await renderPlayerChatPanel({
+                propOverrides: { currentPlayerId: 'player-1' },
+                contextOverrides: { messages: [message] },
             });
-            const { getByText } = await render(<PlayerChatPanel currentPlayerId="player-1" />);
             await expect.element(getByText('Test message')).toBeInTheDocument();
         });
     });

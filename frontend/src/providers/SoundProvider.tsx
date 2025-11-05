@@ -85,7 +85,7 @@ const buildInitialPools = (): AudioPoolMap => {
     }, {});
 };
 
-const SoundContext = createContext<SoundContextValue | null>(null);
+export const SoundContext = createContext<SoundContextValue | null>(null);
 
 export function useSound(): SoundContextValue {
     const context = useContext(SoundContext);

@@ -14,7 +14,7 @@ export const defaultImageContextValue: ImageContextType = {
     isReady: false,
 };
 
-const ImageContext = createContext<ImageContextType | null>(null);
+export const ImageContext = createContext<ImageContextType | null>(null);
 
 export const useImages = (): ImageContextType => {
     const context = useContext(ImageContext);

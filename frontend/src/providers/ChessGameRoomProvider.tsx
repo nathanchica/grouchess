@@ -41,9 +41,9 @@ export type GameRoomContextType = {
     startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
 };
 
-const ChessClockContext = createContext<ChessClockContextType | null>(null);
-const ChessGameContext = createContext<ChessGameContextType | null>(null);
-const GameRoomContext = createContext<GameRoomContextType | null>(null);
+export const ChessClockContext = createContext<ChessClockContextType | null>(null);
+export const ChessGameContext = createContext<ChessGameContextType | null>(null);
+export const GameRoomContext = createContext<GameRoomContextType | null>(null);
 
 export function useChessClock(): ChessClockContextType {
     const context = useContext(ChessClockContext);
