@@ -148,7 +148,7 @@ function GameRoomForm({ onSelfPlayStart }: Props) {
                         onClick={handleStartClick}
                     >
                         {loading ? (
-                            <div className="flex gap-2.5 items-center justify-center">
+                            <div role="status" className="flex gap-2.5 items-center justify-center">
                                 <Spinner />
                                 Creating game room...
                             </div>

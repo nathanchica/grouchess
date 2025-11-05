@@ -73,7 +73,7 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
             <section className="flex w-full max-w-3xl flex-col items-center gap-4 rounded-3xl border border-zinc-800 bg-zinc-950/60 pb-18 px-18 text-center shadow-2xl shadow-black/30">
                 <img src="/gifs/gatito_dormirx3.gif" alt="Sleeping cat" className="size-64 select-none" />
 
-                <div className="flex items-center gap-3">
+                <div role="status" className="flex items-center gap-3">
                     <Spinner size="lg" />
                     <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">Waking up the server...</h2>
                 </div>
