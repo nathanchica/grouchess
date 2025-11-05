@@ -33,6 +33,9 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         - Use `userEvent` and/or `page` from 'vitest/browser' for simulating user interactions
 
             ```ts
+            import { render } from 'vitest-browser-react';
+            import { page, userEvent } from 'vitest/browser';
+
             // Testing stateful components and state transitions
             it('manages items correctly', async () => {
                 const { getByText, getByTestId } = render(<ShoppingCart />)
@@ -87,7 +90,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             ```
 
     - Test edge cases and error states
-    - Avoid testing internal implementation details (e.g., internal state variables, CSS, etc.)
+    - Avoid testing internal implementation details (e.g., internal state variables, CSS, tailwind classes, etc.)
 
 - There are mock context value factories available for common contexts used in the frontend
     - These can be found in the `__mocks__` directories next to the corresponding providers
