@@ -9,7 +9,7 @@ export async function decodeImage(src: string): Promise<void> {
     const img = new Image();
     img.src = src;
     // Prefer HTMLImageElement.decode when available for deterministic decode
-    if ('decode' in img) {
+    if ('decode' in img && typeof img.decode === 'function') {
         try {
             await (img as HTMLImageElement).decode();
             return;
@@ -19,6 +19,7 @@ export async function decodeImage(src: string): Promise<void> {
     }
     await new Promise<void>((resolve) => {
         img.onload = () => resolve();
+        // image will fall back to original src on error, so resolve as well
         img.onerror = () => resolve();
     });
 }
