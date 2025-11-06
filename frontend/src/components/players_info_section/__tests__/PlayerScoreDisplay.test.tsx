@@ -7,45 +7,48 @@ describe('PlayerScoreDisplay', () => {
     describe('rendering variants', () => {
         it.each([
             {
-                scenario: 'white color with score',
+                scenario: 'white color',
                 name: 'Alice',
                 color: 'white' as PieceColor,
                 score: 5,
                 expectedScoreText: '(5)',
             },
             {
-                scenario: 'black color with score',
+                scenario: 'black color',
                 name: 'Bob',
                 color: 'black' as PieceColor,
                 score: 3,
                 expectedScoreText: '(3)',
             },
-            {
-                scenario: 'white color without score',
-                name: 'Charlie',
-                color: 'white' as PieceColor,
-                score: undefined,
-                expectedScoreText: null,
-            },
-            {
-                scenario: 'black color without score',
-                name: 'Diana',
-                color: 'black' as PieceColor,
-                score: undefined,
-                expectedScoreText: null,
-            },
-        ])('renders correctly for $scenario', async ({ name, color, score, expectedScoreText }) => {
+        ])('renders player name and score for $scenario', async ({ name, color, score, expectedScoreText }) => {
             const { getByText } = await render(<PlayerScoreDisplay name={name} color={color} score={score} />);
 
             // Verify player name is displayed
             await expect.element(getByText(name)).toBeInTheDocument();
 
             // Verify score display
-            if (expectedScoreText) {
-                await expect.element(getByText(expectedScoreText)).toBeInTheDocument();
-            } else {
-                await expect.element(getByText(/\(\d+\)/)).not.toBeInTheDocument();
-            }
+            await expect.element(getByText(expectedScoreText)).toBeInTheDocument();
+        });
+
+        it.each([
+            {
+                scenario: 'white color',
+                name: 'Charlie',
+                color: 'white' as PieceColor,
+            },
+            {
+                scenario: 'black color',
+                name: 'Diana',
+                color: 'black' as PieceColor,
+            },
+        ])('renders player name without score for $scenario', async ({ name, color }) => {
+            const { getByText } = await render(<PlayerScoreDisplay name={name} color={color} score={undefined} />);
+
+            // Verify player name is displayed
+            await expect.element(getByText(name)).toBeInTheDocument();
+
+            // Verify score is not displayed
+            await expect.element(getByText(/\(\d+\)/)).not.toBeInTheDocument();
         });
 
         it('hides score when undefined', async () => {
@@ -54,15 +57,27 @@ describe('PlayerScoreDisplay', () => {
             await expect.element(getByText(/\(\d+\)/)).not.toBeInTheDocument();
         });
 
-        it('adds title attribute to name element matching the name prop', async () => {
-            const playerName = 'Very Long Player Name That Will Truncate';
-            const { getByText } = await render(<PlayerScoreDisplay name={playerName} color="white" />);
+        it.each([
+            {
+                scenario: 'white color',
+                name: 'Eve',
+                color: 'white' as PieceColor,
+            },
+            {
+                scenario: 'black color',
+                name: 'Frank',
+                color: 'black' as PieceColor,
+            },
+        ])('adds title attribute to name element for $scenario', async ({ name, color }) => {
+            const { getByTitle } = await render(<PlayerScoreDisplay name={name} color={color} />);
 
-            await expect.element(getByText(playerName)).toHaveAttribute('title', playerName);
+            await expect
+                .element(getByTitle(`${color === 'white' ? 'White' : 'Black'} player: ${name}`))
+                .toBeInTheDocument();
         });
 
         it('renders all expected elements', async () => {
-            const { getByText, container } = await render(
+            const { getByText, getByTitle } = await render(
                 <PlayerScoreDisplay name="TestPlayer" color="black" score={10} />
             );
 
@@ -73,8 +88,7 @@ describe('PlayerScoreDisplay', () => {
             await expect.element(getByText('(10)')).toBeInTheDocument();
 
             // Verify chess king icon (SVG)
-            const svg = container.querySelector('svg');
-            expect(svg).toBeTruthy();
+            await expect.element(getByTitle('Player color icon')).toBeInTheDocument();
         });
     });
 
@@ -92,22 +106,23 @@ describe('PlayerScoreDisplay', () => {
         });
 
         it('handles empty name string', async () => {
-            const { getByText, container } = await render(<PlayerScoreDisplay name="" color="white" score={5} />);
+            const { getByText, getByTitle } = await render(<PlayerScoreDisplay name="" color="white" score={5} />);
 
             // The score should still be rendered
             await expect.element(getByText('(5)')).toBeInTheDocument();
 
             // The name element should still exist with empty title attribute
-            const nameElement = container.querySelector('span[title=""]');
-            expect(nameElement).toBeTruthy();
+            await expect.element(getByTitle(`White player: `)).toBeInTheDocument();
         });
 
         it('handles special characters in name', async () => {
             const specialName = "Player's Name <Test> & More";
-            const { getByText } = await render(<PlayerScoreDisplay name={specialName} color="black" score={5} />);
+            const { getByText, getByTitle } = await render(
+                <PlayerScoreDisplay name={specialName} color="black" score={5} />
+            );
 
             await expect.element(getByText(specialName)).toBeInTheDocument();
-            await expect.element(getByText(specialName)).toHaveAttribute('title', specialName);
+            await expect.element(getByTitle(`Black player: ${specialName}`)).toBeInTheDocument();
         });
     });
 });

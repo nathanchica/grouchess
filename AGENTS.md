@@ -46,6 +46,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - getByText
     - getByTestId
     - getByPlaceholder
+    - If unavoidable, suggest improvements to add proper roles or labels instead
 - Assert with toBeVisible() when checking visibility of elements instead of checking CSS/tailwind classes
 - Focus on behavior and user experience rather than implementation details
     - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
