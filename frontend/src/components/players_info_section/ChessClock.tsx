@@ -55,12 +55,16 @@ function ChessClock({ isActive, color }: Props) {
             className={`flex flex-row gap-3 justify-end items-center cursor-default text-zinc-300 text-2xl font-bold tabular-nums tracking-widest p-1 rounded-lg ${isActive && 'bg-zinc-600'}`}
         >
             {isActive && <StopwatchIcon className="inline-block size-5 text-zinc-300/80 ml-4" aria-hidden="true" />}
-            <time aria-live="polite" aria-label={`${color} clock: ${minAndSecText}${msPartText} remaining`}>
+            <span
+                role="timer"
+                aria-live="polite"
+                aria-label={`${color} clock: ${minAndSecText}${msPartText} remaining`}
+            >
                 {minAndSecText}
                 <span className={`text-base ${!showMsPart && 'invisible'}`}>
                     .<span className="w-[1ch]">{msPartText}</span>
                 </span>
-            </time>
+            </span>
         </div>
     );
 }

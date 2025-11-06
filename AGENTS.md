@@ -28,6 +28,17 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 - Use vitest along with vitest-browser-react (browser mode) for testing React components
 - For interactive elements, prefer `getByRole` queries to ensure accessibility compliance.
     - If components lack proper roles, consider suggesting improvements to enhance accessibility.
+- For images, use `getByRole('img', { name: /alt text/i })` to select by alt text
+    - For multiple images, use `getByRole('img', { name: /alt text/i }).elements()` to get all matching elements
+
+        ```ts
+        const { getByRole } = render(<MyComponent />);
+        const images = await getByRole('img', { name: /alt text/i }).elements();
+        expect(images.length).toBe(2);
+        expect(images[0]).toHaveAttribute('alt', 'First image alt text');
+        expect(images[1]).toHaveAttribute('alt', 'Second image alt text');
+        ```
+
 - Focus on behavior and user experience rather than implementation details
     - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
     - Test user interactions (clicks, typing, etc.) and their effects on the component state and UI

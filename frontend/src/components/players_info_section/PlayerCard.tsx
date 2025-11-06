@@ -64,7 +64,7 @@ function PlayerCard({ playerId, color, displayName }: Props) {
                                 <img
                                     key={`turn-${moveIndex}-${alias}`}
                                     src={imgSrcMap[imgSrc] ?? imgSrc}
-                                    alt={altText}
+                                    alt={`Captured ${altText}`}
                                     className="w-9 h-9 drop-shadow-lg"
                                 />
                             );
