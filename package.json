@@ -72,13 +72,13 @@
             "git add packages/models/README.md"
         ],
         "**/*.{ts,tsx}": [
-            "prettier --write",
             "eslint --fix --max-warnings=0 --no-warn-ignored",
+            "prettier --write",
             "tsc-files --noEmit"
         ],
         "**/*.{js,jsx}": [
-            "prettier --write",
-            "eslint --fix --max-warnings=0 --no-warn-ignored"
+            "eslint --fix --max-warnings=0 --no-warn-ignored",
+            "prettier --write"
         ],
         "**/*.{css,md,json,yml,yaml}": [
             "prettier --write"
