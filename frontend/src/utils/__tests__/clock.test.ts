@@ -1,7 +1,7 @@
 import { createMockChessClockState } from '@grouchess/test-utils';
 import type { Mock } from 'vitest';
 
-import { rebaseServerClockToPerf } from '../clock';
+import { formatMinutesAndSeconds, formatMsPart, parseTime, rebaseServerClockToPerf } from '../clock';
 
 describe('rebaseServerClockToPerf', () => {
     let dateNowSpy: Mock<() => number>;
@@ -127,5 +127,155 @@ describe('rebaseServerClockToPerf', () => {
 
         // Original object should be unchanged
         expect(originalState.lastUpdatedTimeMs).toBe(originalLastUpdated);
+    });
+});
+
+describe('parseTime', () => {
+    it.each([
+        {
+            scenario: 'zero milliseconds',
+            input: 0,
+            expected: { minutes: 0, seconds: 0, milliseconds: 0 },
+        },
+        {
+            scenario: 'only milliseconds (less than 1 second)',
+            input: 543,
+            expected: { minutes: 0, seconds: 0, milliseconds: 543 },
+        },
+        {
+            scenario: 'exactly 1 second',
+            input: 1000,
+            expected: { minutes: 0, seconds: 1, milliseconds: 0 },
+        },
+        {
+            scenario: 'seconds with milliseconds (less than 1 minute)',
+            input: 5432,
+            expected: { minutes: 0, seconds: 5, milliseconds: 432 },
+        },
+        {
+            scenario: 'exactly 1 minute',
+            input: 60000,
+            expected: { minutes: 1, seconds: 0, milliseconds: 0 },
+        },
+        {
+            scenario: 'minutes and seconds',
+            input: 125000,
+            expected: { minutes: 2, seconds: 5, milliseconds: 0 },
+        },
+        {
+            scenario: 'minutes, seconds, and milliseconds',
+            input: 185750,
+            expected: { minutes: 3, seconds: 5, milliseconds: 750 },
+        },
+        {
+            scenario: 'large value (1 hour as minutes)',
+            input: 3600000,
+            expected: { minutes: 60, seconds: 0, milliseconds: 0 },
+        },
+        {
+            scenario: 'large value with all components',
+            input: 3725999,
+            expected: { minutes: 62, seconds: 5, milliseconds: 999 },
+        },
+    ])('parses $scenario correctly', ({ input, expected }) => {
+        const result = parseTime(input);
+        expect(result).toEqual(expected);
+    });
+});
+
+describe('formatMinutesAndSeconds', () => {
+    it.each([
+        {
+            scenario: 'zero minutes and seconds',
+            minutes: 0,
+            seconds: 0,
+            expected: '0:00',
+        },
+        {
+            scenario: 'single digit seconds with leading zero',
+            minutes: 5,
+            seconds: 3,
+            expected: '5:03',
+        },
+        {
+            scenario: 'double digit seconds',
+            minutes: 5,
+            seconds: 42,
+            expected: '5:42',
+        },
+        {
+            scenario: 'zero seconds with padding',
+            minutes: 10,
+            seconds: 0,
+            expected: '10:00',
+        },
+        {
+            scenario: 'large minute values',
+            minutes: 120,
+            seconds: 59,
+            expected: '120:59',
+        },
+        {
+            scenario: 'exactly 60 seconds (edge case)',
+            minutes: 1,
+            seconds: 60,
+            expected: '1:60',
+        },
+    ])('formats $scenario as $expected', ({ minutes, seconds, expected }) => {
+        const result = formatMinutesAndSeconds(minutes, seconds);
+        expect(result).toBe(expected);
+    });
+});
+
+describe('formatMsPart', () => {
+    it.each([
+        {
+            scenario: 'rounds down 0-99ms to "0"',
+            input: 0,
+            expected: '0',
+        },
+        {
+            scenario: 'rounds down 50ms to "0"',
+            input: 50,
+            expected: '0',
+        },
+        {
+            scenario: 'rounds down 99ms to "0"',
+            input: 99,
+            expected: '0',
+        },
+        {
+            scenario: 'rounds down 100ms to "1"',
+            input: 100,
+            expected: '1',
+        },
+        {
+            scenario: 'rounds down 150ms to "1"',
+            input: 150,
+            expected: '1',
+        },
+        {
+            scenario: 'rounds down 199ms to "1"',
+            input: 199,
+            expected: '1',
+        },
+        {
+            scenario: 'rounds down 500ms to "5"',
+            input: 500,
+            expected: '5',
+        },
+        {
+            scenario: 'rounds down 999ms to "9"',
+            input: 999,
+            expected: '9',
+        },
+        {
+            scenario: 'handles exactly 1000ms (edge case)',
+            input: 1000,
+            expected: '10',
+        },
+    ])('$scenario', ({ input, expected }) => {
+        const result = formatMsPart(input);
+        expect(result).toBe(expected);
     });
 });

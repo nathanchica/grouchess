@@ -39,6 +39,15 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         expect(images[1]).toHaveAttribute('alt', 'Second image alt text');
         ```
 
+- Avoid using query selectors like container.querySelector to find elements. Only use:
+    - getByRole
+        - Can use { includeHidden: true } option to include hidden elements
+    - getByLabelText
+    - getByText
+    - getByTestId
+    - getByPlaceholder
+    - If unavoidable, suggest improvements to add proper roles or labels instead
+- Assert with toBeVisible() when checking visibility of elements instead of checking CSS/tailwind classes
 - Focus on behavior and user experience rather than implementation details
     - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
     - Test user interactions (clicks, typing, etc.) and their effects on the component state and UI
