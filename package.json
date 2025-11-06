@@ -71,6 +71,11 @@
             "tsx scripts/generate-package-docs.ts models",
             "git add packages/models/README.md"
         ],
+        "CLAUDE.md": [
+            "prettier --write",
+            "tsx scripts/sync-agents-md.ts",
+            "git add AGENTS.md"
+        ],
         "**/*.{ts,tsx}": [
             "eslint --fix --max-warnings=0 --no-warn-ignored",
             "prettier --write",
