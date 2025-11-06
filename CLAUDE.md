@@ -26,6 +26,20 @@
 Guidelines from https://vitest.dev/guide/browser/component-testing.html
 
 - Use vitest along with vitest-browser-react (browser mode) for testing React components
+- Use meaningful test descriptions that explain the expected behavior, not implementation details:
+
+    ```ts
+    // Good: Describes user-facing behavior
+    it('shows error message when email format is invalid');
+    it('disables submit button while form is submitting');
+
+    // Avoid: Implementation-focused descriptions
+    it('calls validateEmail function');
+    it('sets isSubmitting state to true');
+    ```
+
+#### Locating elements
+
 - For interactive elements, prefer `getByRole` queries to ensure accessibility compliance.
     - If components lack proper roles, consider suggesting improvements to enhance accessibility.
 - For images, use `getByRole('img', { name: /alt text/i })` to select by alt text
@@ -47,6 +61,9 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - getByTestId
     - getByPlaceholder
     - If unavoidable, suggest improvements to add proper roles or labels instead
+
+#### Asserting visibility and behavior
+
 - Assert with toBeVisible() when checking visibility of elements instead of checking CSS/tailwind classes
 - Focus on behavior and user experience rather than implementation details
     - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
@@ -113,6 +130,8 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, tailwind classes, etc.)
 
+#### Mocking strategies
+
 - There are mock context value factories available for common contexts used in the frontend
     - These can be found in the `__mocks__` directories next to the corresponding providers
     - To test components that depend on context, wrap them in the Provider with mock values
@@ -141,18 +160,6 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             // ... test implementation
         });
         ```
-
-- Use meaningful test descriptions that explain the expected behavior, not implementation details:
-
-    ```ts
-    // Good: Describes user-facing behavior
-    it('shows error message when email format is invalid');
-    it('disables submit button while form is submitting');
-
-    // Avoid: Implementation-focused descriptions
-    it('calls validateEmail function');
-    it('sets isSubmitting state to true');
-    ```
 
 - Use `vi.stubEnv` to mock environment variables when needed
 - Mocking fetches:
