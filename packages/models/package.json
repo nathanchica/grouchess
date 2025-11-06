@@ -15,7 +15,8 @@
         "build": "tsc -p tsconfig.build.json",
         "typecheck": "tsc --noEmit",
         "test": "vitest run --coverage",
-        "test:run": "vitest run"
+        "test:run": "vitest run",
+        "docs:generate": "tsx ../../scripts/generate-package-docs.ts models"
     },
     "keywords": [
         "models"

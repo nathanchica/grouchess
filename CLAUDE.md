@@ -2,6 +2,7 @@
 
 - See README.md for overall project context and structure if needed
 - `pnpm` is used as the monorepo package manager
+- See packages/models/README.md for common schemas and types
 
 ## Unit tests
 
