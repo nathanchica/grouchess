@@ -9,11 +9,15 @@ export function getLocationOrigin(): string {
     return window.location.origin;
 }
 
-export function setTimeout(callback: () => void, delay: number): number {
+export function setTimeout<TArgs extends unknown[]>(
+    callback: (...args: TArgs) => void,
+    delay: number,
+    ...args: TArgs
+): number {
     if (typeof window === 'undefined') {
         return -1;
     }
-    return window.setTimeout(callback, delay);
+    return window.setTimeout(callback, delay, ...args);
 }
 
 export function clearTimeout(timeoutId: number): void {

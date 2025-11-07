@@ -116,7 +116,7 @@ export default [
         },
     },
     {
-        files: ['backend/**/*.ts', 'scripts/**/*.{js,ts}'],
+        files: ['backend/**/*.ts', '**/scripts/**/*.{js,ts}'],
         rules: {
             'no-console': 'off',
         },
