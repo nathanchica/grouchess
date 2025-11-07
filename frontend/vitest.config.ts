@@ -24,21 +24,41 @@ export default defineConfig({
         ],
     },
     test: {
-        globals: true,
-        setupFiles: ['./vitest.setup.ts'],
-        include: ['**/__tests__/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
+        projects: [
+            {
+                extends: true,
+                test: {
+                    name: 'browser',
+                    globals: true,
+                    setupFiles: ['./vitest.setup.ts'],
+                    include: ['**/__tests__/**/*.test.{ts,tsx}', 'tests/**/*.test.{ts,tsx}'],
+                    exclude: ['**/utils/**', '**/node_modules/**'],
+                    browser: {
+                        provider: playwright(),
+                        enabled: true,
+                        instances: [{ browser: 'chromium' }],
+                        screenshotFailures: false,
+                    },
+                },
+            },
+            {
+                extends: true,
+                test: {
+                    name: 'happy-dom',
+                    globals: true,
+                    setupFiles: ['./vitest.setup.ts'],
+                    include: ['**/utils/__tests__/**/*.test.{ts,tsx}'],
+                    exclude: ['**/node_modules/**'],
+                    environment: 'happy-dom',
+                },
+            },
+        ],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
             reportsDirectory: './coverage',
             include: ['src/**/*.{ts,tsx}'],
             exclude: ['src/main.tsx', 'src/**/*.d.ts', 'src/**/types.ts'],
-        },
-        browser: {
-            provider: playwright(),
-            enabled: true,
-            instances: [{ browser: 'chromium' }],
-            screenshotFailures: false,
         },
     },
     resolve: {
