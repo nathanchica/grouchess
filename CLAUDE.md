@@ -38,6 +38,8 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     it('sets isSubmitting state to true');
     ```
 
+- See ChallengerWaitingRoom.test.tsx for an example of well-structured frontend test cases and mocks.
+
 #### Locating elements
 
 - For interactive elements, prefer `getByRole` queries to ensure accessibility compliance.
@@ -162,29 +164,68 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         ```
 
 - Use `vi.stubEnv` to mock environment variables when needed
+
+    ```ts
+    it("throws error if API base URL is not configured", async () => {
+        vi.stubEnv('VITE_API_BASE_URL', undefined);
+        await expect(render(<ChallengerWaitingRoom {...defaultProps} />)).rejects.toThrow('Room endpoint is not configured.');
+        vi.unstubAllEnvs();
+    });
+    ```
+
 - Mocking fetches:
 
     ```ts
-    import type { Mock } from 'vitest';
+    const mockGetGameRoomBasicInfoParsedResponse: GetGameRoomBasicInfoResponse = {
+        roomId: 'test-room-123',
+        timeControl: createMockTimeControl(),
+    };
 
-    let fetchSpy: Mock<typeof fetch>;
+    type CreateFetchResponseArgs = {
+        data?: GetGameRoomBasicInfoResponse | null;
+        ok?: boolean;
+    };
 
-    beforeEach(() => {
-        fetchSpy = vi.spyOn(window, 'fetch');
-    });
+    function createFetchResponse({ data = mockGetGameRoomBasicInfoParsedResponse, ok = true }: CreateFetchResponseArgs = {}): Response {
+        return {
+            ok,
+            json: vi.fn().mockResolvedValue(data),
+        } as unknown as Response;
+    }
 
-    afterEach(() => {
-        fetchSpy.mockRestore();
-    });
 
     it('fetches data successfully', async () => {
-        fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ data: 'test' }), { status: 200 }));
+        vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse());
 
         // ...test implementation
     });
 
-    it('handles fetch error', async () => {
-        fetchSpy.mockRejectedValueOnce(new Error('Network error'));
+    it("throws error if fetch fails", async () => {
+        vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse({ ok: false }));
+        await expect(render(<ChallengerWaitingRoom {...defaultProps} />)).rejects.toThrow('Failed to fetch room info.');
+    });
+    ```
+
+- Mocking modules in react tests:
+
+    ```ts
+    import * as useJoinGameRoomModule from '../../../hooks/useJoinGameRoom';
+
+    // Browser mode limitation: https://vitest.dev/guide/browser/#spying-on-module-exports
+    vi.mock('../../../hooks/useJoinGameRoom', { spy: true });
+
+    it('joins the game room on button click', async () => {
+        vi.spyOn(useJoinGameRoomModule, 'useJoinGameRoom').mockReturnValue({
+            joinGameRoom: vi.fn().mockImplementation(({ onSuccess }) => {
+                onSuccess({
+                    roomId,
+                    playerId,
+                    token,
+                });
+            }),
+            loading: false,
+            error: null,
+        });
 
         // ...test implementation
     });

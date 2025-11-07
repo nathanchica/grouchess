@@ -13,6 +13,20 @@ import * as z from 'zod';
 
 export const PlayerDisplayNameInput = PlayerSchema.shape.displayName.nullish();
 
+/**
+ * GET /room/:roomId
+ */
+
+export const GetGameRoomBasicInfoResponseSchema = z.object({
+    roomId: ChessGameRoomSchema.shape.id,
+    timeControl: TimeControlSchema.nullable(),
+});
+export type GetGameRoomBasicInfoResponse = z.infer<typeof GetGameRoomBasicInfoResponseSchema>;
+
+/**
+ * GET /room/:roomId/chess-game
+ */
+
 export const GetChessGameResponseSchema = z.object({
     gameRoom: ChessGameRoomSchema,
     chessGame: ChessGameSchema,
@@ -25,6 +39,10 @@ export const GetChessGameResponseSchema = z.object({
     playerId: PlayerSchema.shape.id,
 });
 export type GetChessGameResponse = z.infer<typeof GetChessGameResponseSchema>;
+
+/**
+ * POST /room/
+ */
 
 export const CreateGameRoomRequestSchema = z.object({
     displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 1').describe(
@@ -45,19 +63,22 @@ export const CreateGameRoomRequestSchema = z.object({
 });
 export type CreateGameRoomRequest = z.infer<typeof CreateGameRoomRequestSchema>;
 
-export const JoinGameRoomRequestSchema = z.object({
-    displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 2').describe(
-        'The display name of the player joining the room. Defaults to "Player 2" if not provided.'
-    ),
-});
-export type JoinGameRoomRequest = z.infer<typeof JoinGameRoomRequestSchema>;
-
 export const CreateGameRoomResponseSchema = z.object({
     roomId: ChessGameRoomSchema.shape.id,
     playerId: PlayerSchema.shape.id,
     token: z.string(),
 });
 export type CreateGameRoomResponse = z.infer<typeof CreateGameRoomResponseSchema>;
+
+/**
+ * POST /room/join/:roomId
+ */
+export const JoinGameRoomRequestSchema = z.object({
+    displayName: PlayerDisplayNameInput.transform((val) => val || 'Player 2').describe(
+        'The display name of the player joining the room. Defaults to "Player 2" if not provided.'
+    ),
+});
+export type JoinGameRoomRequest = z.infer<typeof JoinGameRoomRequestSchema>;
 
 // Currently identical to CreateGameRoomResponseSchema
 export const JoinGameRoomResponseSchema = CreateGameRoomResponseSchema;

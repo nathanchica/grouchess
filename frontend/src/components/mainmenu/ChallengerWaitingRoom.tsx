@@ -1,20 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useState, use } from 'react';
 
-import type { JoinGameRoomResponse } from '@grouchess/http-schemas';
-import type { TimeControl } from '@grouchess/models';
+import { GetGameRoomBasicInfoResponseSchema } from '@grouchess/http-schemas';
+import type { GetGameRoomBasicInfoResponse, JoinGameRoomResponse } from '@grouchess/http-schemas';
 import { useNavigate } from 'react-router';
 
 import DisplayNameForm from './DisplayNameForm';
 
 import { useJoinGameRoom } from '../../hooks/useJoinGameRoom';
+import { getCachedPromise } from '../../utils/fetch';
 
-type RoomInfoResponse = {
-    roomId: string;
-    timeControl: TimeControl;
-};
+async function fetchRoomBasicInfo(url: string): Promise<GetGameRoomBasicInfoResponse> {
+    const response = await fetch(url);
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const ROOM_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/room` : null;
+    if (!response.ok) {
+        throw new Error('Failed to fetch room info.');
+    }
+
+    const data = await response.json();
+    const parsedData = GetGameRoomBasicInfoResponseSchema.safeParse(data);
+
+    if (!parsedData.success) {
+        throw new Error('Failed to parse room info.');
+    }
+
+    return parsedData.data;
+}
 
 type Props = {
     roomId: string;
@@ -22,58 +32,27 @@ type Props = {
 };
 
 function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: Props) {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+    if (!apiBaseUrl) {
+        throw new Error('Room endpoint is not configured.');
+    }
+
+    const parsedData = use(
+        getCachedPromise(
+            `getGameRoomBasicInfo:${roomId}`,
+            () => fetchRoomBasicInfo(`${apiBaseUrl}/room/${roomId}`) as unknown as Promise<Response>
+        )
+    );
+    const { timeControl } = parsedData as unknown as GetGameRoomBasicInfoResponse;
+
     const navigate = useNavigate();
     const { joinGameRoom, loading: isJoining } = useJoinGameRoom(roomId);
 
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [roomBasicInfo, setRoomBasicInfo] = useState<RoomInfoResponse | null>(null);
     const [displayName, setDisplayName] = useState<string>('');
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!ROOM_ENDPOINT) {
-            setErrorMessage('Room endpoint is not configured.');
-            return;
-        }
-
-        let isMounted = true;
-
-        const fetchRoomInfo = async () => {
-            setIsLoading(true);
-            setErrorMessage(null);
-
-            try {
-                const response = await fetch(`${ROOM_ENDPOINT}/${roomId}`);
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    setErrorMessage(errorData.error || 'Failed to fetch room info.');
-                    return;
-                }
-
-                const data: RoomInfoResponse = await response.json();
-                if (isMounted) {
-                    setRoomBasicInfo(data);
-                }
-            } catch (error) {
-                if (isMounted) {
-                    setErrorMessage(error instanceof Error ? error.message : 'Failed to fetch room info.');
-                }
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchRoomInfo();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [roomId]);
-
-    const joinButtonIsDisabled = isLoading || isJoining;
+    const joinButtonIsDisabled = isJoining;
 
     const handleJoinRoomClick = () => {
         setErrorMessage(null);
@@ -87,55 +66,40 @@ function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: Props) {
         });
     };
 
-    let timeControlDisplayText;
-    if (roomBasicInfo) {
-        const { timeControl } = roomBasicInfo;
-        timeControlDisplayText = timeControl?.displayText || 'Unlimited';
-    }
+    const timeControlDisplayText = timeControl?.displayText || 'Unlimited';
 
     return (
         <div className="flex flex-col gap-8">
             <h2 className="text-2xl font-bold text-zinc-100 sm:text-3xl">Join Game</h2>
 
-            {isLoading && (
-                <div className="flex items-center gap-3 py-4">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                    <p className="text-zinc-300">Loading room information...</p>
-                </div>
-            )}
-
-            {errorMessage && (
-                <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
-                    <p className="text-red-400 font-medium">Error: {errorMessage}</p>
-                </div>
-            )}
-
-            {!isLoading && !errorMessage && roomBasicInfo && (
-                <div className="flex flex-col gap-8">
-                    <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 p-6 space-y-4">
-                        <div className="flex flex-col gap-2">
-                            <span className="text-zinc-400 text-sm font-medium uppercase tracking-wide">Room ID</span>
-                            <span className="text-zinc-100 text-lg font-mono">{roomId}</span>
-                        </div>
-
-                        <div className="h-px bg-zinc-700/50" />
-
-                        <div className="flex flex-col gap-2">
-                            <span className="text-zinc-400 text-sm font-medium uppercase tracking-wide">
-                                Time Control
-                            </span>
-                            <span className="text-zinc-100 text-lg">{timeControlDisplayText}</span>
-                        </div>
+            <section className="flex flex-col gap-8">
+                <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 p-6 space-y-4">
+                    <div className="flex flex-col gap-2">
+                        <span className="text-zinc-400 text-sm font-medium uppercase tracking-wide">Room ID</span>
+                        <span className="text-zinc-100 text-lg font-mono">{roomId}</span>
                     </div>
 
-                    <DisplayNameForm
-                        onDisplayNameChange={(name) => setDisplayName(name)}
-                        labelClassName="text-sm font-medium text-zinc-300"
-                    />
+                    <div className="h-px bg-zinc-700/50" />
+
+                    <div className="flex flex-col gap-2">
+                        <span className="text-zinc-400 text-sm font-medium uppercase tracking-wide">Time Control</span>
+                        <span className="text-zinc-100 text-lg">{timeControlDisplayText}</span>
+                    </div>
+                </div>
+
+                <DisplayNameForm
+                    onDisplayNameChange={(name) => setDisplayName(name)}
+                    labelClassName="text-sm font-medium text-zinc-300"
+                />
+            </section>
+
+            {errorMessage && (
+                <div role="alert" className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
+                    <p className="text-red-400 font-medium">{errorMessage}</p>
                 </div>
             )}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <section className="flex flex-col gap-3 sm:flex-row">
                 <button
                     type="button"
                     className="flex-1 rounded-lg cursor-pointer bg-emerald-700/90 px-6 py-2.5 font-semibold text-zinc-100 hover:bg-emerald-700/100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -152,7 +116,7 @@ function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: Props) {
                 >
                     Back
                 </button>
-            </div>
+            </section>
         </div>
     );
 }

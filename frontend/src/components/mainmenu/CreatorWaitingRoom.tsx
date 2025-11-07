@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router';
 
+import { getLocationOrigin } from '../../utils/window';
 import CopyableTextField from '../common/CopyableTextField';
 
 type Props = {
@@ -9,7 +10,7 @@ type Props = {
 function CreatorWaitingRoom({ roomId }: Props) {
     const navigate = useNavigate();
 
-    const shareUrl = `${window.location.origin}/${roomId}`;
+    const shareUrl = `${getLocationOrigin()}/${roomId}`;
 
     return (
         <div className="flex flex-col gap-8">
