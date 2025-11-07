@@ -176,10 +176,6 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 - Mocking fetches:
 
     ```ts
-    import type { Mock } from 'vitest';
-
-    let fetchSpy: Mock<typeof fetch>;
-
     const mockGetGameRoomBasicInfoParsedResponse: GetGameRoomBasicInfoResponse = {
         roomId: 'test-room-123',
         timeControl: createMockTimeControl(),
@@ -199,7 +195,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 
 
     it('fetches data successfully', async () => {
-        fetchSpy.mockResolvedValueOnce(createFetchResponse());
+        vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse());
 
         // ...test implementation
     });

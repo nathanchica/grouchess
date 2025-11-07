@@ -110,7 +110,6 @@ describe('ChallengerWaitingRoom', () => {
             vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse({ ok: false }));
             const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
             await expect.element(getByText('Failed to fetch room info.')).toBeInTheDocument();
-            vi.restoreAllMocks();
         });
 
         it('throws error if response parsing fails', async () => {
@@ -119,7 +118,6 @@ describe('ChallengerWaitingRoom', () => {
             vi.spyOn(window, 'fetch').mockResolvedValueOnce(invalidFetchResponse);
             const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
             await expect.element(getByText('Failed to parse room info.')).toBeInTheDocument();
-            vi.restoreAllMocks();
         });
 
         it('throws error if API base URL is not configured', async () => {
@@ -128,7 +126,6 @@ describe('ChallengerWaitingRoom', () => {
             vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
             const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
             await expect.element(getByText('Room endpoint is not configured.')).toBeInTheDocument();
-            vi.restoreAllMocks();
         });
     });
 
