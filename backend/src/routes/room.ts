@@ -3,6 +3,7 @@ import {
     CreateGameRoomRequestSchema,
     CreateGameRoomResponseSchema,
     GetChessGameResponseSchema,
+    GetGameRoomBasicInfoResponseSchema,
     JoinGameRoomRequestSchema,
     JoinGameRoomResponseSchema,
 } from '@grouchess/http-schemas';
@@ -27,10 +28,18 @@ roomRouter.get('/:roomId', (req, res) => {
         return;
     }
 
-    res.json({
+    const parsedResponse = GetGameRoomBasicInfoResponseSchema.safeParse({
         roomId: room.id,
         timeControl: room.timeControl,
     });
+
+    if (!parsedResponse.success) {
+        console.error('Validation error getting game room basic info:', parsedResponse.error.issues);
+        res.status(500).json({ error: 'Internal server error' });
+        return;
+    }
+
+    res.json(parsedResponse.data);
 });
 
 /**

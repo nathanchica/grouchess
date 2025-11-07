@@ -25,12 +25,14 @@ const {
     createGameRoomResponseSafeParseMock,
     joinGameRoomParseMock,
     joinGameRoomResponseSafeParseMock,
+    getGameRoomBasicInfoResponseSafeParseMock,
 } = vi.hoisted(() => ({
     getChessGameSafeParseMock: vi.fn(),
     createGameRoomParseMock: vi.fn(),
     createGameRoomResponseSafeParseMock: vi.fn(),
     joinGameRoomParseMock: vi.fn(),
     joinGameRoomResponseSafeParseMock: vi.fn(),
+    getGameRoomBasicInfoResponseSafeParseMock: vi.fn(),
 }));
 
 vi.mock('@grouchess/http-schemas', async (importOriginal) => {
@@ -39,6 +41,9 @@ vi.mock('@grouchess/http-schemas', async (importOriginal) => {
         ...actual,
         GetChessGameResponseSchema: {
             safeParse: getChessGameSafeParseMock,
+        },
+        GetGameRoomBasicInfoResponseSchema: {
+            safeParse: getGameRoomBasicInfoResponseSafeParseMock,
         },
         CreateGameRoomRequestSchema: {
             parse: createGameRoomParseMock,
@@ -58,6 +63,14 @@ vi.mock('@grouchess/http-schemas', async (importOriginal) => {
 const { ZodError } = z;
 
 describe('GET /room/:roomId', () => {
+    beforeEach(() => {
+        // Default: make safeParse pass and return the input data
+        getGameRoomBasicInfoResponseSafeParseMock.mockImplementation((data) => ({
+            success: true,
+            data,
+        }));
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -106,6 +119,45 @@ describe('GET /room/:roomId', () => {
         expect(response.body).toEqual({
             roomId: 'test-room-456',
             timeControl: null,
+        });
+    });
+
+    it('returns 500 when schema validation fails', async () => {
+        const mockRoom = createMockChessGameRoom({ id: 'test-room-789' });
+
+        const mockValidationError = {
+            issues: [
+                {
+                    code: 'invalid_type',
+                    expected: 'string',
+                    received: 'number',
+                    path: ['roomId'],
+                    message: 'Expected string, received number',
+                },
+            ],
+        };
+
+        vi.spyOn(gameRoomService, 'getGameRoomById').mockReturnValue(mockRoom);
+
+        // Mock schema validation failure
+        getGameRoomBasicInfoResponseSafeParseMock.mockReturnValue({
+            success: false,
+            error: mockValidationError,
+        });
+
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const response = await request(createApp()).get('/room/test-room-789');
+
+        expect(response.status).toBe(500);
+        expect(response.body).toEqual({ error: 'Internal server error' });
+        expect(errorSpy).toHaveBeenCalledWith(
+            'Validation error getting game room basic info:',
+            mockValidationError.issues
+        );
+        expect(getGameRoomBasicInfoResponseSafeParseMock).toHaveBeenCalledWith({
+            roomId: 'test-room-789',
+            timeControl: mockRoom.timeControl,
         });
     });
 });

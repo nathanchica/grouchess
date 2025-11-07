@@ -183,12 +183,12 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     const mockGetGameRoomBasicInfoParsedResponse: GetGameRoomBasicInfoResponse = {
         roomId: 'test-room-123',
         timeControl: createMockTimeControl(),
-    }
+    };
 
     type CreateFetchResponseArgs = {
         data?: GetGameRoomBasicInfoResponse | null;
         ok?: boolean;
-    }
+    };
 
     function createFetchResponse({ data = mockGetGameRoomBasicInfoParsedResponse, ok = true }: CreateFetchResponseArgs = {}): Response {
         return {
