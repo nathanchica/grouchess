@@ -38,13 +38,9 @@ function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: Props) {
         throw new Error('Room endpoint is not configured.');
     }
 
-    const parsedData = use(
-        getCachedPromise(
-            `getGameRoomBasicInfo:${roomId}`,
-            () => fetchRoomBasicInfo(`${apiBaseUrl}/room/${roomId}`) as unknown as Promise<Response>
-        )
+    const { timeControl } = use(
+        getCachedPromise(`getGameRoomBasicInfo:${roomId}`, () => fetchRoomBasicInfo(`${apiBaseUrl}/room/${roomId}`))
     );
-    const { timeControl } = parsedData as unknown as GetGameRoomBasicInfoResponse;
 
     const navigate = useNavigate();
     const { joinGameRoom, loading: isJoining } = useJoinGameRoom(roomId);
