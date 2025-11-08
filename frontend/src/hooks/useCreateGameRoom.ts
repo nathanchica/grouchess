@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { PieceColor, RoomType } from '@grouchess/models';
 
+import { getEnv } from '../utils/config';
+
 type CreateGameRoomResponse = {
     roomId: string;
     playerId: string;
@@ -25,8 +27,7 @@ type Payload = {
     error: Error | null;
 };
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const ROOM_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/room` : null;
+const GAME_ROOM_URL = `${getEnv().VITE_API_BASE_URL}/room`;
 
 export function useCreateGameRoom(): Payload {
     // Dual loading tracking: state for UI reactivity, ref for race condition prevention
@@ -56,21 +57,12 @@ export function useCreateGameRoom(): Payload {
                 return null;
             }
 
-            if (!ROOM_ENDPOINT) {
-                const endpointError = new Error('Room endpoint is not configured.');
-                if (isMountedRef.current) {
-                    setError(endpointError);
-                    onError?.(endpointError);
-                }
-                return null;
-            }
-
             loadingRef.current = true;
             setLoading(true);
             setError(null);
 
             try {
-                const response = await fetch(ROOM_ENDPOINT, {
+                const response = await fetch(GAME_ROOM_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { JoinGameRoomResponse } from '@grouchess/http-schemas';
 
+import { getEnv } from '../utils/config';
+
 type JoinGameRoomParams = {
     displayName?: string;
     onSuccess?: (data: JoinGameRoomResponse) => void;
@@ -16,8 +18,7 @@ type Payload = {
     error: Error | null;
 };
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const ROOM_ENDPOINT = apiBaseUrl ? `${apiBaseUrl}/room` : null;
+const JOIN_ROOM_URL = `${getEnv().VITE_API_BASE_URL}/room/join`;
 
 export function useJoinGameRoom(roomId: string): Payload {
     // Dual loading tracking: state for UI reactivity, ref for race condition prevention
@@ -49,21 +50,12 @@ export function useJoinGameRoom(roomId: string): Payload {
                 return null;
             }
 
-            if (!ROOM_ENDPOINT) {
-                const endpointError = new Error('Room endpoint is not configured.');
-                if (isMountedRef.current) {
-                    setError(endpointError);
-                    onError?.(endpointError);
-                }
-                return null;
-            }
-
             loadingRef.current = true;
             setLoading(true);
             setError(null);
 
             try {
-                const response = await fetch(`${ROOM_ENDPOINT}/join/${roomId}`, {
+                const response = await fetch(`${JOIN_ROOM_URL}/${roomId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

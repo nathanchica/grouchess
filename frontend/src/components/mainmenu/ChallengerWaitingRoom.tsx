@@ -7,10 +7,13 @@ import { useNavigate } from 'react-router';
 import DisplayNameForm from './DisplayNameForm';
 
 import { useJoinGameRoom } from '../../hooks/useJoinGameRoom';
+import { getEnv } from '../../utils/config';
 import { getCachedPromise } from '../../utils/fetch';
 
-async function fetchRoomBasicInfo(url: string): Promise<GetGameRoomBasicInfoResponse> {
-    const response = await fetch(url);
+const GAME_ROOM_BASE_URL = `${getEnv().VITE_API_BASE_URL}/room`;
+
+async function fetchRoomBasicInfo(roomId: string): Promise<GetGameRoomBasicInfoResponse> {
+    const response = await fetch(`${GAME_ROOM_BASE_URL}/${roomId}`);
 
     if (!response.ok) {
         throw new Error('Failed to fetch room info.');
@@ -32,15 +35,7 @@ type Props = {
 };
 
 function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: Props) {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-    if (!apiBaseUrl) {
-        throw new Error('Room endpoint is not configured.');
-    }
-
-    const { timeControl } = use(
-        getCachedPromise(`getGameRoomBasicInfo:${roomId}`, () => fetchRoomBasicInfo(`${apiBaseUrl}/room/${roomId}`))
-    );
+    const { timeControl } = use(getCachedPromise(`getGameRoomBasicInfo:${roomId}`, () => fetchRoomBasicInfo(roomId)));
 
     const navigate = useNavigate();
     const { joinGameRoom, loading: isJoining } = useJoinGameRoom(roomId);

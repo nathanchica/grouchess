@@ -1,3 +1,4 @@
+import { NotConfiguredError } from '@grouchess/errors';
 import * as z from 'zod';
 
 /**
@@ -10,6 +11,13 @@ const envSchema = z.object({
 
     VITE_SENTRY_DSN: z.url().optional(),
     VITE_SENTRY_TRACES_SAMPLE_RATE: z.number().min(0).max(1).default(0.1).optional(),
+
+    // Vite built-in environment variables
+    MODE: z.enum(['development', 'production', 'test']).default('development'),
+    BASE_URL: z.string().default('/'),
+    DEV: z.boolean().default(false),
+    PROD: z.boolean().default(false),
+    SSR: z.boolean().default(false),
 });
 
 /**
@@ -29,7 +37,7 @@ const parseEnv = () => {
                 })
                 .join('\n');
 
-            throw new Error(
+            throw new NotConfiguredError(
                 `\n🔥 Environment validation failed:\n${errorMessage}\n\n` +
                     `Please check your .env file and ensure all required variables are set correctly.`
             );

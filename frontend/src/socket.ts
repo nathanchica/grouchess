@@ -1,12 +1,9 @@
 import type { ChessClientToServerEvents, ChessServerToClientEvents } from '@grouchess/socket-events';
 import { io, type Socket } from 'socket.io-client';
 
-const wsUrl = import.meta.env.VITE_WEBSOCKET_URL;
-if (!wsUrl) {
-    throw new Error('VITE_WEBSOCKET_URL is not defined');
-}
+import { getEnv } from './utils/config';
 
-export const socket: Socket<ChessServerToClientEvents, ChessClientToServerEvents> = io(wsUrl, {
+export const socket: Socket<ChessServerToClientEvents, ChessClientToServerEvents> = io(getEnv().VITE_WEBSOCKET_URL, {
     transports: ['websocket'],
     autoConnect: false,
 });
