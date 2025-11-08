@@ -4,6 +4,7 @@ import type { TimeControl } from '@grouchess/models';
 
 import GameRoomForm from './GameRoomForm';
 
+import { getCachedPromise } from '../../utils/fetch';
 import { checkHealthStatus } from '../../utils/health';
 
 const LazyServiceHealthCheckView = lazy(() => import('./ServiceHealthCheckView'));
@@ -13,16 +14,10 @@ type Props = {
 };
 
 /**
- * Represents the active health check probe promise.
- * This ensures that multiple mounts of the health gate share the same probe instead of creating multiple probes.
- */
-let activeProbe: Promise<boolean> | null = null;
-
-/**
  * Gates access to the GameRoomForm until the backend service is healthy
  */
 function GameRoomFormHealthGate({ onSelfPlayStart }: Props) {
-    const initiallyHealthy = use((activeProbe ??= checkHealthStatus()));
+    const initiallyHealthy = use(getCachedPromise('healthProbe', () => checkHealthStatus()));
     const [isHealthy, setIsHealthy] = useState<boolean>(initiallyHealthy);
 
     if (isHealthy) {
