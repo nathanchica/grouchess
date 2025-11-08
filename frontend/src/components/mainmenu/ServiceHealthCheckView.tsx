@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
-import { RequestTimeoutError, ServiceUnavailableError } from '@grouchess/errors';
-
-import { useFetchServiceHealth } from '../../hooks/useFetchServiceHealth';
+import { useFetchWithRetry } from '../../hooks/useFetchWithRetry';
 import { getEnv } from '../../utils/config';
 import { MS_IN_SECOND } from '../../utils/formatting';
+import { fetchParsedHealthStatus } from '../../utils/health';
 import Spinner from '../common/Spinner';
 
 type Props = {
@@ -16,8 +15,6 @@ type Props = {
  * While waiting, shows a friendly loading panel. Once healthy, calls onHealthy callback.
  */
 function ServiceHealthCheckView({ onHealthy }: Props) {
-    const { fetchHealthStatus, error } = useFetchServiceHealth();
-
     const {
         VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: requestTimeoutMs,
         VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: maxTimeoutErrorCount,
@@ -26,48 +23,22 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
 
     const maxWaitSecs = (maxTimeoutErrorCount * requestTimeoutMs) / MS_IN_SECOND;
 
-    const [isHealthy, setIsHealthy] = useState<boolean>(false);
-    const [timeoutErrorCount, setTimeoutErrorCount] = useState<number>(0);
-    const [nonTimeoutErrorCount, setNonTimeoutErrorCount] = useState<number>(0);
+    const fetchHealth = useCallback(() => fetchParsedHealthStatus({ timeoutMs: requestTimeoutMs }), [requestTimeoutMs]);
 
-    if (timeoutErrorCount >= maxTimeoutErrorCount) {
-        throw new ServiceUnavailableError();
-    }
-
-    if (error != null && !(error instanceof RequestTimeoutError) && nonTimeoutErrorCount >= maxNonTimeoutErrorCount) {
-        throw error;
-    }
-
-    /**
-     * Fetch health status on mount and whenever timeoutErrorCount or nonTimeoutErrorCount changes.
-     */
-    useEffect(() => {
-        if (isHealthy) return;
-
-        fetchHealthStatus({
-            timeoutMs: requestTimeoutMs,
-            onSuccess: () => {
-                setIsHealthy(true);
-            },
-            onError: (error) => {
-                if (isHealthy) return;
-                if (error instanceof RequestTimeoutError) {
-                    setTimeoutErrorCount((count) => count + 1);
-                    return;
-                }
-                setNonTimeoutErrorCount((count) => count + 1);
-            },
-        });
-    }, [fetchHealthStatus, isHealthy, timeoutErrorCount, nonTimeoutErrorCount, requestTimeoutMs]);
+    const { isSuccess } = useFetchWithRetry({
+        fetchFunction: fetchHealth,
+        maxTimeoutErrorCount,
+        maxNonTimeoutErrorCount,
+    });
 
     // Notify parent when healthy so it can switch views
     useEffect(() => {
-        if (isHealthy) {
+        if (isSuccess) {
             onHealthy();
         }
-    }, [isHealthy, onHealthy]);
+    }, [isSuccess, onHealthy]);
 
-    if (isHealthy) return null;
+    if (isSuccess) return null;
 
     return (
         <div className="flex-1 flex items-center">
