@@ -10,7 +10,7 @@ const envSchema = z.object({
     VITE_WEBSOCKET_URL: z.url().default('http://localhost:4000'),
 
     VITE_SENTRY_DSN: z.url().optional(),
-    VITE_SENTRY_TRACES_SAMPLE_RATE: z.number().min(0).max(1).default(0.1).optional(),
+    VITE_SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1).optional(),
 
     // Vite built-in environment variables
     MODE: z.enum(['development', 'production', 'test']).default('development'),
@@ -37,10 +37,7 @@ const parseEnv = () => {
                 })
                 .join('\n');
 
-            throw new NotConfiguredError(
-                `\n🔥 Environment validation failed:\n${errorMessage}\n\n` +
-                    `Please check your .env file and ensure all required variables are set correctly.`
-            );
+            throw new NotConfiguredError(`\n${errorMessage}`);
         }
         // Defensive re-throw for unexpected errors
         /* v8 ignore next -- @preserve */
@@ -64,4 +61,12 @@ export function getEnv() {
         cachedEnv = parseEnv();
     }
     return cachedEnv;
+}
+
+/**
+ * Resets the cached environment variables.
+ * Intended for use in tests only.
+ */
+export function _resetCachedEnvForTests() {
+    cachedEnv = undefined;
 }
