@@ -17,7 +17,7 @@ type CreateGameRoomParams = {
     onError?: (error: Error) => void;
 };
 
-type CreateGameRoomFn = (params: CreateGameRoomParams) => Promise<CreateGameRoomResponse | null>;
+export type CreateGameRoomFn = (params: CreateGameRoomParams) => Promise<CreateGameRoomResponse | null>;
 
 type Payload = {
     createGameRoom: CreateGameRoomFn;

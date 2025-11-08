@@ -1,8 +1,7 @@
-import { type ReactNode } from 'react';
-
 import type { PieceColor, RoomType, TimeControl } from '@grouchess/models';
 import { createMockTimeControl } from '@grouchess/test-utils';
-import { ErrorBoundary } from 'react-error-boundary';
+import type { Mock } from 'vitest';
+import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
 import * as useCreateGameRoomModule from '../../../hooks/useCreateGameRoom';
@@ -15,6 +14,40 @@ vi.mock('react-router', () => ({
 
 vi.mock('../../../hooks/useCreateGameRoom', { spy: true });
 
+// Mock form components to isolate GameRoomForm
+vi.mock('../TimeControlForm', () => ({
+    default: ({ onTimeControlSelect }: { onTimeControlSelect: (tc: TimeControl | null) => void }) => (
+        <div data-testid="time-control-form">
+            <h2>Time Control</h2>
+            <button
+                onClick={() => onTimeControlSelect(createMockTimeControl({ alias: '5|0', minutes: 5, increment: 0 }))}
+            >
+                5 min
+            </button>
+            <button onClick={() => onTimeControlSelect(null)}>Unlimited</button>
+        </div>
+    ),
+}));
+
+vi.mock('../SideSelectForm', () => ({
+    default: ({ onSideSelect }: { onSideSelect: (side: PieceColor | null) => void }) => (
+        <div data-testid="side-select-form">
+            <h2>Play as</h2>
+            <button onClick={() => onSideSelect('white')}>White</button>
+            <button onClick={() => onSideSelect('black')}>Black</button>
+        </div>
+    ),
+}));
+
+vi.mock('../DisplayNameForm', () => ({
+    default: ({ onDisplayNameChange }: { onDisplayNameChange: (name: string) => void }) => (
+        <div data-testid="display-name-form">
+            <label htmlFor="display-name">Display Name (optional)</label>
+            <input id="display-name" type="text" onChange={(e) => onDisplayNameChange(e.target.value)} />
+        </div>
+    ),
+}));
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
@@ -23,202 +56,262 @@ const defaultProps = {
     onSelfPlayStart: vi.fn(),
 };
 
-function renderWithErrorBoundary(component: ReactNode) {
-    return render(<ErrorBoundary fallbackRender={({ error }) => <p>{error.message}</p>}>{component}</ErrorBoundary>);
-}
-
 describe('GameRoomForm', () => {
+    beforeEach(() => {
+        vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+            createGameRoom: vi.fn(),
+            loading: false,
+            error: null,
+        });
+    });
+
     describe('Initial Render and Default State', () => {
         it('renders the component with all required elements', async () => {
-            // TODO: Implement test
-            // Setup: Default props with onSelfPlayStart callback
-            // Action: Render component
-            // Expected: Should display heading "Start a game", room type buttons, Start button, and default forms section
+            const { getByRole, getByTestId } = await render(<GameRoomForm {...defaultProps} />);
+
+            await expect.element(getByRole('heading', { name: /start a game/i })).toBeInTheDocument();
+            await expect.element(getByRole('button', { name: /play against a friend/i })).toBeInTheDocument();
+            await expect.element(getByRole('button', { name: /self-play/i })).toBeInTheDocument();
+            await expect.element(getByRole('button', { name: /^start$/i })).toBeInTheDocument();
+            await expect.element(getByTestId('time-control-form')).toBeInTheDocument();
+            await expect.element(getByTestId('side-select-form')).toBeInTheDocument();
+            await expect.element(getByTestId('display-name-form')).toBeInTheDocument();
         });
 
         it("shows 'Play against a Friend' as default selected room type", async () => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Render component
-            // Expected: Player-vs-player option should have selected styling (ring-2 ring-emerald-500)
-        });
+            const { getByRole } = await render(<GameRoomForm {...defaultProps} />);
 
-        it('displays correct forms for default room type', async () => {
-            // TODO: Implement test
-            // Setup: Default props (player-vs-player is default)
-            // Action: Render component
-            // Expected: Should render TimeControlForm, SideSelectForm, and DisplayNameForm
+            const playAgainstFriendButton = getByRole('button', { name: /play against a friend/i });
+            const selfPlayButton = getByRole('button', { name: /self-play/i });
+
+            await expect.element(playAgainstFriendButton).toHaveAttribute('aria-pressed', 'true');
+            await expect.element(selfPlayButton).toHaveAttribute('aria-pressed', 'false');
         });
     });
 
     describe('Room Type Selection', () => {
         it('switches to self-play mode when clicked', async () => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Click on "Self-Play" button
-            // Expected: Self-play button gets selected styling, only TimeControlForm is visible
+            const { getByRole, getByTestId } = await render(<GameRoomForm {...defaultProps} />);
+
+            const selfPlayButton = getByRole('button', { name: /self-play/i });
+            await page.getByRole('button', { name: /self-play/i }).click();
+
+            await expect.element(selfPlayButton).toHaveAttribute('aria-pressed', 'true');
+            await expect.element(getByTestId('time-control-form')).toBeInTheDocument();
+            await expect.element(getByTestId('side-select-form')).not.toBeInTheDocument();
+            await expect.element(getByTestId('display-name-form')).not.toBeInTheDocument();
         });
 
         it('switches back to player-vs-player from self-play', async () => {
-            // TODO: Implement test
-            // Setup: Default props, initially select self-play
-            // Action: Click on "Play against a Friend" button
-            // Expected: All three forms become visible again
+            const { getByRole, getByTestId } = await render(<GameRoomForm {...defaultProps} />);
+
+            await page.getByRole('button', { name: /self-play/i }).click();
+            await page.getByRole('button', { name: /play against a friend/i }).click();
+
+            const playAgainstFriendButton = getByRole('button', { name: /play against a friend/i });
+            await expect.element(playAgainstFriendButton).toHaveAttribute('aria-pressed', 'true');
+            await expect.element(getByTestId('time-control-form')).toBeInTheDocument();
+            await expect.element(getByTestId('side-select-form')).toBeInTheDocument();
+            await expect.element(getByTestId('display-name-form')).toBeInTheDocument();
         });
 
         it.each([
             {
                 roomType: 'player-vs-player' as RoomType,
                 label: 'Play against a Friend',
-                description: 'should display TimeControlForm, SideSelectForm, and DisplayNameForm',
-                expectedFormCount: 3,
+                expectedForms: ['time-control-form', 'side-select-form', 'display-name-form'],
+                expectedHiddenForms: [],
             },
             {
                 roomType: 'self' as RoomType,
                 label: 'Self-Play',
-                description: 'should display only TimeControlForm',
-                expectedFormCount: 1,
+                expectedForms: ['time-control-form'],
+                expectedHiddenForms: ['side-select-form', 'display-name-form'],
             },
-        ])('shows correct forms for $roomType room type', async ({ roomType, label, description, expectedFormCount }) => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Click on room type button with given label
-            // Expected: Verify correct number of forms are displayed based on expectedFormCount
+        ])('shows correct forms for $roomType room type', async ({ label, expectedForms, expectedHiddenForms }) => {
+            const { getByTestId } = await render(<GameRoomForm {...defaultProps} />);
+
+            await page.getByRole('button', { name: new RegExp(label, 'i') }).click();
+
+            for (const formId of expectedForms) {
+                await expect.element(getByTestId(formId)).toBeInTheDocument();
+            }
+
+            for (const formId of expectedHiddenForms) {
+                await expect.element(getByTestId(formId)).not.toBeInTheDocument();
+            }
         });
     });
 
-    describe('Form Interactions', () => {
+    describe('Player-vs-Player - Form Interactions and Successful Room Creation', () => {
+        const roomId = 'test-room-123';
+        const playerId = 'test-player-456';
+        const token = 'test-token-789';
+        let mockCreateGameRoom: Mock<useCreateGameRoomModule.CreateGameRoomFn>;
+
+        function assertSuccessfulNavigation() {
+            expect(mockNavigate).toHaveBeenCalledWith(`/${roomId}`, {
+                state: {
+                    roomId,
+                    playerId,
+                    token,
+                    isCreator: true,
+                },
+            });
+        }
+
+        beforeEach(() => {
+            mockCreateGameRoom = vi.fn().mockImplementation(({ onSuccess }) => {
+                onSuccess({
+                    roomId,
+                    playerId,
+                    token,
+                });
+            });
+            vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+                createGameRoom: mockCreateGameRoom,
+                loading: false,
+                error: null,
+            });
+        });
+
         it('updates selected time control option', async () => {
-            // TODO: Implement test
-            // Setup: Default props, mock TimeControlForm with options
-            // Action: Select a time control option (e.g., "5 min")
-            // Expected: State updates with selected time control
+            const { getByRole } = await render(<GameRoomForm {...defaultProps} />);
+
+            const fiveMinButton = getByRole('button', { name: /5 min/i });
+            await fiveMinButton.click();
+
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            expect(mockCreateGameRoom).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    timeControlAlias: '5|0',
+                })
+            );
+            assertSuccessfulNavigation();
         });
 
         it('updates selected side in SideSelectForm', async () => {
-            // TODO: Implement test
-            // Setup: Default props (player-vs-player mode)
-            // Action: Click on "Black" or "Random Side" radio button
-            // Expected: Selected side updates accordingly
+            const { getByRole } = await render(<GameRoomForm {...defaultProps} />);
+
+            const blackButton = getByRole('button', { name: /black/i });
+            await blackButton.click();
+
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            expect(mockCreateGameRoom).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    color: 'black',
+                })
+            );
+            assertSuccessfulNavigation();
         });
 
         it('updates display name in DisplayNameForm', async () => {
-            // TODO: Implement test
-            // Setup: Default props (player-vs-player mode)
-            // Action: Type "TestUser" in display name input
-            // Expected: Display name state updates
+            const { getByRole, getByLabelText } = await render(<GameRoomForm {...defaultProps} />);
+
+            const displayNameInput = getByLabelText(/display name/i);
+            await displayNameInput.fill('TestUser');
+
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            expect(mockCreateGameRoom).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    displayName: 'TestUser',
+                })
+            );
+            assertSuccessfulNavigation();
+        });
+
+        it('updates all form fields together', async () => {
+            const { getByRole, getByLabelText } = await render(<GameRoomForm {...defaultProps} />);
+
+            const fiveMinButton = getByRole('button', { name: /5 min/i });
+            await fiveMinButton.click();
+
+            const blackButton = getByRole('button', { name: /black/i });
+            await blackButton.click();
+
+            const displayNameInput = getByLabelText(/display name/i);
+            await displayNameInput.fill('TestUser');
+
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            expect(mockCreateGameRoom).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    timeControlAlias: '5|0',
+                    color: 'black',
+                    displayName: 'TestUser',
+                    roomType: 'player-vs-player',
+                })
+            );
+            assertSuccessfulNavigation();
         });
     });
 
     describe('Self-Play Mode', () => {
-        it('calls onSelfPlayStart when Start is clicked in self-play mode', async () => {
-            // TODO: Implement test
-            // Setup: Props with mock onSelfPlayStart, select self-play mode
-            // Action: Click Start button
-            // Expected: onSelfPlayStart called with selected time control (or null)
-            // Note: Should not call createGameRoom
+        let mockOnSelfPlayStart: Mock;
+        let mockCreateGameRoom: Mock<useCreateGameRoomModule.CreateGameRoomFn>;
+
+        beforeEach(() => {
+            mockOnSelfPlayStart = vi.fn();
+            mockCreateGameRoom = vi.fn();
+            vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+                createGameRoom: mockCreateGameRoom,
+                loading: false,
+                error: null,
+            });
         });
 
-        it('passes null time control when unlimited is selected', async () => {
-            // TODO: Implement test
-            // Setup: Self-play mode, unlimited time selected
-            // Action: Click Start button
-            // Expected: onSelfPlayStart called with null
+        it('calls onSelfPlayStart when Start is clicked in self-play mode', async () => {
+            const { getByRole } = await render(<GameRoomForm onSelfPlayStart={mockOnSelfPlayStart} />);
+
+            await page.getByRole('button', { name: /self-play/i }).click();
+
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            expect(mockOnSelfPlayStart).toHaveBeenCalledWith(null);
+            expect(mockCreateGameRoom).not.toHaveBeenCalled();
         });
 
         it.each([
             {
                 scenario: 'with time control selected',
-                timeControl: createMockTimeControl({ alias: '5|0', minutes: 5, increment: 0 }),
+                selectTimeControl: true,
                 expectedTimeControl: createMockTimeControl({ alias: '5|0', minutes: 5, increment: 0 }),
             },
             {
                 scenario: 'with unlimited time control',
-                timeControl: null,
+                selectTimeControl: false,
                 expectedTimeControl: null,
             },
         ])(
             'calls onSelfPlayStart with correct time control: $scenario',
-            async ({ scenario, timeControl, expectedTimeControl }) => {
-                // TODO: Implement test
-                // Setup: Self-play mode, set timeControl
-                // Action: Click Start button
-                // Expected: onSelfPlayStart called with expectedTimeControl
+            async ({ selectTimeControl, expectedTimeControl }) => {
+                const { getByRole } = await render(<GameRoomForm onSelfPlayStart={mockOnSelfPlayStart} />);
+
+                await page.getByRole('button', { name: /self-play/i }).click();
+
+                if (selectTimeControl) {
+                    const fiveMinButton = getByRole('button', { name: /5 min/i });
+                    await fiveMinButton.click();
+                }
+
+                const startButton = getByRole('button', { name: /^start$/i });
+                await startButton.click();
+
+                expect(mockOnSelfPlayStart).toHaveBeenCalledWith(expectedTimeControl);
+                expect(mockCreateGameRoom).not.toHaveBeenCalled();
             }
         );
     });
 
-    describe('Player-vs-Player Room Creation (Success Path)', () => {
-        it('creates room with all form data', async () => {
-            // TODO: Implement test
-            // Setup: Mock successful createGameRoom, fill all forms
-            // Action: Click Start button
-            // Expected: createGameRoom called with correct params, navigates to room
-        });
-
-        it('creates room with minimal data (no display name)', async () => {
-            // TODO: Implement test
-            // Setup: Mock successful createGameRoom, leave display name empty
-            // Action: Click Start button
-            // Expected: createGameRoom called with null displayName
-        });
-
-        it('navigates to created room on success', async () => {
-            // TODO: Implement test
-            // Setup: Mock createGameRoom returns roomId, playerId, token
-            // Action: Click Start after filling forms
-            // Expected: navigate called with `/${roomId}` and state containing room data with isCreator: true
-        });
-
-        it.each([
-            {
-                scenario: 'with all form fields filled',
-                displayName: 'TestUser',
-                side: 'white' as PieceColor,
-                timeControl: createMockTimeControl({ alias: '5|0' }),
-            },
-            {
-                scenario: 'without display name',
-                displayName: null,
-                side: 'black' as PieceColor,
-                timeControl: createMockTimeControl({ alias: '10|5' }),
-            },
-            {
-                scenario: 'with random side selection',
-                displayName: 'Player',
-                side: null,
-                timeControl: null,
-            },
-        ])('creates room correctly: $scenario', async ({ scenario, displayName, side, timeControl }) => {
-            // TODO: Implement test
-            // Setup: Mock successful createGameRoom, set form values
-            // Action: Click Start button
-            // Expected: createGameRoom called with correct parameters
-        });
-    });
-
     describe('Error Handling', () => {
-        it('displays error message when room creation fails', async () => {
-            // TODO: Implement test
-            // Setup: Mock createGameRoom to call onError with message
-            // Action: Click Start button
-            // Expected: Error message displayed in UI (red text above Start button)
-        });
-
-        it('clears previous error when retrying', async () => {
-            // TODO: Implement test
-            // Setup: First attempt fails, then succeeds
-            // Action: Click Start twice
-            // Expected: Error cleared on second attempt
-        });
-
-        it('handles network errors gracefully', async () => {
-            // TODO: Implement test
-            // Setup: Mock createGameRoom to throw network error
-            // Action: Click Start button
-            // Expected: Generic error message displayed
-        });
-
         it.each([
             {
                 scenario: 'API error',
@@ -232,94 +325,167 @@ describe('GameRoomForm', () => {
                 scenario: 'network timeout',
                 errorMessage: 'Request timed out.',
             },
-        ])('displays error message correctly: $scenario', async ({ scenario, errorMessage }) => {
-            // TODO: Implement test
-            // Setup: Mock createGameRoom to call onError with errorMessage
-            // Action: Click Start button
-            // Expected: Error message displayed with correct text
+        ])('displays error message when room creation fails: $scenario', async ({ errorMessage }) => {
+            const mockCreateGameRoom = vi.fn().mockImplementation(({ onError }) => {
+                onError({ message: errorMessage });
+            });
+            vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+                createGameRoom: mockCreateGameRoom as unknown as useCreateGameRoomModule.CreateGameRoomFn,
+                loading: false,
+                error: null,
+            });
+
+            const { getByRole } = await render(<GameRoomForm {...defaultProps} />);
+
+            // Click Start to trigger room creation
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            // Verify error message is displayed with correct text
+            const errorElement = getByRole('alert');
+            await expect.element(errorElement).toBeInTheDocument();
+            await expect.element(errorElement).toHaveTextContent(errorMessage);
+        });
+
+        it('clears previous error when retrying', async () => {
+            const errorMessage = 'Failed to create room.';
+            const roomId = 'test-room-123';
+            const playerId = 'test-player-456';
+            const token = 'test-token-789';
+
+            let callCount = 0;
+            const mockCreateGameRoom = vi.fn().mockImplementation(({ onSuccess, onError }) => {
+                callCount++;
+                if (callCount === 1) {
+                    // First attempt fails
+                    onError({ message: errorMessage });
+                } else {
+                    // Second attempt succeeds
+                    onSuccess({ roomId, playerId, token });
+                }
+            });
+
+            vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+                createGameRoom: mockCreateGameRoom as unknown as useCreateGameRoomModule.CreateGameRoomFn,
+                loading: false,
+                error: null,
+            });
+
+            const { getByRole } = await render(<GameRoomForm {...defaultProps} />);
+
+            // First attempt - should fail
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+            const errorElement = getByRole('alert');
+            await expect.element(errorElement).toBeInTheDocument();
+            await expect.element(errorElement).toHaveTextContent(errorMessage);
+
+            // Second attempt - should succeed and clear error
+            await startButton.click();
+            await expect.element(errorElement).not.toBeInTheDocument();
+            expect(mockNavigate).toHaveBeenCalledWith(`/${roomId}`, {
+                state: {
+                    roomId,
+                    playerId,
+                    token,
+                    isCreator: true,
+                },
+            });
         });
     });
 
-    describe('Loading States', () => {
+    describe('Loading State while creating room', () => {
+        beforeEach(() => {
+            vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+                createGameRoom: vi.fn(),
+                loading: true,
+                error: null,
+            });
+        });
+
         it('shows loading spinner during room creation', async () => {
-            // TODO: Implement test
-            // Setup: Mock useCreateGameRoom with loading: true
-            // Action: Render component
-            // Expected: Spinner visible, button shows "Creating game room..."
+            const { getByRole, getByText } = await render(<GameRoomForm {...defaultProps} />);
+
+            // Verify spinner status element is visible
+            const statusElement = getByRole('status');
+            await expect.element(statusElement).toBeInTheDocument();
+
+            // Verify loading text is displayed
+            const loadingText = getByText(/creating game room\.\.\./i);
+            await expect.element(loadingText).toBeInTheDocument();
         });
 
         it('disables Start button while loading', async () => {
-            // TODO: Implement test
-            // Setup: Mock useCreateGameRoom with loading: true
-            // Action: Try to click Start button
-            // Expected: Button is disabled
+            const { getByRole } = await render(<GameRoomForm {...defaultProps} />);
+
+            // Button should be accessible by its aria-label and disabled
+            const startButton = getByRole('button', { name: /creating game room/i });
+            await expect.element(startButton).toBeDisabled();
         });
 
         it('shows correct loading state text', async () => {
-            // TODO: Implement test
-            // Setup: Mock useCreateGameRoom with loading: true
-            // Action: Render component
-            // Expected: Button text changes to "Creating game room..." and includes status role
+            const { getByRole, getByText } = await render(<GameRoomForm {...defaultProps} />);
+
+            // Verify button has correct accessible name
+            const startButton = getByRole('button', { name: /creating game room/i });
+            await expect.element(startButton).toBeInTheDocument();
+
+            // Verify loading text is displayed
+            const loadingText = getByText(/creating game room\.\.\./i);
+            await expect.element(loadingText).toBeInTheDocument();
+
+            // Verify status role is present
+            const statusElement = getByRole('status');
+            await expect.element(statusElement).toBeInTheDocument();
         });
     });
 
     describe('Edge Cases', () => {
-        it('handles rapid room type switching', async () => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Quickly click between room types multiple times
-            // Expected: UI stays consistent, correct forms shown
-        });
-
         it('preserves form data when switching room types and back', async () => {
-            // TODO: Implement test
-            // Setup: Fill forms in player-vs-player mode
-            // Action: Switch to self-play, then back to player-vs-player
-            // Expected: Document expected behavior - forms should maintain their state
-        });
+            const mockCreateGameRoom = vi.fn().mockImplementation(({ onSuccess }) => {
+                onSuccess({
+                    roomId: 'test-room-123',
+                    playerId: 'test-player-456',
+                    token: 'test-token-789',
+                });
+            });
+            vi.spyOn(useCreateGameRoomModule, 'useCreateGameRoom').mockReturnValue({
+                createGameRoom: mockCreateGameRoom,
+                loading: false,
+                error: null,
+            });
 
-        it('handles clicking Start multiple times in quick succession', async () => {
-            // TODO: Implement test
-            // Setup: Mock createGameRoom with delay
-            // Action: Click Start button multiple times rapidly
-            // Expected: createGameRoom should only be called once (or button should be disabled)
-        });
-    });
+            const { getByRole, getByLabelText } = await render(<GameRoomForm {...defaultProps} />);
 
-    describe('Accessibility', () => {
-        it('all interactive elements are keyboard accessible', async () => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Tab through all elements
-            // Expected: Can navigate and activate all buttons/inputs via keyboard, tab order is logical
-        });
+            // Fill forms in player-vs-player mode
+            const fiveMinButton = getByRole('button', { name: /5 min/i });
+            await fiveMinButton.click();
 
-        it('form elements have proper ARIA labels', async () => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Query elements by role and label
-            // Expected: All inputs have associated labels or ARIA labels
-        });
+            const blackButton = getByRole('button', { name: /black/i });
+            await blackButton.click();
 
-        it('error messages are announced to screen readers', async () => {
-            // TODO: Implement test
-            // Setup: Trigger an error
-            // Action: Check error element
-            // Expected: Error has appropriate role (alert) for screen reader announcement
-        });
+            const displayNameInput = getByLabelText(/display name/i);
+            await displayNameInput.fill('TestUser');
 
-        it('room type buttons have proper accessibility attributes', async () => {
-            // TODO: Implement test
-            // Setup: Default props
-            // Action: Query room type buttons
-            // Expected: Buttons have descriptive labels and proper roles
-        });
+            // Switch to self-play
+            await page.getByRole('button', { name: /self-play/i }).click();
 
-        it('Start button has proper disabled state semantics', async () => {
-            // TODO: Implement test
-            // Setup: Mock loading state
-            // Action: Check button attributes
-            // Expected: Button has disabled attribute and appropriate ARIA attributes
+            // Switch back to player-vs-player
+            await page.getByRole('button', { name: /play against a friend/i }).click();
+
+            // Click Start to verify form data was preserved
+            const startButton = getByRole('button', { name: /^start$/i });
+            await startButton.click();
+
+            // Verify all form data was preserved
+            expect(mockCreateGameRoom).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    timeControlAlias: '5|0',
+                    color: 'black',
+                    displayName: 'TestUser',
+                    roomType: 'player-vs-player',
+                })
+            );
         });
     });
 });

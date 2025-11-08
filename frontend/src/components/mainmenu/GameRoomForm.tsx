@@ -82,10 +82,12 @@ function GameRoomForm({ onSelfPlayStart }: Props) {
                 return <SideSelectForm key="side-select-form" initialSide={DEFAULT_SIDE} onSideSelect={onSideSelect} />;
             case 'display-name':
                 return <DisplayNameForm key="display-name-form" onDisplayNameChange={onDisplayNameChange} />;
+            /* v8 ignore next -- @preserve */
             default:
                 return null;
         }
     });
+    const startButtonText = loading ? 'Creating game room...' : 'Start';
 
     const onRoomCreated = (newWaitingRoom: WaitingRoom) => {
         navigate(`/${newWaitingRoom.roomId}`, {
@@ -131,6 +133,7 @@ function GameRoomForm({ onSelfPlayStart }: Props) {
                                 type="button"
                                 className={`${ROOM_OPTION_CLASSES} ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-500/10' : 'bg-zinc-900/60'}`}
                                 onClick={() => setSelectedRoomType(type)}
+                                aria-pressed={isSelected ? 'true' : 'false'}
                             >
                                 <span className="text-lg font-semibold text-zinc-100">{label}</span>
                                 <span className="text-sm text-zinc-400">{description}</span>
@@ -140,20 +143,25 @@ function GameRoomForm({ onSelfPlayStart }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    {errorMessage && <span className="text-sm font-semibold text-red-500">{errorMessage}</span>}
+                    {errorMessage && (
+                        <span role="alert" className="text-sm font-semibold text-red-500">
+                            {errorMessage}
+                        </span>
+                    )}
                     <button
                         type="button"
                         disabled={loading}
                         className="cursor-pointer w-full rounded-2xl bg-emerald-700/90 px-6 py-4 text-center font-semibold text-zinc-100 transition hover:bg-emerald-700/100 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
                         onClick={handleStartClick}
+                        aria-label={startButtonText}
                     >
                         {loading ? (
                             <div role="status" className="flex gap-2.5 items-center justify-center">
                                 <Spinner />
-                                Creating game room...
+                                {startButtonText}
                             </div>
                         ) : (
-                            'Start'
+                            <>{startButtonText}</>
                         )}
                     </button>
                 </div>
