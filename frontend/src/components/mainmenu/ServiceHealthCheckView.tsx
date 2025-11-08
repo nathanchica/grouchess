@@ -3,12 +3,9 @@ import { useEffect, useState } from 'react';
 import { RequestTimeoutError, ServiceUnavailableError } from '@grouchess/errors';
 
 import { useFetchServiceHealth } from '../../hooks/useFetchServiceHealth';
+import { getEnv } from '../../utils/config';
+import { MS_IN_SECOND } from '../../utils/formatting';
 import Spinner from '../common/Spinner';
-
-const REQUEST_TIMEOUT_MS = 5000;
-const MAX_TIMEOUT_ERROR_COUNT = 12; // ~12 attempts with 5s timeout for 60s total
-const MAX_WAIT_SECS = (MAX_TIMEOUT_ERROR_COUNT * REQUEST_TIMEOUT_MS) / 1000;
-const MAX_NON_TIMEOUT_ERROR_COUNT = 3; // Fail fast on non-timeout errors
 
 type Props = {
     onHealthy: () => void;
@@ -21,19 +18,23 @@ type Props = {
 function ServiceHealthCheckView({ onHealthy }: Props) {
     const { fetchHealthStatus, error } = useFetchServiceHealth();
 
+    const {
+        VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: requestTimeoutMs,
+        VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: maxTimeoutErrorCount,
+        VITE_SERVICE_HEALTH_CHECK_MAX_NON_TIMEOUT_ERROR_COUNT: maxNonTimeoutErrorCount,
+    } = getEnv();
+
+    const maxWaitSecs = (maxTimeoutErrorCount * requestTimeoutMs) / MS_IN_SECOND;
+
     const [isHealthy, setIsHealthy] = useState<boolean>(false);
     const [timeoutErrorCount, setTimeoutErrorCount] = useState<number>(0);
     const [nonTimeoutErrorCount, setNonTimeoutErrorCount] = useState<number>(0);
 
-    if (timeoutErrorCount >= MAX_TIMEOUT_ERROR_COUNT) {
+    if (timeoutErrorCount >= maxTimeoutErrorCount) {
         throw new ServiceUnavailableError();
     }
 
-    if (
-        error != null &&
-        !(error instanceof RequestTimeoutError) &&
-        nonTimeoutErrorCount >= MAX_NON_TIMEOUT_ERROR_COUNT
-    ) {
+    if (error != null && !(error instanceof RequestTimeoutError) && nonTimeoutErrorCount >= maxNonTimeoutErrorCount) {
         throw error;
     }
 
@@ -44,7 +45,7 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
         if (isHealthy) return;
 
         fetchHealthStatus({
-            timeoutMs: REQUEST_TIMEOUT_MS,
+            timeoutMs: requestTimeoutMs,
             onSuccess: () => {
                 setIsHealthy(true);
             },
@@ -57,7 +58,7 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
                 setNonTimeoutErrorCount((count) => count + 1);
             },
         });
-    }, [fetchHealthStatus, isHealthy, timeoutErrorCount, nonTimeoutErrorCount]);
+    }, [fetchHealthStatus, isHealthy, timeoutErrorCount, nonTimeoutErrorCount, requestTimeoutMs]);
 
     // Notify parent when healthy so it can switch views
     useEffect(() => {
@@ -79,7 +80,7 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
                 </div>
 
                 <p className="text-sm text-zinc-400">
-                    Please wait, the server is waking up from sleep. This can take up to ~{MAX_WAIT_SECS} seconds.
+                    Please wait, the server is waking up from sleep. This can take up to ~{maxWaitSecs} seconds.
                 </p>
             </section>
         </div>

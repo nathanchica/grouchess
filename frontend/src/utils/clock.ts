@@ -1,7 +1,6 @@
 import type { ChessClockState } from '@grouchess/models';
 
-const MS_IN_SECOND = 1000;
-const SEC_IN_MINUTE = 60;
+import { MS_IN_SECOND, SEC_IN_MINUTE } from './formatting';
 
 // Convert a server-provided clock state's lastUpdatedTimeMs (epoch ms) to a
 // client-side performance timer baseline so that UI can do: performance.now() - lastUpdatedPerfMs.

@@ -10,7 +10,12 @@ const envSchema = z.object({
     VITE_WEBSOCKET_URL: z.url().default('http://localhost:4000'),
 
     VITE_SENTRY_DSN: z.url().optional(),
-    VITE_SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1).optional(),
+    VITE_SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+
+    // Service health check configuration
+    VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: z.coerce.number().positive().default(5000),
+    VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: z.coerce.number().positive().default(12),
+    VITE_SERVICE_HEALTH_CHECK_MAX_NON_TIMEOUT_ERROR_COUNT: z.coerce.number().positive().default(3),
 
     // Vite built-in environment variables
     MODE: z.enum(['development', 'production', 'test']).default('development'),
