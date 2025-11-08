@@ -20,6 +20,13 @@
 - Backend tests HTTP routes using supertest, Express app is created via createApp() function from backend/src/app.ts
 - Use mock data factories from `@grouchess/test-utils` where applicable.
     - See ./packages/test-utils/README.md for available factories and usage examples.
+- Running tests:
+    - From the monorepo root: `pnpm test <package-name>` (e.g. `pnpm test frontend`)
+    - From within a package: `pnpm test`
+    - To run a specific test file: `pnpm test <test-file-name>` (e.g. `pnpm test GameRoomForm.test.ts`)
+    - Without coverage: `pnpm test:run <test-file-name>` (e.g. `pnpm test:run GameRoomForm.test.ts`)
+    - Useful options:
+        - `--testTimeout 1000` to decrease test timeout (default is 15000ms)
 
 ### Frontend Testing
 
@@ -48,7 +55,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - For multiple images, use `getByRole('img', { name: /alt text/i }).elements()` to get all matching elements
 
         ```ts
-        const { getByRole } = render(<MyComponent />);
+        const { getByRole } = await render(<MyComponent />);
         const images = await getByRole('img', { name: /alt text/i }).elements();
         expect(images.length).toBe(2);
         expect(images[0]).toHaveAttribute('alt', 'First image alt text');
