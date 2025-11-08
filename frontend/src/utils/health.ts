@@ -1,7 +1,10 @@
-import { InvalidInputError, NotConfiguredError, RequestTimeoutError } from '@grouchess/errors';
+import { InvalidInputError, RequestTimeoutError } from '@grouchess/errors';
 import { HealthStatusResponseSchema, type HealthStatusResponse } from '@grouchess/http-schemas';
 
+import { getEnv } from './config';
+
 const DEFAULT_TIMEOUT_MS = 800;
+const HEALTH_URL = `${getEnv().VITE_API_BASE_URL}/health`;
 
 type FetchHealthParams = {
     timeoutMs?: number;
@@ -11,10 +14,6 @@ type FetchHealthParams = {
  * Fetches the /health endpoint with an optional timeout
  */
 async function fetchHealth({ timeoutMs = DEFAULT_TIMEOUT_MS }: FetchHealthParams = {}): Promise<Response> {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-    if (!apiBaseUrl) {
-        throw new NotConfiguredError('API base URL is not configured.');
-    }
     if (timeoutMs <= 0) {
         throw new InvalidInputError('timeoutMs must be a positive number.');
     }
@@ -23,7 +22,7 @@ async function fetchHealth({ timeoutMs = DEFAULT_TIMEOUT_MS }: FetchHealthParams
     const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const response = await fetch(`${apiBaseUrl}/health`, {
+        const response = await fetch(HEALTH_URL, {
             signal: controller.signal,
         });
 

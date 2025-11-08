@@ -119,14 +119,6 @@ describe('ChallengerWaitingRoom', () => {
             const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
             await expect.element(getByText('Failed to parse room info.')).toBeInTheDocument();
         });
-
-        it('throws error if API base URL is not configured', async () => {
-            vi.spyOn(console, 'error').mockImplementation(() => {}); // Suppress error boundary logging
-            vi.stubEnv('VITE_API_BASE_URL', undefined);
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
-            const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
-            await expect.element(getByText('Room endpoint is not configured.')).toBeInTheDocument();
-        });
     });
 
     describe('Display Name Form', () => {

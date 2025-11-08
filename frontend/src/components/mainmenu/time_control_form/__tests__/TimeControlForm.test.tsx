@@ -88,13 +88,6 @@ describe('TimeControlForm', () => {
     describe('Error State (ErrorBoundary)', () => {
         it.each([
             {
-                scenario: 'API endpoint is not configured',
-                setup: () => {
-                    vi.stubEnv('VITE_API_BASE_URL', undefined);
-                },
-                expectedError: 'API base endpoint is not configured.',
-            },
-            {
                 scenario: 'fetch fails with network error',
                 setup: () => {
                     vi.spyOn(window, 'fetch').mockRejectedValue(new Error('Network error'));

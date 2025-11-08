@@ -5,16 +5,13 @@ import type { TimeControl } from '@grouchess/models';
 
 import TimeControlOption from './TimeControlOption';
 
+import { getEnv } from '../../../utils/config';
 import { getCachedPromise } from '../../../utils/fetch';
 
+const TIME_CONTROL_OPTIONS_URL = `${getEnv().VITE_API_BASE_URL}/time-control`;
+
 async function fetchTimeControlOptions(): Promise<GetTimeControlOptionsResponse> {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-    if (!apiBaseUrl) {
-        throw new Error('API base endpoint is not configured.');
-    }
-
-    const response = await fetch(`${apiBaseUrl}/time-control`);
+    const response = await fetch(TIME_CONTROL_OPTIONS_URL);
 
     if (!response.ok) {
         throw new Error('Failed to fetch time control options.');

@@ -2,7 +2,9 @@ import { useCallback, useState } from 'react';
 
 import { GetChessGameResponseSchema, type GetChessGameResponse } from '@grouchess/http-schemas';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+import { getEnv } from '../utils/config';
+
+const { VITE_API_BASE_URL: API_BASE_URL } = getEnv();
 
 type FetchChessGameDataParams = {
     roomId: string;
@@ -22,13 +24,6 @@ export function useFetchChessGame(): UseFetchChessGameResult {
     const [error, setError] = useState<Error | null>(null);
 
     const fetchChessGameData = useCallback(async ({ roomId, token, onSuccess, onError }: FetchChessGameDataParams) => {
-        if (!apiBaseUrl) {
-            const err = new Error('API base URL is not configured.');
-            setError(err);
-            onError?.(err);
-            return;
-        }
-
         if (!roomId || !token) {
             const err = new Error('Room ID and token are required.');
             setError(err);
@@ -40,7 +35,7 @@ export function useFetchChessGame(): UseFetchChessGameResult {
             setLoading(true);
             setError(null);
 
-            const response = await fetch(`${apiBaseUrl}/room/${roomId}/chess-game`, {
+            const response = await fetch(`${API_BASE_URL}/room/${roomId}/chess-game`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

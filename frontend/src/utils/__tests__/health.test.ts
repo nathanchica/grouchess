@@ -1,4 +1,4 @@
-import { InvalidInputError, NotConfiguredError, RequestTimeoutError } from '@grouchess/errors';
+import { InvalidInputError, RequestTimeoutError } from '@grouchess/errors';
 import type { Mock } from 'vitest';
 
 import { fetchParsedHealthStatus, checkHealthStatus } from '../health';
@@ -11,28 +11,15 @@ beforeEach(() => {
     fetchSpy = vi.spyOn(window, 'fetch');
     setTimeoutSpy = vi.spyOn(window, 'setTimeout');
     clearTimeoutSpy = vi.spyOn(window, 'clearTimeout');
-    vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:4000/api');
 });
 
 afterEach(() => {
     fetchSpy.mockRestore();
     setTimeoutSpy.mockRestore();
     clearTimeoutSpy.mockRestore();
-    vi.unstubAllEnvs();
 });
 
 describe('fetchParsedHealthStatus', () => {
-    it.each([
-        { description: 'empty string', value: '' },
-        { description: 'undefined', value: undefined },
-    ])('throws NotConfiguredError when API base URL is $description', async ({ value }) => {
-        vi.stubEnv('VITE_API_BASE_URL', value);
-
-        await expect(fetchParsedHealthStatus()).rejects.toThrow(NotConfiguredError);
-        await expect(fetchParsedHealthStatus()).rejects.toThrow('API base URL is not configured.');
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it.each([
         { description: 'zero', value: 0 },
         { description: 'negative', value: -100 },
@@ -249,24 +236,6 @@ describe('checkHealthStatus', () => {
         const result = await checkHealthStatus();
 
         expect(result).toBe(true);
-    });
-
-    it('returns false when API base URL is empty', async () => {
-        vi.stubEnv('VITE_API_BASE_URL', '');
-
-        const result = await checkHealthStatus();
-
-        expect(result).toBe(false);
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it('returns false when API base URL is undefined', async () => {
-        vi.stubEnv('VITE_API_BASE_URL', undefined);
-
-        const result = await checkHealthStatus();
-
-        expect(result).toBe(false);
-        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it('returns false when timeoutMs is invalid', async () => {
