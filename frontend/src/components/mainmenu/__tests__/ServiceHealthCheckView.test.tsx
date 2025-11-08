@@ -206,16 +206,29 @@ describe('ServiceHealthCheckView', () => {
     });
 
     describe('Edge Cases', () => {
-        it('handles minimum timeout configuration correctly', async () => {
+        it.each([
+            {
+                scenario: 'zero timeout configuration',
+                requestTimeoutMs: 0,
+                maxTimeoutErrorCount: 0,
+                expectedText: /up to ~0 seconds/i,
+            },
+            {
+                scenario: '1 second timeout configuration',
+                requestTimeoutMs: 1000,
+                maxTimeoutErrorCount: 1,
+                expectedText: /up to ~1 second/i,
+            },
+        ])('handles $scenario correctly', async ({ requestTimeoutMs, maxTimeoutErrorCount, expectedText }) => {
             vi.spyOn(configModule, 'getEnv').mockReturnValue({
                 ...defaultEnv,
-                VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: 1000,
-                VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: 1,
+                VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: requestTimeoutMs,
+                VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: maxTimeoutErrorCount,
             } as unknown as configModule.Env);
 
             const { getByText } = await render(<ServiceHealthCheckView onHealthy={vi.fn()} />);
 
-            await expect.element(getByText(/up to ~1 seconds/i)).toBeVisible();
+            await expect.element(getByText(expectedText)).toBeVisible();
         });
 
         it('handles large timeout configuration correctly', async () => {
