@@ -85,7 +85,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 
             // Testing stateful components and state transitions
             it('manages items correctly', async () => {
-                const { getByText, getByTestId } = render(<ShoppingCart />)
+                const { getByText, getByTestId } = await render(<ShoppingCart />)
 
                 // Initially empty
                 await expect.element(getByText('Your cart is empty')).toBeInTheDocument()
@@ -103,7 +103,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             })
 
             it('is accessible', async () => {
-                const { getByRole, getByLabelText } = render(
+                const { getByRole, getByLabelText } = await render(
                     <Modal isOpen={true} title="Settings">
                         <SettingsForm />
                     </Modal>
