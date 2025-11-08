@@ -3,6 +3,8 @@ import { use, useState } from 'react';
 import { type GetTimeControlOptionsResponse, GetTimeControlOptionsResponseSchema } from '@grouchess/http-schemas';
 import type { TimeControl } from '@grouchess/models';
 
+import TimeControlOption from './TimeControlOption';
+
 import { getCachedPromise } from '../../../utils/fetch';
 
 async function fetchTimeControlOptions(): Promise<GetTimeControlOptionsResponse> {
@@ -54,52 +56,32 @@ function TimeControlOptions({ onTimeControlSelect }: Props) {
     return (
         <fieldset>
             <legend className="sr-only">Time control options</legend>
-            <section className="flex flex-col gap-8">
+            <div className="flex flex-col gap-8">
                 <div className="grid gap-3 grid-cols-3">
                     {supportedTimeControls.map((timeControl) => {
                         const isSelected = timeControl.alias === selectedTimeControlAlias;
 
                         return (
-                            <label
+                            <TimeControlOption
                                 key={timeControl.alias}
-                                className={`cursor-pointer gap-1 rounded-2xl border px-5 py-4 transition focus-within:outline focus-within:outline-offset-2 focus-within:outline-emerald-400 ${
-                                    isSelected
-                                        ? 'border-emerald-400 bg-emerald-400/10'
-                                        : 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-300/60 hover:bg-emerald-400/10'
-                                }`}
-                            >
-                                <input
-                                    type="radio"
-                                    name="time-control"
-                                    value={timeControl.alias}
-                                    checked={isSelected}
-                                    onChange={() => handleSelectionChange(timeControl.alias)}
-                                    className="sr-only"
-                                />
-                                <span className="text-base font-semibold text-zinc-100">{timeControl.displayText}</span>
-                            </label>
+                                isSelected={isSelected}
+                                onSelect={() => handleSelectionChange(timeControl.alias)}
+                                ariaLabel={`${timeControl.displayText} time control option`}
+                                displayText={timeControl.displayText}
+                                optionValue={timeControl.alias}
+                            />
                         );
                     })}
                 </div>
 
-                <label
-                    className={`cursor-pointer gap-1 rounded-2xl border px-5 py-4 transition focus-within:outline focus-within:outline-offset-2 focus-within:outline-emerald-400 ${
-                        isUnlimitedOptionSelected
-                            ? 'border-emerald-400 bg-emerald-400/10'
-                            : 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-300/60 hover:bg-emerald-400/10'
-                    }`}
-                >
-                    <input
-                        type="radio"
-                        name="time-control"
-                        value="unlimited"
-                        checked={isUnlimitedOptionSelected}
-                        onChange={() => handleSelectionChange(null)}
-                        className="sr-only"
-                    />
-                    <span className="text-base font-semibold text-zinc-100">Unlimited</span>
-                </label>
-            </section>
+                <TimeControlOption
+                    isSelected={isUnlimitedOptionSelected}
+                    onSelect={() => handleSelectionChange(null)}
+                    ariaLabel="Unlimited time control option"
+                    displayText="Unlimited"
+                    optionValue="unlimited"
+                />
+            </div>
         </fieldset>
     );
 }
