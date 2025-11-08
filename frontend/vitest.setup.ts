@@ -13,6 +13,9 @@ vi.mock('./src/utils/config', () => ({
         DEV: false,
         PROD: false,
         SSR: false,
+        VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: 5000,
+        VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: 12,
+        VITE_SERVICE_HEALTH_CHECK_MAX_NON_TIMEOUT_ERROR_COUNT: 3,
     })),
 }));
 

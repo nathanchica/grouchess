@@ -25,8 +25,6 @@
     - From within a package: `pnpm test`
     - To run a specific test file: `pnpm test <test-file-name>` (e.g. `pnpm test GameRoomForm.test.ts`)
     - Without coverage: `pnpm test:run <test-file-name>` (e.g. `pnpm test:run GameRoomForm.test.ts`)
-    - Useful options:
-        - `--testTimeout 1000` to decrease test timeout (default is 15000ms)
 
 ### Frontend Testing
 
@@ -139,6 +137,13 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, tailwind classes, etc.)
 
+- Asserting that a component renders null or is empty:
+
+    ```ts
+    const { container } = await render(<MyComponent />);
+    expect(container).toBeEmptyDOMElement();
+    ```
+
 #### Mocking strategies
 
 - There are mock context value factories available for common contexts used in the frontend
@@ -169,16 +174,6 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             // ... test implementation
         });
         ```
-
-- Use `vi.stubEnv` to mock environment variables when needed
-
-    ```ts
-    it("throws error if API base URL is not configured", async () => {
-        vi.stubEnv('VITE_API_BASE_URL', undefined);
-        await expect(render(<ChallengerWaitingRoom {...defaultProps} />)).rejects.toThrow('Room endpoint is not configured.');
-        vi.unstubAllEnvs();
-    });
-    ```
 
 - For mocking fetches, refer to docs/FrontendFetching.md for guidelines and examples
 - Mocking modules in react tests:

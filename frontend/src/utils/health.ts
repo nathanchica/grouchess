@@ -4,7 +4,6 @@ import { HealthStatusResponseSchema, type HealthStatusResponse } from '@grouches
 import { getEnv } from './config';
 
 const DEFAULT_TIMEOUT_MS = 800;
-const HEALTH_URL = `${getEnv().VITE_API_BASE_URL}/health`;
 
 type FetchHealthParams = {
     timeoutMs?: number;
@@ -14,6 +13,7 @@ type FetchHealthParams = {
  * Fetches the /health endpoint with an optional timeout
  */
 async function fetchHealth({ timeoutMs = DEFAULT_TIMEOUT_MS }: FetchHealthParams = {}): Promise<Response> {
+    const healthUrl = `${getEnv().VITE_API_BASE_URL}/health`;
     if (timeoutMs <= 0) {
         throw new InvalidInputError('timeoutMs must be a positive number.');
     }
@@ -22,7 +22,7 @@ async function fetchHealth({ timeoutMs = DEFAULT_TIMEOUT_MS }: FetchHealthParams
     const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const response = await fetch(HEALTH_URL, {
+        const response = await fetch(healthUrl, {
             signal: controller.signal,
         });
 

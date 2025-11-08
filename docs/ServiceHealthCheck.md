@@ -7,7 +7,7 @@ This documents the initial health‑check and lazy‑loading flow for the main m
 - Run a fast, one‑shot health probe before rendering the root view.
 - If healthy: render `GameRoomForm` immediately (no extra UI).
 - If unhealthy/timeout: lazy‑load `ServiceHealthCheckView`, which polls until healthy.
-- Keep polling logic encapsulated in `ServiceHealthCheckView` via `useFetchServiceHealth`.
+- Keep polling logic encapsulated in `ServiceHealthCheckView` via `useFetchWithRetry`.
 
 ## High‑Level Flow
 
@@ -15,7 +15,7 @@ This documents the initial health‑check and lazy‑loading flow for the main m
 2. `GameRoomFormHealthGate` kicks off a one‑shot probe using `checkHealthStatus()` and awaits it with React 19's `use()`.
 3. If the probe resolves `true`, `GameRoomFormHealthGate` renders `GameRoomForm`.
 4. If the probe resolves `false`, `GameRoomFormHealthGate` renders a lazily imported `ServiceHealthCheckView`.
-5. `ServiceHealthCheckView` uses `useFetchServiceHealth` to poll and, once healthy, calls `onHealthy()`.
+5. `ServiceHealthCheckView` uses `useFetchWithRetry` to poll and, once healthy, calls `onHealthy()`.
    `GameRoomFormHealthGate` then renders `GameRoomForm`.
 
 This ensures the normal path is instant and small, while the wake‑up UI is code‑split and only fetched on failure.
@@ -23,13 +23,27 @@ This ensures the normal path is instant and small, while the wake‑up UI is cod
 ## Files
 
 - `frontend/src/utils/health.ts` — `fetchParsedHealthStatus` (typed one‑shot health request) and `checkHealthStatus` (boolean).
+- `frontend/src/hooks/useFetchWithRetry.ts` — reusable hook that manages retries for fetch operations, distinguishing between timeout and non-timeout errors.
 - `frontend/src/components/mainmenu/GameRoomFormHealthGate.tsx` — probes once and branches UI; lazy‑loads the fallback.
 - `frontend/src/components/views/MainMenuView.tsx` — wraps the root route element with `Suspense` and renders `GameRoomFormHealthGate`.
-- `frontend/src/components/mainmenu/ServiceHealthCheckView.tsx` — polling view using `useFetchServiceHealth`, invokes `onHealthy()` when ready.
+- `frontend/src/components/mainmenu/ServiceHealthCheckView.tsx` — polling view using `useFetchWithRetry`, invokes `onHealthy()` when ready.
 
 ## `fetchParsedHealthStatus` and `checkHealthStatus`
 
 `fetchParsedHealthStatus` performs a single, typed request to the backend health endpoint and either returns parsed data or throws a typed error. `checkHealthStatus` fetches once and returns a boolean indicating health.
+
+## `useFetchWithRetry`
+
+A reusable hook that manages retry logic for fetch operations. It automatically retries when errors occur, distinguishing between timeout errors (`RequestTimeoutError`) and other errors. Key features:
+
+- Accepts a fetch function and optional retry limits (defaults: 12 for timeouts, 3 for non-timeout errors)
+- Automatically retries on errors, tracking separate counters for timeout vs non-timeout errors
+- Throws `ServiceUnavailableError` when the timeout error limit is exceeded
+- Throws the actual error when the non-timeout error limit is exceeded
+- Returns `{ isSuccess, timeoutErrorCount, nonTimeoutErrorCount }`
+- Stops retrying once a successful response is received
+
+This hook encapsulates all retry logic, making it reusable across the application.
 
 ## `GameRoomFormHealthGate`
 
@@ -69,16 +83,33 @@ It polls and calls `onHealthy()` so the parent (`GameRoomFormHealthGate`) can sw
 
 ```tsx
 // frontend/src/components/mainmenu/ServiceHealthCheckView.tsx
+import { useCallback, useEffect } from 'react';
+import { useFetchWithRetry } from '../../hooks/useFetchWithRetry';
+import { fetchParsedHealthStatus } from '../../utils/health';
+import { getEnv } from '../../utils/config';
+
 type Props = { onHealthy: () => void };
 
 function ServiceHealthCheckView({ onHealthy }: Props) {
-    const { fetchHealthStatus, error } = useFetchServiceHealth();
-    const [isHealthy, setIsHealthy] = useState(false);
-    // ... polling counters and effects
+    const {
+        VITE_SERVICE_HEALTH_CHECK_REQUEST_TIMEOUT_MS: requestTimeoutMs,
+        VITE_SERVICE_HEALTH_CHECK_MAX_TIMEOUT_ERROR_COUNT: maxTimeoutErrorCount,
+        VITE_SERVICE_HEALTH_CHECK_MAX_NON_TIMEOUT_ERROR_COUNT: maxNonTimeoutErrorCount,
+    } = getEnv();
+
+    const fetchHealth = useCallback(() => fetchParsedHealthStatus({ timeoutMs: requestTimeoutMs }), [requestTimeoutMs]);
+
+    const { isSuccess } = useFetchWithRetry({
+        fetchFunction: fetchHealth,
+        maxTimeoutErrorCount,
+        maxNonTimeoutErrorCount,
+    });
+
     useEffect(() => {
-        if (isHealthy) onHealthy();
-    }, [isHealthy, onHealthy]);
-    if (isHealthy) return null; // parent will swap to GameRoomForm
+        if (isSuccess) onHealthy();
+    }, [isSuccess, onHealthy]);
+
+    if (isSuccess) return null; // parent will swap to GameRoomForm
     return <LoadingPanel />;
 }
 ```
