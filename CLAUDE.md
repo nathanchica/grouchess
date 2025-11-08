@@ -137,6 +137,13 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, tailwind classes, etc.)
 
+- Asserting that a component renders null or is empty:
+
+    ```ts
+    const { container } = await render(<MyComponent />);
+    expect(container).toBeEmptyDOMElement();
+    ```
+
 #### Mocking strategies
 
 - There are mock context value factories available for common contexts used in the frontend
