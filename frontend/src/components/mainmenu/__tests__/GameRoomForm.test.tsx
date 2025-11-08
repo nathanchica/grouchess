@@ -15,7 +15,7 @@ vi.mock('react-router', () => ({
 vi.mock('../../../hooks/useCreateGameRoom', { spy: true });
 
 // Mock form components to isolate GameRoomForm
-vi.mock('../TimeControlForm', () => ({
+vi.mock('../time_control_form/TimeControlForm', () => ({
     default: ({ onTimeControlSelect }: { onTimeControlSelect: (tc: TimeControl | null) => void }) => (
         <div data-testid="time-control-form">
             <h2>Time Control</h2>

@@ -3,12 +3,13 @@ import { useState } from 'react';
 import type { PieceColor, RoomType, TimeControl } from '@grouchess/models';
 import { useNavigate } from 'react-router';
 
+import DisplayNameForm from './DisplayNameForm';
+import SideSelectForm from './SideSelectForm';
+import TimeControlForm from './time_control_form/TimeControlForm';
+
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
 import type { WaitingRoom } from '../../utils/types';
 import Spinner from '../common/Spinner';
-import DisplayNameForm from '../mainmenu/DisplayNameForm';
-import SideSelectForm from '../mainmenu/SideSelectForm';
-import TimeControlForm from '../mainmenu/TimeControlForm';
 
 const ROOM_OPTION_CLASSES =
     'flex w-full cursor-pointer flex-col items-start gap-1 rounded-2xl border border-zinc-800 px-6 py-5 text-left transition hover:border-emerald-400/50 hover:bg-emerald-500/10 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-emerald-400';

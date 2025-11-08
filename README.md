@@ -215,8 +215,8 @@ pnpm test:watch:browser     # runs frontend browser tests in watch mode (see iso
 - HTTP contracts (shared): `packages/http-schemas`
     - REST request/response schemas for chess/game-room: `packages/http-schemas/src/chess.ts`, `packages/http-schemas/src/timeControl.ts`
     - Used in backend routes (`backend/src/routes/*`) and frontend hooks
-      (`frontend/src/hooks/useFetchChessGame.ts`, `frontend/src/hooks/useFetchTimeControlOptions.ts`,
-      `frontend/src/hooks/useCreateGameRoom.ts`, `frontend/src/hooks/useJoinGameRoom.ts`).
+      (`frontend/src/hooks/useFetchChessGame.ts`, `frontend/src/hooks/useCreateGameRoom.ts`,
+      `frontend/src/hooks/useJoinGameRoom.ts`).
 
 - Backend services: `backend/src/services/*`
     - `chessGameService.ts` (game lifecycle, move application)
@@ -229,7 +229,7 @@ pnpm test:watch:browser     # runs frontend browser tests in watch mode (see iso
       `ChessClockSocketProvider.tsx`, `PlayerChatSocketProvider.tsx`, `SoundProvider.tsx`, `ImagesProvider.tsx`
     - Controllers: `frontend/src/components/controllers/ChessMovesController.tsx`, `.../SoundEffects.tsx`
     - Hooks: `useMonotonicClock.ts`, `useCreateGameRoom.ts`, `useJoinGameRoom.ts`,
-      `useFetchChessGame.ts`, `useFetchTimeControlOptions.ts`, `useWaitingRoom.ts`
+      `useFetchChessGame.ts`, `useWaitingRoom.ts`
     - UI: `frontend/src/components/chess_board/*`, `.../game_info_panel/*`, `.../chat/*`, `.../common/*`, `.../views/*`
 
 - Clocks
