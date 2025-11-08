@@ -27,12 +27,12 @@ function SideSelectForm({ initialSide, onSideSelect }: Props) {
 
             <form className="flex flex-row gap-2 mt-6">
                 {OPTIONS.map(({ label, value }) => {
-                    const isActive = selectedSide === value;
+                    const isSelected = selectedSide === value;
                     return (
                         <label
                             key={value}
                             className={`cursor-pointer gap-1 rounded-2xl border px-5 py-4 transition focus-within:outline focus-within:outline-offset-2 focus-within:outline-emerald-400 ${
-                                isActive
+                                isSelected
                                     ? 'border-emerald-400 bg-emerald-400/10'
                                     : 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-300/60 hover:bg-emerald-400/10'
                             }`}
@@ -41,9 +41,10 @@ function SideSelectForm({ initialSide, onSideSelect }: Props) {
                                 type="radio"
                                 name="side-select"
                                 value={value}
-                                checked={isActive}
+                                checked={isSelected}
                                 onChange={() => handleSideSelect(value)}
                                 className="sr-only"
+                                aria-label={`Play as ${label}`}
                             />
                             <span className="text-base font-semibold text-zinc-100">{label}</span>
                         </label>
