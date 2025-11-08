@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router';
 import { getLocationOrigin } from '../../utils/window';
 import CopyableTextField from '../common/CopyableTextField';
 
-type Props = {
+export type CreatorWaitingRoomProps = {
     roomId: string;
 };
 
-function CreatorWaitingRoom({ roomId }: Props) {
+function CreatorWaitingRoom({ roomId }: CreatorWaitingRoomProps) {
     const navigate = useNavigate();
 
     const shareUrl = `${getLocationOrigin()}/${roomId}`;

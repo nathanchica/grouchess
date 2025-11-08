@@ -126,6 +126,40 @@ function TimeControlOptions({ onTimeControlSelect }: Props) {
 export default TimeControlOptions;
 ```
 
+#### Utility: `getCachedPromise`
+
+React's `use` requires a stable promise reference to avoid refetching on every render. `getCachedPromise` provides
+a simple in-memory caching mechanism for promises based on a unique key.
+
+```ts
+// fetch.ts
+
+const promiseCache = new Map<string, Promise<unknown>>();
+
+/**
+ * Caches promises based on a key for fetching with `use` using a stable promise in React components.
+ * Cache is in-memory only, resets on page reload, and lasts for the lifetime of the application.
+ *
+ * @param key Unique key to identify the cached promise.
+ * @param fetchFunction Function that returns a promise to be cached.
+ * @returns The cached promise if it exists; otherwise, calls `fetchFunction`, caches its promise, and returns it.
+ */
+export function getCachedPromise<T>(key: string, fetchFunction: () => Promise<T>): Promise<T> {
+    if (promiseCache.has(key)) {
+        return promiseCache.get(key) as Promise<T>;
+    }
+
+    const promise = fetchFunction();
+    promiseCache.set(key, promise);
+    return promise;
+}
+
+// For testing purposes only
+export function _resetPromiseCacheForTesting(): void {
+    promiseCache.clear();
+}
+```
+
 ### Testing
 
 - Prompt for creating test skeleton:
@@ -209,13 +243,6 @@ describe('Loading State (Suspense Fallback)', () => {
 
 describe('Error State (ErrorBoundary)', () => {
     it.each([
-        {
-            scenario: 'API endpoint is not configured',
-            setup: () => {
-                vi.stubEnv('VITE_API_BASE_URL', undefined);
-            },
-            expectedError: 'API base endpoint is not configured.',
-        },
         {
             scenario: 'fetch fails with network error',
             setup: () => {

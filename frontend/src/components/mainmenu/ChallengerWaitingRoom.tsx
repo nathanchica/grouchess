@@ -29,12 +29,12 @@ async function fetchRoomBasicInfo(roomId: string): Promise<GetGameRoomBasicInfoR
     return parsedData.data;
 }
 
-type Props = {
+export type ChallengerWaitingRoomProps = {
     roomId: string;
     onJoinGameRoom: (payload: JoinGameRoomResponse) => void;
 };
 
-function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: Props) {
+function ChallengerWaitingRoom({ roomId, onJoinGameRoom }: ChallengerWaitingRoomProps) {
     const { timeControl } = use(getCachedPromise(`getGameRoomBasicInfo:${roomId}`, () => fetchRoomBasicInfo(roomId)));
 
     const navigate = useNavigate();
