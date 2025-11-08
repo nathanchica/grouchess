@@ -180,39 +180,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     });
     ```
 
-- Mocking fetches:
-
-    ```ts
-    const mockGetGameRoomBasicInfoParsedResponse: GetGameRoomBasicInfoResponse = {
-        roomId: 'test-room-123',
-        timeControl: createMockTimeControl(),
-    };
-
-    type CreateFetchResponseArgs = {
-        data?: GetGameRoomBasicInfoResponse | null;
-        ok?: boolean;
-    };
-
-    function createFetchResponse({ data = mockGetGameRoomBasicInfoParsedResponse, ok = true }: CreateFetchResponseArgs = {}): Response {
-        return {
-            ok,
-            json: vi.fn().mockResolvedValue(data),
-        } as unknown as Response;
-    }
-
-
-    it('fetches data successfully', async () => {
-        vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse());
-
-        // ...test implementation
-    });
-
-    it("throws error if fetch fails", async () => {
-        vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse({ ok: false }));
-        await expect(render(<ChallengerWaitingRoom {...defaultProps} />)).rejects.toThrow('Failed to fetch room info.');
-    });
-    ```
-
+- For mocking fetches, refer to docs/FrontendFetching.md for guidelines and examples
 - Mocking modules in react tests:
 
     ```ts
