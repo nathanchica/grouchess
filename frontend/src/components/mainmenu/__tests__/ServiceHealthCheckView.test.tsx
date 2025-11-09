@@ -219,6 +219,12 @@ describe('ServiceHealthCheckView', () => {
                 maxTimeoutErrorCount: 1,
                 expectedText: /up to ~1 second/i,
             },
+            {
+                scenario: 'negative timeout configuration',
+                requestTimeoutMs: -1000,
+                maxTimeoutErrorCount: 1,
+                expectedText: /up to ~0 seconds/i,
+            },
         ])('handles $scenario correctly', async ({ requestTimeoutMs, maxTimeoutErrorCount, expectedText }) => {
             vi.spyOn(configModule, 'getEnv').mockReturnValue({
                 ...defaultEnv,
