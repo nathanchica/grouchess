@@ -22,7 +22,7 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
         VITE_SERVICE_HEALTH_CHECK_MAX_NON_TIMEOUT_ERROR_COUNT: maxNonTimeoutErrorCount,
     } = getEnv();
 
-    const maxWaitSecs = (maxTimeoutErrorCount * requestTimeoutMs) / MS_IN_SECOND;
+    const maxWaitSecs = Math.max((maxTimeoutErrorCount * requestTimeoutMs) / MS_IN_SECOND, 0);
 
     const fetchHealth = useCallback(() => fetchParsedHealthStatus({ timeoutMs: requestTimeoutMs }), [requestTimeoutMs]);
 
