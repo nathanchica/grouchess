@@ -4,6 +4,7 @@ import { useFetchWithRetry } from '../../hooks/useFetchWithRetry';
 import { getEnv } from '../../utils/config';
 import { MS_IN_SECOND } from '../../utils/formatting';
 import { fetchParsedHealthStatus } from '../../utils/health';
+import Plural from '../common/Plural';
 import Spinner from '../common/Spinner';
 
 type Props = {
@@ -51,7 +52,8 @@ function ServiceHealthCheckView({ onHealthy }: Props) {
                 </div>
 
                 <p className="text-sm text-zinc-400">
-                    Please wait, the server is waking up from sleep. This can take up to ~{maxWaitSecs} seconds.
+                    Please wait, the server is waking up from sleep. This can take up to ~{maxWaitSecs}{' '}
+                    <Plural value={maxWaitSecs} one="second" many="seconds" />.
                 </p>
             </section>
         </div>
