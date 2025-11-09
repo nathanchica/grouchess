@@ -1,9 +1,11 @@
 import { isDrawStatus } from '@grouchess/chess';
 import type { ChessGameState } from '@grouchess/models';
+import invariant from 'tiny-invariant';
 
 import HandPeaceIcon from '../../assets/icons/hand-peace.svg?react';
 import RotateLeftIcon from '../../assets/icons/rotate-left.svg?react';
 import { getDisplayTextForDrawStatus } from '../../utils/draws';
+import { capitalizeFirstLetter } from '../../utils/formatting';
 import IconButton from '../common/IconButton';
 import Spinner from '../common/Spinner';
 
@@ -14,24 +16,28 @@ type Props = {
     onRematchClick: () => void;
 };
 
-function capitalizeFirstLetter(text: string) {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 function GameResultCard({ gameState, isAwaitingRematchResponse, onExitClick, onRematchClick }: Props) {
     const { status, winner } = gameState;
-    const isDraw = isDrawStatus(status);
+    invariant(status !== 'in-progress', 'GameResultCard should only be used for completed games');
 
-    const winnerLabel = isDraw ? 'Draw' : winner === 'white' ? 'White wins' : 'Black wins';
+    const isDraw = isDrawStatus(status);
     const resultScore = winner === 'white' ? '1-0' : winner === 'black' ? '0-1' : '1/2-1/2';
-    const statusLabel = (() => {
-        if (isDraw) return getDisplayTextForDrawStatus(status);
-        if (status === 'resigned') {
-            const loserText = winner === 'white' ? 'Black' : winner === 'black' ? 'White' : 'Player';
-            return `${loserText} resigned`;
-        }
-        return capitalizeFirstLetter(status.replace(/-/g, ' '));
-    })();
+
+    let winnerLabel;
+    if (isDraw) winnerLabel = 'Draw';
+    else if (winner === 'white') winnerLabel = 'White wins';
+    else if (winner === 'black') winnerLabel = 'Black wins';
+    else invariant(false, 'Winner must be defined for non-draw game results');
+
+    let statusLabel;
+    if (isDraw) statusLabel = getDisplayTextForDrawStatus(status);
+    else if (status === 'resigned') {
+        // The invariant above ensures winner is either 'white' or 'black' here
+        const losingPlayerColor = winner === 'white' ? 'Black' : 'White';
+        statusLabel = `${losingPlayerColor} resigned`;
+    } else {
+        statusLabel = capitalizeFirstLetter(status.replace(/-/g, ' '));
+    }
 
     return (
         <div
@@ -46,18 +52,25 @@ function GameResultCard({ gameState, isAwaitingRematchResponse, onExitClick, onR
             </div>
             <div className="flex md:flex-col flex-row md:gap-0 md:place-content-between justify-center md:py-1 py-0 gap-6">
                 {isAwaitingRematchResponse ? (
-                    <Spinner size="md" />
+                    <div aria-label="Awaiting rematch response">
+                        <Spinner size="md" />
+                    </div>
                 ) : (
                     <IconButton
                         icon={<RotateLeftIcon className="size-5" aria-hidden="true" />}
-                        aria-label="Offer Rematch"
                         tooltipText="Rematch"
+                        ariaProps={{
+                            'aria-label': 'Offer rematch',
+                        }}
                         onClick={onRematchClick}
                     />
                 )}
+
                 <IconButton
                     icon={<HandPeaceIcon className="size-5" aria-hidden="true" />}
-                    aria-label="Exit Game"
+                    ariaProps={{
+                        'aria-label': 'Exit Game',
+                    }}
                     tooltipText="Exit"
                     onClick={onExitClick}
                 />
