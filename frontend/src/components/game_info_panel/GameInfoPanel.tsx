@@ -28,8 +28,9 @@ function GameInfoPanel() {
     const { isReady: isImagesLoaded, imgSrcMap } = useImages();
     const { chessGame, loadFEN } = useChessGame();
     const { gameRoom, currentPlayerColor } = useGameRoom();
-    const { type } = gameRoom;
     const { timelineVersion, moveHistory } = chessGame;
+    const { type } = gameRoom;
+    const isSelfPlay = type === 'self';
 
     const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
     const logoImgSrc = imgSrcMap[rookImgSrc] ?? rookImgSrc;
@@ -62,7 +63,7 @@ function GameInfoPanel() {
     const iconButtons: IconButtonPropsWithKey[] = [
         {
             key: 'reset-game-button',
-            skip: type !== 'self',
+            skip: !isSelfPlay,
             icon: <RotateLeftIcon className={ICON_CLASSES} aria-hidden="true" />,
             onClick: onResetButtonClick,
             ariaProps: {
@@ -72,7 +73,7 @@ function GameInfoPanel() {
         },
         {
             key: 'load-board-button',
-            skip: type !== 'self',
+            skip: !isSelfPlay,
             icon: <FileImportIcon className={ICON_CLASSES} aria-hidden="true" />,
             onClick: () => toggleBottomDrawerView('load-board'),
             ariaProps: {

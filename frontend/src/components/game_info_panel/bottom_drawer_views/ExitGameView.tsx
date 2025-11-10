@@ -15,9 +15,7 @@ function ExitGameView({ onDismiss }: ExitGameViewProps) {
 
     return (
         <div className="w-full flex flex-col gap-6">
-            <h2 id="exit-game-modal-title" className="text-lg text-slate-50 font-semibold">
-                Are you sure you want to quit?
-            </h2>
+            <h2 className="text-lg text-slate-50 font-semibold">Are you sure you want to quit?</h2>
 
             <div className="flex justify-end gap-3">
                 <button
