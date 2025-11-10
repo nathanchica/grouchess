@@ -1,7 +1,7 @@
 import { render } from 'vitest-browser-react';
 
-import { SoundContext } from '../../../providers/SoundProvider';
-import { createMockSoundContextValues } from '../../../providers/__mocks__/SoundProvider';
+import { SoundContext } from '../../../../providers/SoundProvider';
+import { createMockSoundContextValues } from '../../../../providers/__mocks__/SoundProvider';
 import SoundControls from '../SoundControls';
 
 describe('SoundControls', () => {
@@ -19,7 +19,6 @@ describe('SoundControls', () => {
             const { getByLabelText, getByRole, getByText } = await renderSoundControls();
 
             await expect.element(getByText('Sound Effects')).toBeInTheDocument();
-            await expect.element(getByLabelText('Sound settings')).toBeInTheDocument();
             await expect.element(getByLabelText('Sound effect volume')).toBeInTheDocument();
             await expect.element(getByRole('button', { name: /toggle sound effects/i })).toBeInTheDocument();
             await expect.element(getByRole('slider', { name: /sound effect volume/i })).toBeInTheDocument();

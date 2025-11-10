@@ -7,24 +7,28 @@ export type IconButtonProps = {
     onClick: () => void;
     ariaProps?: AriaAttributes;
     isActive?: boolean;
-    tooltipText: string;
+    tooltipText?: string;
     disabled?: boolean;
 };
 
 function IconButton({ icon, onClick, ariaProps, isActive, tooltipText, disabled }: IconButtonProps) {
-    return (
-        <TooltipContainer tooltipText={tooltipText}>
-            <button
-                type="button"
-                onClick={onClick}
-                disabled={disabled}
-                {...ariaProps}
-                className={`cursor-pointer ${isActive ? 'text-zinc-100' : 'text-zinc-400 hover:text-zinc-100'} disabled:opacity-50 disabled:pointer-events-none transition`}
-            >
-                {icon}
-            </button>
-        </TooltipContainer>
+    const buttonContent = (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            {...ariaProps}
+            className={`cursor-pointer ${isActive ? 'text-zinc-100' : 'text-zinc-400 hover:text-zinc-100'} disabled:opacity-50 disabled:pointer-events-none transition`}
+        >
+            {icon}
+        </button>
     );
+
+    if (!tooltipText) {
+        return buttonContent;
+    }
+
+    return <TooltipContainer tooltipText={tooltipText}>{buttonContent}</TooltipContainer>;
 }
 
 export default IconButton;
