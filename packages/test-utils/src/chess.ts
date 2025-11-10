@@ -244,7 +244,7 @@ export const sicilianDefenseMoves: readonly MoveNotation[] = [
     { san: 'Nc6', figurine: '\u265Ec6', uci: 'b8c6' },
     { san: 'd4', figurine: 'd4', uci: 'd2d4' },
     { san: 'cxd4', figurine: 'cxd4', uci: 'c5d4' },
-    { san: 'Nxd4', figurine: 'Nxd4', uci: 'f3d4' },
+    { san: 'Nxd4', figurine: '\u265Exd4', uci: 'f3d4' },
     { san: 'e6', figurine: 'e6', uci: 'e7e6' },
     { san: 'Nc3', figurine: '\u265Ec3', uci: 'b1c3' },
     { san: 'a6', figurine: 'a6', uci: 'a7a6' },
