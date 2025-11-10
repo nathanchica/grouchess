@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+import { returnToMainMenu } from '../../../utils/window';
+
 export type ExitGameViewProps = {
     onDismiss: () => void;
 };
@@ -11,10 +13,6 @@ function ExitGameView({ onDismiss }: ExitGameViewProps) {
         confirmButtonRef.current?.focus();
     }, []);
 
-    const onExitGame = () => {
-        window.location.href = '/';
-    };
-
     return (
         <div className="w-full flex flex-col gap-6">
             <h2 id="exit-game-modal-title" className="text-lg text-slate-50 font-semibold">
@@ -25,7 +23,7 @@ function ExitGameView({ onDismiss }: ExitGameViewProps) {
                 <button
                     ref={confirmButtonRef}
                     type="button"
-                    onClick={onExitGame}
+                    onClick={returnToMainMenu}
                     className="px-4 py-2 rounded bg-emerald-700 text-white cursor-pointer hover:bg-emerald-600"
                 >
                     Yes

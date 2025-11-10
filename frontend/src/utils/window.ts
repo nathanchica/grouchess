@@ -50,3 +50,10 @@ export function setStoredValue<T>(storage: Storage, key: string, value: T): void
     }
     window[storage].setItem(key, JSON.stringify(value));
 }
+
+export function returnToMainMenu(): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    window.location.href = '/';
+}
