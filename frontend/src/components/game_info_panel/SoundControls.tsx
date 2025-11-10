@@ -17,6 +17,7 @@ function SoundControls() {
                             ? 'bg-indigo-500/20 text-indigo-100 border-indigo-400/60 hover:bg-indigo-400/30'
                             : 'bg-zinc-700 text-zinc-400 border-zinc-600 hover:bg-zinc-700/70'
                     }`}
+                    aria-label="Toggle sound effects"
                 >
                     {enabled ? 'On' : 'Off'}
                 </button>
