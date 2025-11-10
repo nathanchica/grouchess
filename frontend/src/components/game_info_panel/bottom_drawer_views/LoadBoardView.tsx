@@ -51,9 +51,7 @@ function LoadBoardView({ onDismiss }: LoadBoardViewProps) {
 
     return (
         <form className="w-full flex flex-col gap-6" onSubmit={handleSubmit}>
-            <h2 id="load-fen-modal-title" className="text-lg text-slate-50 font-semibold">
-                Load Board
-            </h2>
+            <h2 className="text-lg text-slate-50 font-semibold">Load Board</h2>
 
             <div>
                 <label htmlFor="fen-input" className="block text-slate-50 mb-1">

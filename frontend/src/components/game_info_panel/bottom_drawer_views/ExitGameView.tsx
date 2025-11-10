@@ -14,10 +14,10 @@ function ExitGameView({ onDismiss }: ExitGameViewProps) {
     }, []);
 
     return (
-        <div className="w-full flex flex-col gap-6">
+        <div className="w-full flex flex-col items-center gap-6 pt-8">
             <h2 className="text-lg text-slate-50 font-semibold">Are you sure you want to quit?</h2>
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-center gap-4 w-full">
                 <button
                     ref={confirmButtonRef}
                     type="button"

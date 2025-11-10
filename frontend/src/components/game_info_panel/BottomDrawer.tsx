@@ -41,7 +41,7 @@ function BottomDrawer({ onClosingEnd, onStartClosing, shouldClose, children }: B
         <section
             id="bottom-drawer"
             role="region"
-            className={`absolute bottom-0 left-0 right-0 z-10 bg-zinc-950/30 backdrop-blur-sm rounded-t-md flex flex-col items-center gap-2 px-4 pb-8 pt-2 ${shouldClose ? 'animate-slide-down' : 'animate-slide-up'}`}
+            className={`absolute bottom-0 left-0 right-0 z-10 bg-zinc-950/30 min-h-[260px] backdrop-blur-md rounded-t-md flex flex-col items-center gap-2 px-4 pb-8 pt-2 ${shouldClose ? 'animate-slide-down' : 'animate-slide-up'}`}
             aria-label="Bottom drawer"
         >
             <IconButton icon={<ChevronDownIcon className="size-5" />} onClick={onStartClosing} />
