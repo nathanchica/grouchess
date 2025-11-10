@@ -21,6 +21,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
     - Chat
     - Rematches
     - Draw offers
+    - Resignations
 - Player vs Self (local)
 - Drag-and-drop and click-to-move piece movement
 - Legal move generation and enforcement
@@ -30,7 +31,7 @@ Status: Core functionalities implemented. See [Roadmap](#roadmap) for planned fe
     - 50-move rule
     - Insufficient material
 - Move history display
-    - Algebraic notation (SAN) and FEN generation/parsing
+    - Algebraic notation (SAN)
 - Game clocks
     - Monotonic timers in frontend
     - Animated with requestAnimationFrame
@@ -252,6 +253,9 @@ pnpm test:watch:browser     # runs frontend browser tests in watch mode (see iso
 - Change piece set images
 - Change board colors
 - Piece sliding animations
+- Storybook
+- Pre-move support
+- Arrows with right-click-and-drag
 
 - More game modes:
     - Othello/Reversi
