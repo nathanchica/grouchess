@@ -233,3 +233,23 @@ export function createMockStartingChessGame(overrides?: Partial<ChessGame>): Che
         ...overrides,
     };
 }
+
+/**
+ * Common moves in the Sicilian Defense opening
+ */
+export const sicilianDefenseMoves: readonly MoveNotation[] = [
+    { san: 'e4', figurine: 'e4', uci: 'e2e4' },
+    { san: 'c5', figurine: 'c5', uci: 'c7c5' },
+    { san: 'Nf3', figurine: '\u265Ef3', uci: 'g1f3' },
+    { san: 'Nc6', figurine: '\u265Ec6', uci: 'b8c6' },
+    { san: 'd4', figurine: 'd4', uci: 'd2d4' },
+    { san: 'cxd4', figurine: 'cxd4', uci: 'c5d4' },
+    { san: 'Nxd4', figurine: 'Nxd4', uci: 'f3d4' },
+    { san: 'e6', figurine: 'e6', uci: 'e7e6' },
+    { san: 'Nc3', figurine: '\u265Ec3', uci: 'b1c3' },
+    { san: 'a6', figurine: 'a6', uci: 'a7a6' },
+    { san: 'Be2', figurine: '\u265De2', uci: 'f1e2' },
+    { san: 'Qc7', figurine: '\u265Bc7', uci: 'd8c7' },
+    { san: 'O-O', figurine: 'O-O', uci: 'e1g1' },
+    { san: 'Nf6', figurine: '\u265Ef6', uci: 'g8f6' },
+];

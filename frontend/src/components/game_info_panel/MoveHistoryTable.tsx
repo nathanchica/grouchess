@@ -18,11 +18,11 @@ export function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
     return result;
 }
 
-type Props = {
+export type MoveHistoryTableProps = {
     onExitClick: () => void;
 };
 
-function MoveHistoryTable({ onExitClick }: Props) {
+function MoveHistoryTable({ onExitClick }: MoveHistoryTableProps) {
     const { chessGame } = useChessGame();
     const { gameRoom } = useGameRoom();
     const { moveHistory, gameState } = chessGame;
