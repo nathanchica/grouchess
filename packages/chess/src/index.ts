@@ -12,7 +12,7 @@ export {
 export { computeCastleRightsChangesFromMove, createInitialCastleRights } from './castles.js';
 export { hasInsufficientMatingMaterial, isDrawStatus } from './draws.js';
 export { computeAllLegalMoves, computeNextChessBoardFromMove, isKingInCheck } from './moves.js';
-export { createFEN, isValidFEN } from './notations.js';
+export { createFEN, indexToAlgebraicNotation, isValidFEN } from './notations.js';
 export { getColorFromAlias, getPiece, isValidPieceAlias } from './pieces.js';
 
 export {

@@ -5,7 +5,7 @@ import { indexToRowCol } from '@grouchess/chess';
 import CaptureOverlay from './CaptureOverlay';
 import Legends from './Legends';
 
-import { getLegendsForIndex } from '../../../utils/board';
+import { getLegendsForIndex } from '../../../utils/square';
 import { type GlowingSquareProps } from '../../../utils/types';
 
 const CHESS_SQUARE_BASE_CLASSES =
@@ -35,9 +35,18 @@ type Props = {
     onClick: () => void;
     children: ReactNode;
     isFlipped: boolean;
+    ariaLabel: string;
 };
 
-function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, children, isFlipped }: Props) {
+function ChessSquare({
+    index,
+    glowingSquareProps,
+    hideContent = false,
+    onClick,
+    children,
+    isFlipped,
+    ariaLabel,
+}: Props) {
     const { row, col } = indexToRowCol(index);
     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
     const legends = getLegendsForIndex(index, isFlipped);
@@ -76,6 +85,7 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
         <button
             type="button"
             onClick={onClick}
+            aria-label={ariaLabel}
             className={`${CHESS_SQUARE_BASE_CLASSES} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
         >
             {showCaptureOverlay ? <CaptureOverlay isDarkSquare={isDarkSquare} /> : null}
@@ -94,7 +104,8 @@ export function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
         prevProps.hideContent !== nextProps.hideContent ||
         prevProps.isFlipped !== nextProps.isFlipped ||
         prevProps.onClick !== nextProps.onClick ||
-        prevProps.children !== nextProps.children
+        prevProps.children !== nextProps.children ||
+        prevProps.ariaLabel !== nextProps.ariaLabel
     ) {
         return false;
     }

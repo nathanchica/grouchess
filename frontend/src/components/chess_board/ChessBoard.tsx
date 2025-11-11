@@ -11,6 +11,7 @@ import ChessSquare from './chess_square/ChessSquare';
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
 import { getRowColFromXY, xyFromPointerEvent } from '../../utils/board';
+import { getSquareAriaLabel } from '../../utils/square';
 import { type GlowingSquareProps } from '../../utils/types';
 
 export type DragProps = {
@@ -155,6 +156,19 @@ function ChessBoard() {
         return propsMap;
     }, [glowingSquarePropsByIndex, drag, dragOverIndex]);
 
+    // Memoize aria labels for each square to avoid re-renders
+    const squareAriaLabelByIndex = useMemo(() => {
+        const labelsMap: Record<number, string> = {};
+        for (let index = 0; index < NUM_SQUARES; index++) {
+            labelsMap[index] = getSquareAriaLabel(
+                index,
+                board[index] ?? null,
+                glowingSquarePropsWithDragByIndex[index]
+            );
+        }
+        return labelsMap;
+    }, [board, glowingSquarePropsWithDragByIndex]);
+
     const handlePiecePointerDown = useCallback(
         (boardIndex: BoardIndex, event: PointerEvent<HTMLImageElement>) => {
             const pieceAlias = board[boardIndex];
@@ -267,6 +281,7 @@ function ChessBoard() {
                         hideContent={Boolean(drag && selectedIndex === boardIndex)}
                         onClick={squareClickHandlersByIndex[boardIndex]}
                         isFlipped={boardIsFlipped}
+                        ariaLabel={squareAriaLabelByIndex[boardIndex]}
                     >
                         {content}
                     </ChessSquare>
