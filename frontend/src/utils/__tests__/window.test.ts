@@ -1,6 +1,13 @@
 import type { Mock } from 'vitest';
 
-import { getLocationOrigin, setTimeout, clearTimeout, getStoredValue, setStoredValue } from '../window';
+import {
+    getLocationOrigin,
+    setTimeout,
+    clearTimeout,
+    getStoredValue,
+    returnToMainMenu,
+    setStoredValue,
+} from '../window';
 
 describe('getLocationOrigin', () => {
     let originalLocation: Location;
@@ -321,6 +328,47 @@ describe('setStoredValue', () => {
         delete global.window;
 
         expect(() => setStoredValue(storage, 'test-key', { value: 123 })).not.toThrow();
+
+        global.window = originalWindow;
+    });
+});
+
+describe('returnToMainMenu', () => {
+    let originalLocation: Location;
+
+    beforeEach(() => {
+        originalLocation = window.location;
+    });
+
+    afterEach(() => {
+        Object.defineProperty(window, 'location', {
+            value: originalLocation,
+            configurable: true,
+        });
+    });
+
+    it('sets window.location.href to "/" when window is available', () => {
+        const hrefSetter = vi.fn();
+        Object.defineProperty(window, 'location', {
+            value: { ...originalLocation, href: '' },
+            configurable: true,
+            writable: true,
+        });
+        Object.defineProperty(window.location, 'href', {
+            set: hrefSetter,
+        });
+
+        returnToMainMenu();
+
+        expect(hrefSetter).toHaveBeenCalledWith('/');
+    });
+
+    it('does nothing when window is undefined', () => {
+        const originalWindow = global.window;
+        // @ts-expect-error - Testing SSR scenario
+        delete global.window;
+
+        expect(() => returnToMainMenu()).not.toThrow();
 
         global.window = originalWindow;
     });

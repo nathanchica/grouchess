@@ -38,7 +38,7 @@ function MoveHistoryTable({ onExitClick }: MoveHistoryTableProps) {
     }, [moveHistory.length, isGameOver]);
 
     return (
-        <div className="flex-1 min-h-0 bg-zinc-900/60 p-3 rounded-md overflow-y-auto overflow-x-hidden">
+        <div className="p-3">
             <table className="table-fixed w-full 2xl:text-base text-sm">
                 <colgroup>
                     <col className="xl:w-[4ch] lg:w-[3ch] w-[2ch]" />

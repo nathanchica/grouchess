@@ -33,7 +33,7 @@ function GameActions({ playerColor }: Props) {
     };
 
     return (
-        <section className="flex flex-row justify-evenly">
+        <section className="flex flex-row justify-evenly py-1">
             <TooltipContainer tooltipText="Offer a draw">
                 <button
                     type="button"

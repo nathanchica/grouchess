@@ -47,19 +47,6 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 
 #### Locating elements
 
-- For interactive elements, prefer `getByRole` queries to ensure accessibility compliance.
-    - If components lack proper roles, consider suggesting improvements to enhance accessibility.
-- For images, use `getByRole('img', { name: /alt text/i })` to select by alt text
-    - For multiple images, use `getByRole('img', { name: /alt text/i }).elements()` to get all matching elements
-
-        ```ts
-        const { getByRole } = await render(<MyComponent />);
-        const images = await getByRole('img', { name: /alt text/i }).elements();
-        expect(images.length).toBe(2);
-        expect(images[0]).toHaveAttribute('alt', 'First image alt text');
-        expect(images[1]).toHaveAttribute('alt', 'Second image alt text');
-        ```
-
 - Avoid using query selectors like container.querySelector to find elements. Only use:
     - getByRole
         - Can use { includeHidden: true } option to include hidden elements
@@ -68,79 +55,221 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     - getByTestId
     - getByPlaceholder
     - If unavoidable, suggest improvements to add proper roles or labels instead
+- For images, use `getByRole('img', { name: /alt text/i })` to select by alt text
+    - For multiple images, use `getByRole('img').elements()` to get all matching elements
+
+        ```ts
+        const { getByRole } = await render(<MyComponent />);
+        const images = await getByRole('img').elements();
+        expect(images.length).toBe(2);
+        expect(images[0]).toHaveAttribute('alt', 'First image alt text');
+        expect(images[1]).toHaveAttribute('alt', 'Second image alt text');
+        ```
+
+- Locate elements and store them in variables before performing actions or assertions
+    - This improves readability and avoids repeating queries
+
+        ```ts
+        const { getByRole } = await render(<MyComponent />);
+        const submitButton = getByRole('button', { name: /submit/i });
+
+        // Perform actions
+        await submitButton.click();
+
+        // Assertions
+        await expect.element(submitButton).toBeDisabled();
+        ```
+
+- Locating children within a specific parent element:
+
+    ```ts
+    const { getByTestId } = await render(<MyComponent />);
+    const parentElement = getByTestId('parent-element');
+
+    // Locate child button within the parent element
+    const childButton = parentElement.getByRole('button', { name: /child button/i });
+
+    // Perform actions or assertions on the child button
+    await childButton.click();
+    await expect.element(childButton).toBeDisabled();
+    ```
 
 #### Asserting visibility and behavior
 
-- Assert with toBeVisible() when checking visibility of elements instead of checking CSS/tailwind classes
+- Assert with toBeVisible() when checking visibility of elements instead of checking CSS or tailwind classes
 - Focus on behavior and user experience rather than implementation details
     - Test the contract of the component: inputs (props, context) and outputs (rendered UI, events)
     - Test user interactions (clicks, typing, etc.) and their effects on the component state and UI
-        - Use `userEvent` and/or `page` from 'vitest/browser' for simulating user interactions
+        - Use `userEvent` from 'vitest/browser' for simulating user interactions. Events like `click` can also be called
+          directly on locators
 
             ```ts
             import { render } from 'vitest-browser-react';
-            import { page, userEvent } from 'vitest/browser';
+            import { userEvent } from 'vitest/browser';
 
-            // Testing stateful components and state transitions
-            it('manages items correctly', async () => {
-                const { getByText, getByTestId } = await render(<ShoppingCart />)
+            const validFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            const invalidFEN = 'invalid-fen-string';
 
-                // Initially empty
-                await expect.element(getByText('Your cart is empty')).toBeInTheDocument()
+            it('accepts valid FEN strings and enables Load button', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
 
-                // Add item
-                await page.getByRole('button', { name: /add laptop/i }).click()
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, validFEN);
 
-                // Verify state change
-                await expect.element(getByText('1 item')).toBeInTheDocument()
-                await expect.element(getByText('Laptop - $999')).toBeInTheDocument()
+                const errorText = getByRole('alert');
+                await expect.element(errorText).not.toBeInTheDocument();
 
-                // Test quantity updates
-                await page.getByRole('button', { name: /increase quantity/i }).click()
-                await expect.element(getByText('2 items')).toBeInTheDocument()
-            })
+                const loadButton = getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toBeEnabled();
+            });
 
-            it('is accessible', async () => {
-                const { getByRole, getByLabelText } = await render(
-                    <Modal isOpen={true} title="Settings">
-                        <SettingsForm />
-                    </Modal>
-                )
+            it('shows error for invalid FEN strings and disables Load button', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
 
-                // Test focus management - modal should receive focus when opened
-                // This is crucial for screen reader users to know a modal opened
-                const modal = getByRole('dialog')
-                await expect.element(modal).toHaveFocus()
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, invalidFEN);
 
-                // Test ARIA attributes - these provide semantic information to screen readers
-                await expect.element(modal).toHaveAttribute('aria-labelledby') // Links to title element
-                await expect.element(modal).toHaveAttribute('aria-modal', 'true') // Indicates modal behavior
+                const errorText = getByRole('alert');
+                await expect.element(errorText).toBeInTheDocument();
+                expect(errorText).toHaveTextContent('Invalid FEN');
 
-                // Test keyboard navigation - Escape key should close modal
-                // This is required by ARIA authoring practices
-                await userEvent.keyboard('{Escape}')
-                // expect.element auto-retries until modal is removed
-                await expect.element(modal).not.toBeInTheDocument()
+                const loadButton = getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toBeDisabled();
+            });
 
-                // Test focus trap - tab navigation should cycle within modal
-                // This prevents users from tabbing to content behind the modal
-                const firstInput = getByLabelText(/username/i)
-                const lastButton = getByRole('button', { name: /save/i })
+            it('clears error when input is emptied', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const { getByLabelText, getByText } = await renderLoadBoardView();
 
-                // Use click to focus on the first input, then test tab navigation
-                await firstInput.click()
-                await userEvent.keyboard('{Shift>}{Tab}{/Shift}') // Shift+Tab goes backwards
-                await expect.element(lastButton).toHaveFocus() // Should wrap to last element
-            })
+                const fenInput = getByLabelText(/FEN/i);
+
+                await userEvent.fill(fenInput, invalidFEN);
+
+                const errorText = getByRole('alert');
+                await expect.element(errorText).toBeInTheDocument();
+
+                await userEvent.clear(fenInput);
+
+                await expect.element(errorText).not.toBeInTheDocument();
+            });
+
+            it('validates on every character change', async () => {
+                const isValidFENSpy = vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const { getByLabelText } = await renderLoadBoardView();
+
+                const fenInput = getByLabelText(/FEN/i);
+
+                // Type character by character
+                await userEvent.type(fenInput, 'abc');
+
+                // isValidFEN should be called for each character typed (3 times)
+                expect(isValidFENSpy).toHaveBeenCalledTimes(3);
+            });
+
+            it('submits form via Enter key', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                const loadFEN = vi.fn();
+                const onDismiss = vi.fn();
+                const { getByLabelText } = await renderLoadBoardView({
+                    propOverrides: { onDismiss },
+                    contextOverrides: { loadFEN },
+                });
+
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, validFEN);
+
+                // Press Enter to submit
+                await userEvent.keyboard('{Enter}');
+
+                expect(loadFEN).toHaveBeenCalledWith(validFEN);
+                expect(onDismiss).toHaveBeenCalled();
+            });
+
+            it('prevents submission with invalid FEN', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const loadFEN = vi.fn();
+                const onDismiss = vi.fn();
+                const { getByLabelText, getByRole } = await renderLoadBoardView({
+                    propOverrides: { onDismiss },
+                    contextOverrides: { loadFEN },
+                });
+
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, invalidFEN);
+
+                // Button should be disabled with invalid FEN
+                const loadButton = getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toBeDisabled();
+
+                // Try to submit via Enter key (should do nothing)
+                await userEvent.keyboard('{Enter}');
+
+                expect(loadFEN).not.toHaveBeenCalled();
+                expect(onDismiss).not.toHaveBeenCalled();
+            });
+
+            it('keyboard navigation works correctly', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                const loadFEN = vi.fn();
+                const { getByLabelText } = await renderLoadBoardView({
+                    contextOverrides: { loadFEN },
+                });
+
+                const fenInput = getByLabelText(/FEN/i);
+
+                // Input should be focused on mount
+                await expect.element(fenInput).toHaveFocus();
+                await userEvent.fill(fenInput, validFEN);
+
+                // Tab to focus on button
+                await userEvent.tab();
+                const loadButton = page.getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toHaveFocus();
+
+                // Activate button with Space key
+                await userEvent.keyboard('{Space}');
+
+                expect(loadFEN).toHaveBeenCalled();
+            });
             ```
+
+        - Use `userEvent.fill()` for filling inputs instead of typing character by character unless specifically testing
+          typing behavior
+        - Use `userEvent.keyboard('{Enter}')`, `userEvent.keyboard('{Space}')`, or similar for simulating key presses
+            - Use `userEvent.tab()` for tabbing between focusable elements
 
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, tailwind classes, etc.)
+        - Exception for animations where you may need to check for specific classes being applied
+            - e.g. testing that a closing animation class is applied when a drawer is closed
+
+                ```ts
+                it('applies closing animation class when shouldClose becomes true', async () => {
+                    const { getByRole, rerender } = await renderBottomDrawer({ shouldClose: false });
+
+                    const drawer = getByRole('region', { name: /bottom drawer/i });
+                    expect(drawer).toHaveClass('animate-slide-up');
+                    expect(drawer).not.toHaveClass('animate-slide-down');
+
+                    await rerender(<BottomDrawer {...defaultProps} shouldClose={true} />);
+
+                    expect(drawer).toHaveClass('animate-slide-down');
+                    expect(drawer).not.toHaveClass('animate-slide-up');
+                });
+                ```
+
+    - No need to test rapid sequences of events (e.g., rapid clicking)
 
 - Asserting that a component renders null or is empty:
 
     ```ts
-    const { container } = await render(<MyComponent />);
+    function NullComponent() {
+        return null;
+    }
+
+    const { container } = await render(<NullComponent />);
     expect(container).toBeEmptyDOMElement();
     ```
 
@@ -198,5 +327,50 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         });
 
         // ...test implementation
+    });
+    ```
+
+- Mocking timers and cleanup:
+
+    ```tsx
+    describe('Timer Management', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('calls onClosingEnd after 300ms when shouldClose becomes true', async () => {
+            const onClosingEnd = vi.fn();
+            await renderBottomDrawer({ shouldClose: true, onClosingEnd });
+
+            expect(onClosingEnd).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(SLIDE_ANIMATION_DURATION_MS); // 300ms
+
+            expect(onClosingEnd).toHaveBeenCalledOnce();
+        });
+
+        it('cleans up timer on unmount during closing animation', async () => {
+            const clearTimeoutSpy = vi.spyOn(windowUtilsModule, 'clearTimeout');
+            const { unmount } = await renderBottomDrawer({ shouldClose: true });
+
+            expect(clearTimeoutSpy).not.toHaveBeenCalled();
+
+            unmount();
+
+            expect(clearTimeoutSpy).toHaveBeenCalledOnce();
+        });
+
+        it('no timer cleanup if component unmounts without closing', async () => {
+            const clearTimeoutSpy = vi.spyOn(windowUtilsModule, 'clearTimeout');
+            const { unmount } = await renderBottomDrawer({ shouldClose: false });
+
+            unmount();
+
+            expect(clearTimeoutSpy).not.toHaveBeenCalled();
+        });
     });
     ```

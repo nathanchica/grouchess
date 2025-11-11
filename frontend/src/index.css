@@ -4,3 +4,30 @@
     --font-serif: 'Merriweather Variable', ui-serif, Georgia, serif;
     --font-display: 'Playfair Display Variable', ui-serif, Georgia, serif;
 }
+
+@keyframes slide-up {
+    0% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-down {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+}
+
+@theme {
+    --animate-slide-up: slide-up 300ms ease-out;
+    --animate-slide-down: slide-down 300ms ease-in forwards;
+}

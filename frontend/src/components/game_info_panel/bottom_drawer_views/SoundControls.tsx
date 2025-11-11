@@ -1,13 +1,13 @@
-import { useSound } from '../../providers/SoundProvider';
+import { useSound } from '../../../providers/SoundProvider';
 
 function SoundControls() {
     const { enabled, toggleEnabled, volume, setVolume } = useSound();
     const displayVolume = Math.round(volume * 100);
 
     return (
-        <section className="flex flex-col gap-2" aria-label="Sound settings">
+        <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-4">
-                <span className="text-xs uppercase tracking-wide text-zinc-400">Sound Effects</span>
+                <span className="text-sm text-zinc-200">Sound Effects</span>
                 <button
                     type="button"
                     onClick={toggleEnabled}
@@ -36,7 +36,7 @@ function SoundControls() {
                 className="w-full accent-indigo-400 disabled:opacity-40 cursor-pointer"
                 disabled={!enabled}
             />
-        </section>
+        </div>
     );
 }
 
