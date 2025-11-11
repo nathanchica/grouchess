@@ -89,137 +89,137 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         - Use `userEvent` from 'vitest/browser' for simulating user interactions. Events like `click` can also be called
           directly on locators
 
-                ```ts
-                import { render } from 'vitest-browser-react';
-                import { userEvent } from 'vitest/browser';
+                  ```ts
+                  import { render } from 'vitest-browser-react';
+                  import { userEvent } from 'vitest/browser';
 
-                const validFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-                const invalidFEN = 'invalid-fen-string';
+                  const validFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+                  const invalidFEN = 'invalid-fen-string';
 
-                it('accepts valid FEN strings and enables Load button', async () => {
-                    vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
-                    const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
+                  it('accepts valid FEN strings and enables Load button', async () => {
+                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                      const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
 
-                    const fenInput = getByLabelText(/FEN/i);
-                    await userEvent.fill(fenInput, validFEN);
+                      const fenInput = getByLabelText(/FEN/i);
+                      await userEvent.fill(fenInput, validFEN);
 
-                    const errorText = getByRole('alert');
-                    await expect.element(errorText).not.toBeInTheDocument();
+                      const errorText = getByRole('alert');
+                      await expect.element(errorText).not.toBeInTheDocument();
 
-                    const loadButton = getByRole('button', { name: /load/i });
-                    await expect.element(loadButton).toBeEnabled();
-                });
+                      const loadButton = getByRole('button', { name: /load/i });
+                      await expect.element(loadButton).toBeEnabled();
+                  });
 
-                it('shows error for invalid FEN strings and disables Load button', async () => {
-                    vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                    const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
+                  it('shows error for invalid FEN strings and disables Load button', async () => {
+                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                      const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
 
-                    const fenInput = getByLabelText(/FEN/i);
-                    await userEvent.fill(fenInput, invalidFEN);
+                      const fenInput = getByLabelText(/FEN/i);
+                      await userEvent.fill(fenInput, invalidFEN);
 
-                    const errorText = getByRole('alert');
-                    await expect.element(errorText).toBeInTheDocument();
-                    expect(errorText).toHaveTextContent('Invalid FEN');
+                      const errorText = getByRole('alert');
+                      await expect.element(errorText).toBeInTheDocument();
+                      expect(errorText).toHaveTextContent('Invalid FEN');
 
-                    const loadButton = getByRole('button', { name: /load/i });
-                    await expect.element(loadButton).toBeDisabled();
-                });
+                      const loadButton = getByRole('button', { name: /load/i });
+                      await expect.element(loadButton).toBeDisabled();
+                  });
 
-                it('clears error when input is emptied', async () => {
-                    vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                    const { getByLabelText, getByText } = await renderLoadBoardView();
+                  it('clears error when input is emptied', async () => {
+                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                      const { getByLabelText, getByText } = await renderLoadBoardView();
 
-                    const fenInput = getByLabelText(/FEN/i);
+                      const fenInput = getByLabelText(/FEN/i);
 
-                    await userEvent.fill(fenInput, invalidFEN);
+                      await userEvent.fill(fenInput, invalidFEN);
 
-                    const errorText = getByRole('alert');
-                    await expect.element(errorText).toBeInTheDocument();
+                      const errorText = getByRole('alert');
+                      await expect.element(errorText).toBeInTheDocument();
 
-                    await userEvent.clear(fenInput);
+                      await userEvent.clear(fenInput);
 
-                    await expect.element(errorText).not.toBeInTheDocument();
-                });
+                      await expect.element(errorText).not.toBeInTheDocument();
+                  });
 
-                it('validates on every character change', async () => {
-                    const isValidFENSpy = vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                    const { getByLabelText } = await renderLoadBoardView();
+                  it('validates on every character change', async () => {
+                      const isValidFENSpy = vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                      const { getByLabelText } = await renderLoadBoardView();
 
-                    const fenInput = getByLabelText(/FEN/i);
+                      const fenInput = getByLabelText(/FEN/i);
 
-                    // Type character by character
-                    await userEvent.type(fenInput, 'abc');
+                      // Type character by character
+                      await userEvent.type(fenInput, 'abc');
 
-                    // isValidFEN should be called for each character typed (3 times)
-                    expect(isValidFENSpy).toHaveBeenCalledTimes(3);
-                });
+                      // isValidFEN should be called for each character typed (3 times)
+                      expect(isValidFENSpy).toHaveBeenCalledTimes(3);
+                  });
 
-                it('submits form via Enter key', async () => {
-                    vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
-                    const loadFEN = vi.fn();
-                    const onDismiss = vi.fn();
-                    const { getByLabelText } = await renderLoadBoardView({
-                        propOverrides: { onDismiss },
-                        contextOverrides: { loadFEN },
-                    });
+                  it('submits form via Enter key', async () => {
+                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                      const loadFEN = vi.fn();
+                      const onDismiss = vi.fn();
+                      const { getByLabelText } = await renderLoadBoardView({
+                          propOverrides: { onDismiss },
+                          contextOverrides: { loadFEN },
+                      });
 
-                    const fenInput = getByLabelText(/FEN/i);
-                    await userEvent.fill(fenInput, validFEN);
+                      const fenInput = getByLabelText(/FEN/i);
+                      await userEvent.fill(fenInput, validFEN);
 
-                    // Press Enter to submit
-                    await userEvent.keyboard('{Enter}');
+                      // Press Enter to submit
+                      await userEvent.keyboard('{Enter}');
 
-                    expect(loadFEN).toHaveBeenCalledWith(validFEN);
-                    expect(onDismiss).toHaveBeenCalled();
-                });
+                      expect(loadFEN).toHaveBeenCalledWith(validFEN);
+                      expect(onDismiss).toHaveBeenCalled();
+                  });
 
-                it('prevents submission with invalid FEN', async () => {
-                    vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                    const loadFEN = vi.fn();
-                    const onDismiss = vi.fn();
-                    const { getByLabelText, getByRole } = await renderLoadBoardView({
-                        propOverrides: { onDismiss },
-                        contextOverrides: { loadFEN },
-                    });
+                  it('prevents submission with invalid FEN', async () => {
+                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                      const loadFEN = vi.fn();
+                      const onDismiss = vi.fn();
+                      const { getByLabelText, getByRole } = await renderLoadBoardView({
+                          propOverrides: { onDismiss },
+                          contextOverrides: { loadFEN },
+                      });
 
-                    const fenInput = getByLabelText(/FEN/i);
-                    await userEvent.fill(fenInput, invalidFEN);
+                      const fenInput = getByLabelText(/FEN/i);
+                      await userEvent.fill(fenInput, invalidFEN);
 
-                    // Button should be disabled with invalid FEN
-                    const loadButton = getByRole('button', { name: /load/i });
-                    await expect.element(loadButton).toBeDisabled();
+                      // Button should be disabled with invalid FEN
+                      const loadButton = getByRole('button', { name: /load/i });
+                      await expect.element(loadButton).toBeDisabled();
 
-                    // Try to submit via Enter key (should do nothing)
-                    await userEvent.keyboard('{Enter}');
+                      // Try to submit via Enter key (should do nothing)
+                      await userEvent.keyboard('{Enter}');
 
-                    expect(loadFEN).not.toHaveBeenCalled();
-                    expect(onDismiss).not.toHaveBeenCalled();
-                });
+                      expect(loadFEN).not.toHaveBeenCalled();
+                      expect(onDismiss).not.toHaveBeenCalled();
+                  });
 
-                it('keyboard navigation works correctly', async () => {
-                    vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
-                    const loadFEN = vi.fn();
-                    const { getByLabelText } = await renderLoadBoardView({
-                        contextOverrides: { loadFEN },
-                    });
+                  it('keyboard navigation works correctly', async () => {
+                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                      const loadFEN = vi.fn();
+                      const { getByLabelText } = await renderLoadBoardView({
+                          contextOverrides: { loadFEN },
+                      });
 
-                    const fenInput = getByLabelText(/FEN/i);
+                      const fenInput = getByLabelText(/FEN/i);
 
-                    // Input should be focused on mount
-                    await expect.element(fenInput).toHaveFocus();
-                    await userEvent.fill(fenInput, validFEN);
+                      // Input should be focused on mount
+                      await expect.element(fenInput).toHaveFocus();
+                      await userEvent.fill(fenInput, validFEN);
 
-                    // Tab to focus on button
-                    await userEvent.tab();
-                    const loadButton = page.getByRole('button', { name: /load/i });
-                    await expect.element(loadButton).toHaveFocus();
+                      // Tab to focus on button
+                      await userEvent.tab();
+                      const loadButton = page.getByRole('button', { name: /load/i });
+                      await expect.element(loadButton).toHaveFocus();
 
-                    // Activate button with Space key
-                    await userEvent.keyboard('{Space}');
+                      // Activate button with Space key
+                      await userEvent.keyboard('{Space}');
 
-                    expect(loadFEN).toHaveBeenCalled();
-                });
-                ```
+                      expect(loadFEN).toHaveBeenCalled();
+                  });
+                  ```
 
         - Use `userEvent.fill()` for filling inputs instead of typing character by character unless specifically testing
           typing behavior
@@ -228,6 +228,24 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 
     - Test edge cases and error states
     - Avoid testing internal implementation details (e.g., internal state variables, CSS, tailwind classes, etc.)
+        - Exception for animations where you may need to check for specific classes being applied
+            - e.g. testing that a closing animation class is applied when a drawer is closed
+
+                ```ts
+                it('applies closing animation class when shouldClose becomes true', async () => {
+                    const { getByRole, rerender } = await renderBottomDrawer({ shouldClose: false });
+
+                    const drawer = getByRole('region', { name: /bottom drawer/i });
+                    expect(drawer).toHaveClass('animate-slide-up');
+                    expect(drawer).not.toHaveClass('animate-slide-down');
+
+                    await rerender(<BottomDrawer {...defaultProps} shouldClose={true} />);
+
+                    expect(drawer).toHaveClass('animate-slide-down');
+                    expect(drawer).not.toHaveClass('animate-slide-up');
+                });
+                ```
+
     - No need to test rapid sequences of events (e.g., rapid clicking)
 
 - Asserting that a component renders null or is empty:
@@ -295,5 +313,50 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         });
 
         // ...test implementation
+    });
+    ```
+
+- Mocking timers and cleanup:
+
+    ```tsx
+    describe('Timer Management', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('calls onClosingEnd after 300ms when shouldClose becomes true', async () => {
+            const onClosingEnd = vi.fn();
+            await renderBottomDrawer({ shouldClose: true, onClosingEnd });
+
+            expect(onClosingEnd).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(SLIDE_ANIMATION_DURATION_MS); // 300ms
+
+            expect(onClosingEnd).toHaveBeenCalledOnce();
+        });
+
+        it('cleans up timer on unmount during closing animation', async () => {
+            const clearTimeoutSpy = vi.spyOn(windowUtilsModule, 'clearTimeout');
+            const { unmount } = await renderBottomDrawer({ shouldClose: true });
+
+            expect(clearTimeoutSpy).not.toHaveBeenCalled();
+
+            unmount();
+
+            expect(clearTimeoutSpy).toHaveBeenCalledOnce();
+        });
+
+        it('no timer cleanup if component unmounts without closing', async () => {
+            const clearTimeoutSpy = vi.spyOn(windowUtilsModule, 'clearTimeout');
+            const { unmount } = await renderBottomDrawer({ shouldClose: false });
+
+            unmount();
+
+            expect(clearTimeoutSpy).not.toHaveBeenCalled();
+        });
     });
     ```

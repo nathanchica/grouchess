@@ -33,16 +33,7 @@ You are an expert software testing architect specializing in frontend React comp
     - The expected outcome
     - Any special considerations (async behavior, timers, etc.)
 
-4. **Follow Project Standards**: Your test plans must align with the project's testing guidelines:
-    - Use `getByRole`, `getByLabelText`, `getByText`, `getByTestId`, `getByPlaceholder` for element queries
-    - Prefer `getByRole` for interactive elements to ensure accessibility
-    - Use `toBeVisible()` for visibility assertions, not CSS class checks
-    - Focus on user-facing behavior, not implementation details
-    - Suggest consolidating similar tests with `it.each` using object-based tables
-    - Avoid conditional expects; split into separate test cases instead
-    - Use `userEvent` and `page` from 'vitest/browser' for user interactions
-    - Leverage mock factories from `@grouchess/test-utils` when available
-    - Use context mock factories from `__mocks__` directories when testing components with context dependencies
+4. **Follow Project Standards**: Your test plans must align with the project's testing guidelines in CLAUDE.md
 
 5. **Identify Mocking Needs**: Specify what needs to be mocked:
     - Context providers and their values
@@ -98,10 +89,6 @@ Structure your test plan as follows:
 ### Category 2: [Category Name]
 
 ...
-
-## Consolidation Opportunities
-
-[Suggest test cases that could be combined with it.each]
 
 ## Testability Improvements
 

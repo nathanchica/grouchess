@@ -21,8 +21,15 @@ import InfoCard from '../common/InfoCard';
 
 const ICON_CLASSES = 'size-4 2xl:size-5';
 
-type BottomDrawerView = 'settings' | 'exit-game' | 'load-board' | 'share-board';
 type IconButtonPropsWithKey = IconButtonProps & { key: string; skip?: boolean };
+
+export type BottomDrawerView = 'settings' | 'exit-game' | 'load-board' | 'share-board';
+export const bottomDrawerViewAriaLabels: Record<BottomDrawerView, string> = {
+    settings: 'Player Settings',
+    'exit-game': 'Exit Game',
+    'load-board': 'Load Board',
+    'share-board': 'Share Board',
+};
 
 function GameInfoPanel() {
     const { isReady: isImagesLoaded, imgSrcMap } = useImages();
@@ -145,6 +152,7 @@ function GameInfoPanel() {
                             onClosingEnd={dismissBottomDrawer}
                             onStartClosing={startClosingBottomDrawer}
                             shouldClose={bottomDrawerIsClosing}
+                            ariaLabel={bottomDrawerViewAriaLabels[activeBottomDrawerView]}
                         >
                             {activeBottomDrawerView === 'settings' && <PlayerSettingsView />}
                             {activeBottomDrawerView === 'load-board' && (
