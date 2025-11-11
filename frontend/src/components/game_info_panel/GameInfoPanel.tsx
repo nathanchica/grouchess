@@ -35,15 +35,15 @@ function GameInfoPanel() {
     const { isReady: isImagesLoaded, imgSrcMap } = useImages();
     const { chessGame, loadFEN } = useChessGame();
     const { gameRoom, currentPlayerColor } = useGameRoom();
-    const { timelineVersion, moveHistory } = chessGame;
-    const { type } = gameRoom;
-    const isSelfPlay = type === 'self';
-
-    const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
-    const logoImgSrc = imgSrcMap[rookImgSrc] ?? rookImgSrc;
 
     const [activeBottomDrawerView, setActiveBottomDrawerView] = useState<BottomDrawerView | null>(null);
     const [bottomDrawerIsClosing, setBottomDrawerIsClosing] = useState(false);
+
+    const { timelineVersion, moveHistory } = chessGame;
+    const { type } = gameRoom;
+    const isSelfPlay = type === 'self';
+    const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
+    const logoImgSrc = imgSrcMap[rookImgSrc] ?? rookImgSrc;
 
     const onResetButtonClick = () => {
         loadFEN();
@@ -134,14 +134,15 @@ function GameInfoPanel() {
             <div className="2xl:py-5 p-2 flex flex-col 2xl:gap-4 gap-2 h-full">
                 <div className="flex flex-row justify-center items-center gap-2 cursor-default">
                     {isImagesLoaded && <img src={logoImgSrc} alt={rookAltText} className="2xl:size-9 size-7" />}
-                    <span className="text-zinc-100 font-display text-center pr-3 2xl:text-2xl text-lg font-bold">
+                    <h2 className="text-zinc-100 font-display text-center pr-3 2xl:text-2xl text-lg font-bold">
                         grouchess
-                    </span>
+                    </h2>
                 </div>
 
                 <section className="flex-1 flex flex-col min-h-0 bg-zinc-900/60 rounded-md overflow-hidden relative">
                     <div className="flex-1 overflow-y-auto overflow-x-hidden">
                         <MoveHistoryTable
+                            // Reset the component on timelineVersion change to reset internal states
                             key={`move-history-table-${timelineVersion}`}
                             onExitClick={() => toggleBottomDrawerView('exit-game')}
                         />
@@ -167,13 +168,11 @@ function GameInfoPanel() {
                 </section>
 
                 {type !== 'self' && (
-                    <section>
-                        <GameActions
-                            // Reset the component each turn or each game to reset internal states
-                            key={`game-actions-${timelineVersion}-${moveHistory.length}`}
-                            playerColor={currentPlayerColor}
-                        />
-                    </section>
+                    <GameActions
+                        // Reset the component each turn or each game to reset internal states
+                        key={`game-actions-${timelineVersion}-${moveHistory.length}`}
+                        playerColor={currentPlayerColor}
+                    />
                 )}
 
                 <section className="flex flex-row justify-evenly" aria-label="Game actions">

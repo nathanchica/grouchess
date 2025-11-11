@@ -13,6 +13,6 @@ vi.mock('../SoundControls', () => {
 describe('PlayerSettingsView', () => {
     it('renders SoundControls component', async () => {
         const { getByText } = await render(<PlayerSettingsView />);
-        await expect.element(getByText('Mock SoundControls')).toBeDefined();
+        await expect.element(getByText('Mock SoundControls')).toBeInTheDocument();
     });
 });

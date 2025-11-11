@@ -80,6 +80,20 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         await expect.element(submitButton).toBeDisabled();
         ```
 
+- Locating children within a specific parent element:
+
+    ```ts
+    const { getByTestId } = await render(<MyComponent />);
+    const parentElement = getByTestId('parent-element');
+
+    // Locate child button within the parent element
+    const childButton = parentElement.getByRole('button', { name: /child button/i });
+
+    // Perform actions or assertions on the child button
+    await childButton.click();
+    await expect.element(childButton).toBeDisabled();
+    ```
+
 #### Asserting visibility and behavior
 
 - Assert with toBeVisible() when checking visibility of elements instead of checking CSS or tailwind classes
@@ -89,137 +103,137 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         - Use `userEvent` from 'vitest/browser' for simulating user interactions. Events like `click` can also be called
           directly on locators
 
-                  ```ts
-                  import { render } from 'vitest-browser-react';
-                  import { userEvent } from 'vitest/browser';
+            ```ts
+            import { render } from 'vitest-browser-react';
+            import { userEvent } from 'vitest/browser';
 
-                  const validFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-                  const invalidFEN = 'invalid-fen-string';
+            const validFEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            const invalidFEN = 'invalid-fen-string';
 
-                  it('accepts valid FEN strings and enables Load button', async () => {
-                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
-                      const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
+            it('accepts valid FEN strings and enables Load button', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
 
-                      const fenInput = getByLabelText(/FEN/i);
-                      await userEvent.fill(fenInput, validFEN);
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, validFEN);
 
-                      const errorText = getByRole('alert');
-                      await expect.element(errorText).not.toBeInTheDocument();
+                const errorText = getByRole('alert');
+                await expect.element(errorText).not.toBeInTheDocument();
 
-                      const loadButton = getByRole('button', { name: /load/i });
-                      await expect.element(loadButton).toBeEnabled();
-                  });
+                const loadButton = getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toBeEnabled();
+            });
 
-                  it('shows error for invalid FEN strings and disables Load button', async () => {
-                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                      const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
+            it('shows error for invalid FEN strings and disables Load button', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const { getByLabelText, getByRole, getByText } = await renderLoadBoardView();
 
-                      const fenInput = getByLabelText(/FEN/i);
-                      await userEvent.fill(fenInput, invalidFEN);
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, invalidFEN);
 
-                      const errorText = getByRole('alert');
-                      await expect.element(errorText).toBeInTheDocument();
-                      expect(errorText).toHaveTextContent('Invalid FEN');
+                const errorText = getByRole('alert');
+                await expect.element(errorText).toBeInTheDocument();
+                expect(errorText).toHaveTextContent('Invalid FEN');
 
-                      const loadButton = getByRole('button', { name: /load/i });
-                      await expect.element(loadButton).toBeDisabled();
-                  });
+                const loadButton = getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toBeDisabled();
+            });
 
-                  it('clears error when input is emptied', async () => {
-                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                      const { getByLabelText, getByText } = await renderLoadBoardView();
+            it('clears error when input is emptied', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const { getByLabelText, getByText } = await renderLoadBoardView();
 
-                      const fenInput = getByLabelText(/FEN/i);
+                const fenInput = getByLabelText(/FEN/i);
 
-                      await userEvent.fill(fenInput, invalidFEN);
+                await userEvent.fill(fenInput, invalidFEN);
 
-                      const errorText = getByRole('alert');
-                      await expect.element(errorText).toBeInTheDocument();
+                const errorText = getByRole('alert');
+                await expect.element(errorText).toBeInTheDocument();
 
-                      await userEvent.clear(fenInput);
+                await userEvent.clear(fenInput);
 
-                      await expect.element(errorText).not.toBeInTheDocument();
-                  });
+                await expect.element(errorText).not.toBeInTheDocument();
+            });
 
-                  it('validates on every character change', async () => {
-                      const isValidFENSpy = vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                      const { getByLabelText } = await renderLoadBoardView();
+            it('validates on every character change', async () => {
+                const isValidFENSpy = vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const { getByLabelText } = await renderLoadBoardView();
 
-                      const fenInput = getByLabelText(/FEN/i);
+                const fenInput = getByLabelText(/FEN/i);
 
-                      // Type character by character
-                      await userEvent.type(fenInput, 'abc');
+                // Type character by character
+                await userEvent.type(fenInput, 'abc');
 
-                      // isValidFEN should be called for each character typed (3 times)
-                      expect(isValidFENSpy).toHaveBeenCalledTimes(3);
-                  });
+                // isValidFEN should be called for each character typed (3 times)
+                expect(isValidFENSpy).toHaveBeenCalledTimes(3);
+            });
 
-                  it('submits form via Enter key', async () => {
-                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
-                      const loadFEN = vi.fn();
-                      const onDismiss = vi.fn();
-                      const { getByLabelText } = await renderLoadBoardView({
-                          propOverrides: { onDismiss },
-                          contextOverrides: { loadFEN },
-                      });
+            it('submits form via Enter key', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                const loadFEN = vi.fn();
+                const onDismiss = vi.fn();
+                const { getByLabelText } = await renderLoadBoardView({
+                    propOverrides: { onDismiss },
+                    contextOverrides: { loadFEN },
+                });
 
-                      const fenInput = getByLabelText(/FEN/i);
-                      await userEvent.fill(fenInput, validFEN);
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, validFEN);
 
-                      // Press Enter to submit
-                      await userEvent.keyboard('{Enter}');
+                // Press Enter to submit
+                await userEvent.keyboard('{Enter}');
 
-                      expect(loadFEN).toHaveBeenCalledWith(validFEN);
-                      expect(onDismiss).toHaveBeenCalled();
-                  });
+                expect(loadFEN).toHaveBeenCalledWith(validFEN);
+                expect(onDismiss).toHaveBeenCalled();
+            });
 
-                  it('prevents submission with invalid FEN', async () => {
-                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
-                      const loadFEN = vi.fn();
-                      const onDismiss = vi.fn();
-                      const { getByLabelText, getByRole } = await renderLoadBoardView({
-                          propOverrides: { onDismiss },
-                          contextOverrides: { loadFEN },
-                      });
+            it('prevents submission with invalid FEN', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(false);
+                const loadFEN = vi.fn();
+                const onDismiss = vi.fn();
+                const { getByLabelText, getByRole } = await renderLoadBoardView({
+                    propOverrides: { onDismiss },
+                    contextOverrides: { loadFEN },
+                });
 
-                      const fenInput = getByLabelText(/FEN/i);
-                      await userEvent.fill(fenInput, invalidFEN);
+                const fenInput = getByLabelText(/FEN/i);
+                await userEvent.fill(fenInput, invalidFEN);
 
-                      // Button should be disabled with invalid FEN
-                      const loadButton = getByRole('button', { name: /load/i });
-                      await expect.element(loadButton).toBeDisabled();
+                // Button should be disabled with invalid FEN
+                const loadButton = getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toBeDisabled();
 
-                      // Try to submit via Enter key (should do nothing)
-                      await userEvent.keyboard('{Enter}');
+                // Try to submit via Enter key (should do nothing)
+                await userEvent.keyboard('{Enter}');
 
-                      expect(loadFEN).not.toHaveBeenCalled();
-                      expect(onDismiss).not.toHaveBeenCalled();
-                  });
+                expect(loadFEN).not.toHaveBeenCalled();
+                expect(onDismiss).not.toHaveBeenCalled();
+            });
 
-                  it('keyboard navigation works correctly', async () => {
-                      vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
-                      const loadFEN = vi.fn();
-                      const { getByLabelText } = await renderLoadBoardView({
-                          contextOverrides: { loadFEN },
-                      });
+            it('keyboard navigation works correctly', async () => {
+                vi.spyOn(chessModule, 'isValidFEN').mockReturnValue(true);
+                const loadFEN = vi.fn();
+                const { getByLabelText } = await renderLoadBoardView({
+                    contextOverrides: { loadFEN },
+                });
 
-                      const fenInput = getByLabelText(/FEN/i);
+                const fenInput = getByLabelText(/FEN/i);
 
-                      // Input should be focused on mount
-                      await expect.element(fenInput).toHaveFocus();
-                      await userEvent.fill(fenInput, validFEN);
+                // Input should be focused on mount
+                await expect.element(fenInput).toHaveFocus();
+                await userEvent.fill(fenInput, validFEN);
 
-                      // Tab to focus on button
-                      await userEvent.tab();
-                      const loadButton = page.getByRole('button', { name: /load/i });
-                      await expect.element(loadButton).toHaveFocus();
+                // Tab to focus on button
+                await userEvent.tab();
+                const loadButton = page.getByRole('button', { name: /load/i });
+                await expect.element(loadButton).toHaveFocus();
 
-                      // Activate button with Space key
-                      await userEvent.keyboard('{Space}');
+                // Activate button with Space key
+                await userEvent.keyboard('{Space}');
 
-                      expect(loadFEN).toHaveBeenCalled();
-                  });
-                  ```
+                expect(loadFEN).toHaveBeenCalled();
+            });
+            ```
 
         - Use `userEvent.fill()` for filling inputs instead of typing character by character unless specifically testing
           typing behavior
