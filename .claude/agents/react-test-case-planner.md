@@ -2,7 +2,7 @@
 name: react-test-case-planner
 description: Use this agent when the user needs help planning, organizing, or structuring unit test cases for a React component or function. This includes when the user:\n\n- Explicitly asks for help planning tests (e.g., 'help me plan tests for this component')\n- Shows you a component/function and asks what tests to write\n- References an example test file and wants to follow a similar structure\n- Asks for test coverage suggestions or what edge cases to consider\n- Needs help categorizing or organizing existing test cases\n\nExamples:\n\n<example>\nuser: "I just wrote this LoginForm component. Can you help me plan out the test cases?"\nassistant: "I'll use the test-case-planner agent to help you design comprehensive test cases for your LoginForm component."\n<uses Task tool to invoke test-case-planner agent>\n</example>\n\n<example>\nuser: "What tests should I write for the validateEmail function?"\nassistant: "Let me use the test-case-planner agent to help you identify all the important test cases for email validation."\n<uses Task tool to invoke test-case-planner agent>\n</example>\n\n<example>\nuser: "I want to test this component following the same structure as ChallengerWaitingRoom.test.tsx"\nassistant: "I'll use the test-case-planner agent to help you plan test cases using that example as a reference."\n<uses Task tool to invoke test-case-planner agent>\n</example>
 tools: Bash, Glob, Grep, Read, NotebookEdit, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell, AskUserQuestion, SlashCommand, mcp__ide__getDiagnostics, mcp__ide__executeCode, Skill
-model: opus
+model: sonnet
 color: cyan
 ---
 
@@ -118,3 +118,4 @@ Before finalizing your test plan:
 4. Confirm mocking strategy is complete and appropriate
 5. Validate that test descriptions focus on behavior, not implementation
 6. Look for opportunities to consolidate similar tests
+7. Make sure none of the tests are testing for CSS or tailwind classes
