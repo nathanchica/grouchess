@@ -12,13 +12,13 @@ const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
 
 const DEFAULT_DARK_SQUARE_COLOR = 'bg-slate-400';
-const DEFAULT_LIGHT_SQUARE_COLOR = 'bg-stone-100';
+const DEFAULT_LIGHT_SQUARE_COLOR = 'bg-stone-200';
 
 const CHECK_GLOW_DARK_SQUARE_COLOR = 'bg-red-400';
 const CHECK_GLOW_LIGHT_SQUARE_COLOR = 'bg-red-300';
 
-const PREV_MOVE_GLOW_DARK_SQUARE_COLOR = 'bg-amber-100';
-const PREV_MOVE_GLOW_LIGHT_SQUARE_COLOR = 'bg-orange-100';
+const PREV_MOVE_GLOW_DARK_SQUARE_COLOR = 'bg-amber-100/85';
+const PREV_MOVE_GLOW_LIGHT_SQUARE_COLOR = 'bg-amber-100/90';
 
 const SELECTED_GLOW_SQUARE_COLOR = 'bg-emerald-300';
 const HOVER_SELECTABLE_SQUARE_COLOR = 'hover:bg-emerald-300';
