@@ -35,7 +35,8 @@ function LoadBoardView({ onDismiss }: LoadBoardViewProps) {
     const canLoad = useMemo(() => fenInput.trim().length > 0 && !errorMessage, [fenInput, errorMessage]);
 
     const handleLoad = () => {
-        if (!canLoad) return;
+        /* v8 ignore next -- @preserve */
+        if (!canLoad) return; // Guard against invalid load attempts, unreachable in practice due to button disabling
         loadFEN(fenInput.trim());
         onDismiss();
     };

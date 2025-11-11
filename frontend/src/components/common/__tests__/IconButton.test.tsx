@@ -53,6 +53,16 @@ describe('IconButton', () => {
             const button = getByRole('button');
             await expect.element(button).toBeInTheDocument();
         });
+
+        it('renders without tooltip text', async () => {
+            const { getByRole } = await render(<IconButton icon={mockIcon} onClick={mockOnClick} />);
+
+            const button = getByRole('button');
+            await expect.element(button).toBeInTheDocument();
+
+            const tooltip = getByRole('tooltip');
+            await expect.element(tooltip).not.toBeInTheDocument();
+        });
     });
 
     describe('click interactions', () => {
