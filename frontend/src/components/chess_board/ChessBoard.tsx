@@ -106,6 +106,11 @@ function ChessBoard() {
         setSelectedIndex(null);
     };
 
+    const clearDrag = () => {
+        setDrag(null);
+        setDragOverIndex(null);
+    };
+
     const handleSquareClick = useCallback(
         (boardIndex: BoardIndex) => {
             if (boardInteractionIsDisabled) return;
@@ -236,29 +241,12 @@ function ChessBoard() {
                 if (dragOverIndex !== selectedIndex) {
                     clearSelection();
                 }
-                setDrag(null);
-                setDragOverIndex(null);
+                clearDrag();
             }}
-            onPointerCancel={() => {
-                setDrag(null);
-                setDragOverIndex(null);
-            }}
+            onPointerCancel={clearDrag}
         >
             {boardToRender.map((pieceAlias, visualIndex) => {
                 const boardIndex = boardIsFlipped ? NUM_SQUARES - 1 - visualIndex : visualIndex;
-                let content;
-                if (isFinishedLoadingImages && pieceAlias) {
-                    const piece = getPiece(pieceAlias);
-                    content = (
-                        <ChessPiece
-                            piece={piece}
-                            showTextDisplay={failedImageIndices.has(boardIndex)}
-                            onPointerDown={piecePointerDownHandlersByIndex[boardIndex]}
-                            onImgLoadError={imgLoadErrorHandlersByIndex[boardIndex]}
-                        />
-                    );
-                }
-
                 return (
                     <ChessSquare
                         key={`square-${visualIndex}`}
@@ -268,7 +256,14 @@ function ChessBoard() {
                         onClick={squareClickHandlersByIndex[boardIndex]}
                         isFlipped={boardIsFlipped}
                     >
-                        {content}
+                        {isFinishedLoadingImages && pieceAlias ? (
+                            <ChessPiece
+                                piece={getPiece(pieceAlias)}
+                                showTextDisplay={failedImageIndices.has(boardIndex)}
+                                onPointerDown={piecePointerDownHandlersByIndex[boardIndex]}
+                                onImgLoadError={imgLoadErrorHandlersByIndex[boardIndex]}
+                            />
+                        ) : null}
                     </ChessSquare>
                 );
             })}
