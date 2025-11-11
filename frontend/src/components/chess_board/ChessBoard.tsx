@@ -1,16 +1,16 @@
-import { useMemo, useRef, useState, type PointerEventHandler, type PointerEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type PointerEvent, type PointerEventHandler } from 'react';
 
 import { getKingIndices, getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
-import { NUM_ROWS, NUM_COLS, NUM_SQUARES, type Move, type PieceAlias, type RowCol } from '@grouchess/models';
-import invariant from 'tiny-invariant';
+import { NUM_COLS, NUM_SQUARES, type BoardIndex, type Move, type PieceAlias } from '@grouchess/models';
 
 import ChessPiece from './ChessPiece';
-import ChessSquare from './ChessSquare';
 import GhostPiece from './GhostPiece';
 import PawnPromotionPrompt from './PawnPromotionPrompt';
+import ChessSquare from './chess_square/ChessSquare';
 
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
+import { getRowColFromXY, xyFromPointerEvent } from '../../utils/board';
 import { type GlowingSquareProps } from '../../utils/types';
 
 export type DragProps = {
@@ -19,23 +19,6 @@ export type DragProps = {
     y: number; // pointer Y relative to board
     squareSize: number;
 };
-
-function getRowColFromXY(x: number, y: number, squareSize: number, isFlipped: boolean): RowCol {
-    const row = Math.floor(y / squareSize);
-    const col = Math.floor(x / squareSize);
-
-    return isFlipped ? { row: NUM_ROWS - 1 - row, col: NUM_COLS - 1 - col } : { row, col };
-}
-
-function xyFromPointerEvent(
-    event: PointerEvent<HTMLDivElement> | PointerEvent<HTMLImageElement>,
-    rect: DOMRect
-): { x: number; y: number } {
-    return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-    };
-}
 
 /**
  * ChessBoard
@@ -53,26 +36,26 @@ function ChessBoard() {
     const { isReady: isFinishedLoadingImages } = useImages();
     const { chessGame, movePiece } = useChessGame();
     const { gameRoom, currentPlayerColor } = useGameRoom();
-    invariant(gameRoom && chessGame, 'Game room and chess game are required');
+
+    const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [drag, setDrag] = useState<DragProps | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const boardRef = useRef<HTMLDivElement | null>(null);
 
     const { boardState, previousMoveIndices, pendingPromotion, gameState, legalMovesStore } = chessGame;
     const { board, playerTurn } = boardState;
     const { type: roomType } = gameRoom;
-
-    const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
-    const boardRef = useRef<HTMLDivElement | null>(null);
-
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const [drag, setDrag] = useState<DragProps | null>(null);
-    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-
     const boardIsFlipped = currentPlayerColor === 'black';
     const isCurrentPlayerTurn = roomType === 'self' || currentPlayerColor === playerTurn;
-    const boardToRender = boardIsFlipped ? [...board].reverse() : board;
-
     const { status, check: checkedColor } = gameState;
     const isGameOver = status !== 'in-progress';
     const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver || !isCurrentPlayerTurn;
+
+    // Memoize board array to render based on flipped state
+    const boardToRender = useMemo(() => {
+        return boardIsFlipped ? [...board].reverse() : board;
+    }, [board, boardIsFlipped]);
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
     const { selectedPiece, indexToMoveDataForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
@@ -119,41 +102,114 @@ function ChessBoard() {
         };
     }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore]);
 
-    function clearSelection() {
+    const clearSelection = () => {
         setSelectedIndex(null);
-    }
-
-    const createClickHandler = (pieceAliasAtSquare: PieceAlias | undefined | null, clickedIndex: number) => () => {
-        if (boardInteractionIsDisabled) return;
-
-        const isPossibleMoveSquare = clickedIndex in indexToMoveDataForSelectedPiece;
-        const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
-        const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
-
-        if (isPossibleMoveSquare && selectedPiece) {
-            movePiece(indexToMoveDataForSelectedPiece[clickedIndex]);
-            clearSelection();
-            return;
-        }
-
-        if (!pieceAtSquare) {
-            clearSelection();
-            return;
-        }
-
-        // if no selected piece, set current square to selected index
-        if (isPlayersOwnPiece) {
-            setSelectedIndex(clickedIndex);
-        }
     };
 
-    const createImgLoadError = (index: number) => () => {
-        setFailedImageIndices((prev) => {
-            const next = new Set(prev);
-            next.add(index);
-            return next;
-        });
-    };
+    const handleSquareClick = useCallback(
+        (boardIndex: BoardIndex) => {
+            if (boardInteractionIsDisabled) return;
+
+            const pieceAliasAtSquare = board[boardIndex];
+            const isPossibleMoveSquare = boardIndex in indexToMoveDataForSelectedPiece;
+            const pieceAtSquare = pieceAliasAtSquare ? getPiece(pieceAliasAtSquare) : null;
+            const isPlayersOwnPiece = pieceAtSquare && pieceAtSquare.color === playerTurn;
+
+            if (isPossibleMoveSquare && selectedPiece) {
+                movePiece(indexToMoveDataForSelectedPiece[boardIndex]);
+                clearSelection();
+                return;
+            }
+
+            if (!pieceAtSquare) {
+                clearSelection();
+                return;
+            }
+
+            // if no selected piece, set current square to selected index
+            if (isPlayersOwnPiece) {
+                setSelectedIndex(boardIndex);
+            }
+        },
+        [board, boardInteractionIsDisabled, indexToMoveDataForSelectedPiece, movePiece, playerTurn, selectedPiece]
+    );
+
+    // Memoize click handlers for each square to avoid re-renders
+    const squareClickHandlersByIndex = useMemo(() => {
+        const handlers: Record<number, () => void> = {};
+        for (let index = 0; index < NUM_SQUARES; index++) {
+            handlers[index] = () => handleSquareClick(index);
+        }
+        return handlers;
+    }, [handleSquareClick]);
+
+    // Memoize glowing square props for each square to avoid re-renders
+    const glowingSquarePropsWithDragByIndex = useMemo(() => {
+        const propsMap: Record<number, GlowingSquareProps> = {};
+        for (let index = 0; index < NUM_SQUARES; index++) {
+            propsMap[index] = {
+                ...(glowingSquarePropsByIndex[index] ?? {}),
+                isDraggingOver: Boolean(drag && dragOverIndex === index),
+            };
+        }
+        return propsMap;
+    }, [glowingSquarePropsByIndex, drag, dragOverIndex]);
+
+    const handlePiecePointerDown = useCallback(
+        (boardIndex: BoardIndex, event: PointerEvent<HTMLImageElement>) => {
+            const pieceAlias = board[boardIndex];
+            if (!pieceAlias) return;
+
+            const piece = getPiece(pieceAlias);
+            const canDrag = piece.color === playerTurn;
+
+            if (boardInteractionIsDisabled || !canDrag || !boardRef.current) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const boardRect = boardRef.current.getBoundingClientRect();
+            const { x, y } = xyFromPointerEvent(event, boardRect);
+            const squareSize = boardRect.width / NUM_COLS;
+            try {
+                boardRef.current.setPointerCapture(event.pointerId);
+            } catch {
+                // ignore errors
+            }
+            setSelectedIndex(boardIndex);
+            setDrag({
+                pointerId: event.pointerId,
+                x,
+                y,
+                squareSize,
+            });
+            const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
+            setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
+        },
+        [board, boardInteractionIsDisabled, boardIsFlipped, playerTurn]
+    );
+
+    // Memoize pointer down handlers for each square to avoid re-renders
+    const piecePointerDownHandlersByIndex = useMemo(() => {
+        const handlers: Record<number, PointerEventHandler<HTMLImageElement>> = {};
+        for (let index = 0; index < NUM_SQUARES; index++) {
+            handlers[index] = (event) => handlePiecePointerDown(index, event);
+        }
+        return handlers;
+    }, [handlePiecePointerDown]);
+
+    // Memoize image error handlers for each square to avoid re-renders
+    const imgLoadErrorHandlersByIndex = useMemo(() => {
+        const handlers: Record<number, () => void> = {};
+        for (let index = 0; index < NUM_SQUARES; index++) {
+            handlers[index] = () => {
+                setFailedImageIndices((prev) => {
+                    const next = new Set(prev);
+                    next.add(index);
+                    return next;
+                });
+            };
+        }
+        return handlers;
+    }, []);
 
     return (
         <div
@@ -193,36 +249,12 @@ function ChessBoard() {
                 let content;
                 if (isFinishedLoadingImages && pieceAlias) {
                     const piece = getPiece(pieceAlias);
-                    const { color } = piece;
-                    const canDrag = color === playerTurn;
-                    const onPointerDown: PointerEventHandler<HTMLImageElement> = (event) => {
-                        if (boardInteractionIsDisabled || !canDrag || !boardRef.current) return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        const boardRect = boardRef.current.getBoundingClientRect();
-                        const { x, y } = xyFromPointerEvent(event, boardRect);
-                        const squareSize = boardRect.width / NUM_COLS;
-                        try {
-                            boardRef.current.setPointerCapture(event.pointerId);
-                        } catch {
-                            // ignore errors
-                        }
-                        setSelectedIndex(boardIndex);
-                        setDrag({
-                            pointerId: event.pointerId,
-                            x,
-                            y,
-                            squareSize,
-                        });
-                        const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
-                        setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
-                    };
                     content = (
                         <ChessPiece
                             piece={piece}
                             showTextDisplay={failedImageIndices.has(boardIndex)}
-                            onPointerDown={onPointerDown}
-                            onImgLoadError={createImgLoadError(boardIndex)}
+                            onPointerDown={piecePointerDownHandlersByIndex[boardIndex]}
+                            onImgLoadError={imgLoadErrorHandlersByIndex[boardIndex]}
                         />
                     );
                 }
@@ -231,12 +263,9 @@ function ChessBoard() {
                     <ChessSquare
                         key={`square-${visualIndex}`}
                         index={boardIndex}
-                        glowingSquareProps={{
-                            ...(glowingSquarePropsByIndex[boardIndex] ?? {}),
-                            isDraggingOver: Boolean(drag && dragOverIndex === boardIndex),
-                        }}
+                        glowingSquareProps={glowingSquarePropsWithDragByIndex[boardIndex]}
                         hideContent={Boolean(drag && selectedIndex === boardIndex)}
-                        onClick={createClickHandler(pieceAlias, boardIndex)}
+                        onClick={squareClickHandlersByIndex[boardIndex]}
                         isFlipped={boardIsFlipped}
                     >
                         {content}
