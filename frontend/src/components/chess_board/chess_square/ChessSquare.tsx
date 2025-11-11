@@ -5,10 +5,28 @@ import { indexToRowCol } from '@grouchess/chess';
 import CaptureOverlay from './CaptureOverlay';
 import Legends from './Legends';
 
+import { getLegendsForIndex } from '../../../utils/board';
 import { type GlowingSquareProps } from '../../../utils/types';
 
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
+
+const DEFAULT_DARK_SQUARE_COLOR = 'bg-slate-400';
+const DEFAULT_LIGHT_SQUARE_COLOR = 'bg-stone-100';
+
+const CHECK_GLOW_DARK_SQUARE_COLOR = 'bg-red-400';
+const CHECK_GLOW_LIGHT_SQUARE_COLOR = 'bg-red-300';
+
+const PREV_MOVE_GLOW_DARK_SQUARE_COLOR = 'bg-amber-100';
+const PREV_MOVE_GLOW_LIGHT_SQUARE_COLOR = 'bg-orange-100';
+
+const SELECTED_GLOW_SQUARE_COLOR = 'bg-emerald-300';
+const HOVER_SELECTABLE_SQUARE_COLOR = 'hover:bg-emerald-300';
+const DRAG_OVER_SELECTABLE_SQUARE_COLOR = 'bg-emerald-300';
+
+const SELECTABLE_MOVE_DOT_COLOR = 'after:bg-emerald-300/80';
+// Use a responsive, clamped size to scale with the square and stays within sensible bounds. Bump size on xl+ screens.
+const SELECTABLE_MOVE_DOT_CLASSES = `after:absolute after:left-1/2 after:top-1/2 after:h-[clamp(0.75rem,30%,1.25rem)] after:w-[clamp(0.75rem,30%,1.25rem)] 2xl:after:h-[clamp(1rem,35%,1.5rem)] 2xl:after:w-[clamp(1rem,35%,1.5rem)] after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${SELECTABLE_MOVE_DOT_COLOR} after:content-[""] hover:after:opacity-0`;
 
 type Props = {
     index: number;
@@ -22,38 +40,34 @@ type Props = {
 function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, children, isFlipped }: Props) {
     const { row, col } = indexToRowCol(index);
     const isDarkSquare = row % 2 === (col % 2 === 0 ? 1 : 0);
+    const legends = getLegendsForIndex(index, isFlipped);
 
     const { isPreviousMove, isSelected, isDraggingOver, isCheck, canCapture, canMove } = glowingSquareProps;
 
-    let backgroundClasses = isDarkSquare ? 'bg-slate-400' : 'bg-stone-100';
+    let backgroundClasses = isDarkSquare ? DEFAULT_DARK_SQUARE_COLOR : DEFAULT_LIGHT_SQUARE_COLOR;
     let highlightClasses = '';
     let hoverClasses = '';
     let showCaptureOverlay: boolean = false;
 
     if (isSelected) {
-        backgroundClasses = 'bg-emerald-300';
-        highlightClasses = '';
+        backgroundClasses = SELECTED_GLOW_SQUARE_COLOR;
     } else {
         if (isCheck) {
-            backgroundClasses = isDarkSquare ? 'bg-red-400' : 'bg-red-300';
+            backgroundClasses = isDarkSquare ? CHECK_GLOW_DARK_SQUARE_COLOR : CHECK_GLOW_LIGHT_SQUARE_COLOR;
         } else if (isPreviousMove) {
-            backgroundClasses = isDarkSquare ? 'bg-amber-100' : 'bg-orange-100';
+            backgroundClasses = isDarkSquare ? PREV_MOVE_GLOW_DARK_SQUARE_COLOR : PREV_MOVE_GLOW_LIGHT_SQUARE_COLOR;
         }
         if (canCapture) {
             showCaptureOverlay = !isDraggingOver;
-            hoverClasses = 'hover:bg-emerald-300';
+            hoverClasses = HOVER_SELECTABLE_SQUARE_COLOR;
             if (isDraggingOver) {
-                backgroundClasses = 'bg-emerald-300';
+                backgroundClasses = SELECTED_GLOW_SQUARE_COLOR;
             }
         } else if (canMove) {
-            const backgroundColor = isDarkSquare ? 'after:bg-emerald-300/90' : 'after:bg-emerald-300/80';
-            // Use a responsive, clamped size so the dot scales with the square
-            // and stays within sensible bounds. Bump size on xl+ screens.
-            highlightClasses = `after:absolute after:left-1/2 after:top-1/2 after:h-[clamp(0.75rem,30%,1.25rem)] after:w-[clamp(0.75rem,30%,1.25rem)] 2xl:after:h-[clamp(1rem,35%,1.5rem)] 2xl:after:w-[clamp(1rem,35%,1.5rem)] after:-translate-x-1/2 after:-translate-y-1/2 after:rounded-full ${backgroundColor} after:content-[""] hover:after:opacity-0`;
-            // On hover, softly recolor the square to match the dot color and hide the dot
-            hoverClasses = 'hover:bg-emerald-300';
+            highlightClasses = SELECTABLE_MOVE_DOT_CLASSES;
+            hoverClasses = HOVER_SELECTABLE_SQUARE_COLOR;
             if (isDraggingOver) {
-                backgroundClasses = 'bg-emerald-300';
+                backgroundClasses = DRAG_OVER_SELECTABLE_SQUARE_COLOR;
             }
         }
     }
@@ -64,15 +78,11 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
             onClick={onClick}
             className={`${CHESS_SQUARE_BASE_CLASSES} ${backgroundClasses} ${highlightClasses} ${hoverClasses}`}
         >
-            {showCaptureOverlay && <CaptureOverlay isDarkSquare={isDarkSquare} />}
+            {showCaptureOverlay ? <CaptureOverlay isDarkSquare={isDarkSquare} /> : null}
             {!hideContent ? children : null}
-
-            <Legends
-                boardIndex={index}
-                isDarkSquare={isDarkSquare}
-                isPreviousMoveSquare={Boolean(isPreviousMove)}
-                isFlippedBoard={isFlipped}
-            />
+            {legends ? (
+                <Legends {...legends} isDarkSquare={isDarkSquare} isPreviousMoveSquare={Boolean(isPreviousMove)} />
+            ) : null}
         </button>
     );
 }
