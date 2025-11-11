@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-react';
 
 import { ImageContext, type ImageContextType } from '../../../providers/ImagesProvider';
 import { createMockImageContextValues } from '../../../providers/__mocks__/ImagesProvider';
-import ChessPiece from '../ChessPiece';
+import ChessPiece, { arePropsEqual } from '../ChessPiece';
 
 const defaultProps = {
     piece: { alias: 'P' } as Piece,
@@ -257,5 +257,54 @@ describe('ChessPiece', () => {
             expect(image).toHaveAttribute('alt', expectedAltText);
             expect(image).toHaveAttribute('src', expectedImgSrc);
         });
+    });
+});
+
+describe('arePropsEqual', () => {
+    it('returns true for identical props', () => {
+        const propsA = {
+            ...defaultProps,
+        };
+        const propsB = {
+            ...propsA,
+        };
+
+        const result = arePropsEqual(propsA, propsB);
+        expect(result).toBe(true);
+    });
+
+    it.each([
+        {
+            scenario: 'different piece alias',
+            propsAOverrides: { piece: { alias: 'P' } as Piece },
+            propsBOverrides: { piece: { alias: 'N' } as Piece },
+        },
+        {
+            scenario: 'different showTextDisplay',
+            propsAOverrides: { showTextDisplay: false },
+            propsBOverrides: { showTextDisplay: true },
+        },
+        {
+            scenario: 'different onPointerDown',
+            propsAOverrides: { onPointerDown: vi.fn() },
+            propsBOverrides: { onPointerDown: vi.fn() },
+        },
+        {
+            scenario: 'different onImgLoadError',
+            propsAOverrides: { onImgLoadError: vi.fn() },
+            propsBOverrides: { onImgLoadError: vi.fn() },
+        },
+    ])('returns false when piece alias differs', ({ propsAOverrides, propsBOverrides }) => {
+        const propsA = {
+            ...defaultProps,
+            ...propsAOverrides,
+        };
+        const propsB = {
+            ...propsA,
+            ...propsBOverrides,
+        };
+
+        const result = arePropsEqual(propsA, propsB);
+        expect(result).toBe(false);
     });
 });

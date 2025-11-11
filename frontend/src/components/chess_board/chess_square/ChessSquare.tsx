@@ -77,7 +77,7 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
     );
 }
 
-function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
+export function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
     // Compare primitive props
     if (
         prevProps.index !== nextProps.index ||

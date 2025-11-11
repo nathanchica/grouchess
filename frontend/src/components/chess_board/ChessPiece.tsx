@@ -39,7 +39,7 @@ function ChessPiece({ piece, showTextDisplay = false, onPointerDown, onImgLoadEr
     );
 }
 
-function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
+export function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
     // Compare piece by alias (pieces with same alias are identical)
     return (
         prevProps.piece.alias === nextProps.piece.alias &&
