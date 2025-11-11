@@ -1,4 +1,4 @@
-import { getLegendsForIndex } from '../square';
+import { getIsDarkSquare, getLegendsForIndex } from '../square';
 
 describe('getLegendsForIndex', () => {
     describe("Non-flipped Board (White's Perspective)", () => {
@@ -168,5 +168,30 @@ describe('getLegendsForIndex', () => {
                 expect(flippedResult).toBeNull();
             }
         );
+    });
+});
+
+describe('getIsDarkSquare', () => {
+    it.each([
+        { index: 0, expectedIsDark: false },
+        { index: 1, expectedIsDark: true },
+        { index: 2, expectedIsDark: false },
+        { index: 3, expectedIsDark: true },
+        { index: 4, expectedIsDark: false },
+        { index: 5, expectedIsDark: true },
+        { index: 6, expectedIsDark: false },
+        { index: 7, expectedIsDark: true },
+        { index: 8, expectedIsDark: true },
+        { index: 9, expectedIsDark: false },
+        { index: 10, expectedIsDark: true },
+        { index: 11, expectedIsDark: false },
+        { index: 12, expectedIsDark: true },
+        { index: 13, expectedIsDark: false },
+        { index: 14, expectedIsDark: true },
+        { index: 15, expectedIsDark: false },
+        { index: 63, expectedIsDark: true },
+    ])('correctly identifies dark squares for index $index', ({ index, expectedIsDark }) => {
+        const result = getIsDarkSquare(index);
+        expect(result).toBe(expectedIsDark);
     });
 });

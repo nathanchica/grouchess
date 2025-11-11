@@ -1,8 +1,7 @@
-import { indexToAlgebraicNotation } from '@grouchess/chess';
-import type { BoardIndex, PieceAlias } from '@grouchess/models';
+import { indexToRowCol } from '@grouchess/chess';
+import type { BoardIndex } from '@grouchess/models';
 
-import { aliasToPieceImageData } from './pieces';
-import type { ChessSquareLegends, GlowingSquareProps } from './types';
+import type { ChessSquareLegends } from './types';
 
 // When not flipped (white's perspective): bottom row is row 7, left column is col 0
 const INDEX_TO_COL_LEGEND_NOT_FLIPPED: Partial<Record<number, string>> = {
@@ -67,45 +66,9 @@ export function getLegendsForIndex(index: number, isFlippedBoard: boolean): Ches
 }
 
 /**
- * Generates an accessible label for a chess square that describes its position, piece, and state.
- * Used for screen reader accessibility.
+ * Determines if a square at a given board index is a dark square.
  */
-export function getSquareAriaLabel(
-    boardIndex: BoardIndex,
-    pieceAlias: PieceAlias | null,
-    glowingSquareProps: GlowingSquareProps
-): string {
-    const squareName = indexToAlgebraicNotation(boardIndex);
-    const parts: string[] = [squareName];
-
-    // Describe the piece on this square using the same alt text as the images
-    if (pieceAlias) {
-        parts.push(aliasToPieceImageData[pieceAlias].altText);
-    } else {
-        parts.push('empty');
-    }
-
-    // Add state information
-    const { isCheck, isSelected, canCapture, canMove, isPreviousMove } = glowingSquareProps;
-
-    if (isCheck) {
-        parts.push('in check');
-    }
-
-    if (isSelected) {
-        parts.push('selected');
-    }
-
-    if (canCapture) {
-        // The piece described above can be captured
-        parts.push('can be captured');
-    } else if (canMove) {
-        parts.push('can move here');
-    }
-
-    if (isPreviousMove) {
-        parts.push('previous move');
-    }
-
-    return parts.join(', ');
+export function getIsDarkSquare(index: BoardIndex): boolean {
+    const { row, col } = indexToRowCol(index);
+    return row % 2 === (col % 2 === 0 ? 1 : 0);
 }
