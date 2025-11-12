@@ -9,18 +9,25 @@ import { useDismissOnEscape } from '../../hooks/useDismissOnEscape';
 import { useChessGame } from '../../providers/ChessGameRoomProvider';
 import { PAWN_PROMOTION_OPTIONS } from '../../utils/pieces';
 
-type Props = {
-    boardRect: DOMRect;
-    promotionIndex: number;
-    color: PieceColor;
-    onDismiss: () => void;
-    isFlipped: boolean;
-};
-
-function PawnPromotionPrompt({ boardRect, promotionIndex, color, onDismiss, isFlipped }: Props) {
-    const { promotePawn, cancelPromotion } = useChessGame();
-
+export function getPawnPromotionOptions(color: PieceColor, isFlipped: boolean): PawnPromotion[] {
     const options = PAWN_PROMOTION_OPTIONS[color];
+
+    // Ensure queen is closest to the pawn. For black on a flipped board, the
+    // visual stack extends downward, so reverse the options to put queen first.
+    if (isFlipped && color === 'black') {
+        return [...options].reverse();
+    }
+
+    return options;
+}
+
+export function getPromptPositionAndSize(
+    boardRect: DOMRect,
+    promotionIndex: number,
+    color: PieceColor,
+    isFlipped: boolean,
+    numOptions: number
+) {
     const { width } = boardRect;
     const squareSize = width / NUM_COLS;
     const { row, col } = indexToRowCol(promotionIndex);
@@ -29,22 +36,37 @@ function PawnPromotionPrompt({ boardRect, promotionIndex, color, onDismiss, isFl
     // row/col to get the on-screen coordinates for the overlay.
     const displayRow = isFlipped ? NUM_ROWS - 1 - row : row;
     const displayCol = isFlipped ? NUM_COLS - 1 - col : col;
-
-    // Position the prompt:
-    // - When flipped: anchor at the pawn square and extend downward (matches white UX)
-    // - When not flipped: preserve legacy behavior where black extends upward
     const top = Math.round(
         isFlipped
             ? displayRow * squareSize
             : color === 'white'
               ? row * squareSize
-              : (row - (options.length - 1)) * squareSize
+              : (row - (numOptions - 1)) * squareSize
     );
     const left = Math.round((isFlipped ? displayCol : col) * squareSize);
 
-    // Ensure queen is closest to the pawn. For black on a flipped board, the
-    // visual stack extends downward, so reverse the options to put queen first.
-    const displayOptions = isFlipped && color === 'black' ? [...options].reverse() : options;
+    return { top, left, squareSize };
+}
+
+export type PawnPromotionPromptProps = {
+    boardRect: DOMRect;
+    promotionIndex: number;
+    color: PieceColor;
+    onDismiss: () => void;
+    isFlipped: boolean;
+};
+
+function PawnPromotionPrompt({ boardRect, promotionIndex, color, onDismiss, isFlipped }: PawnPromotionPromptProps) {
+    const { promotePawn, cancelPromotion } = useChessGame();
+    const displayOptions = getPawnPromotionOptions(color, isFlipped);
+
+    const { top, left, squareSize } = getPromptPositionAndSize(
+        boardRect,
+        promotionIndex,
+        color,
+        isFlipped,
+        displayOptions.length
+    );
 
     const handleDismiss = useCallback(() => {
         cancelPromotion();
@@ -60,7 +82,7 @@ function PawnPromotionPrompt({ boardRect, promotionIndex, color, onDismiss, isFl
 
     return (
         <div className="absolute inset-0 z-20" onClick={handleDismiss} role="dialog" aria-modal="true" tabIndex={-1}>
-            <div className="absolute inset-0 bg-black/40" />
+            <div className="absolute inset-0 bg-black/40" data-testid="backdrop" />
             <PromotionCard
                 onSelect={handleOptionSelect}
                 options={displayOptions}

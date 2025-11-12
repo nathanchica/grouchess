@@ -5,14 +5,14 @@ import { type PawnPromotion } from '@grouchess/models';
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
 
-type Props = {
+export type PromotionCardProps = {
     onSelect: (option: PawnPromotion) => void;
     options: PawnPromotion[]; // Render order top->bottom
     squareSize?: number; // optional explicit sizing
     style?: CSSProperties; // absolute positioning from parent
 };
 
-function PromotionCard({ onSelect, options, squareSize, style }: Props) {
+function PromotionCard({ onSelect, options, squareSize, style }: PromotionCardProps) {
     const { isReady: isImagesLoaded, imgSrcMap } = useImages();
     const optionSize = squareSize ? `${squareSize}px` : undefined;
 
