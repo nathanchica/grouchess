@@ -4,6 +4,19 @@
 - `pnpm` is used as the monorepo package manager
 - See packages/models/README.md for common schemas and types
 
+## Common commands
+
+- Rebuild all packages: `pnpm build:packages` from the monorepo root
+    - Needed after making changes to shared packages (e.g. models)
+- Running tests:
+    - From the monorepo root: `pnpm test <package-name>` (e.g. `pnpm test frontend`)
+    - From within a package: `pnpm test`
+    - To run a specific test file: `pnpm test <test-file-name>` (e.g. `pnpm test GameRoomForm.test.ts`)
+    - Without coverage: `pnpm test:run <test-file-name>` (e.g. `pnpm test:run GameRoomForm.test.ts`)
+- Linting: `pnpm lint` from the monorepo root
+- Formatting: `pnpm format` from the monorepo root
+- Typechecking: `pnpm typecheck` from the monorepo root
+
 ## Unit tests
 
 - Unit tests are written using vitest.
@@ -20,11 +33,6 @@
 - Backend tests HTTP routes using supertest, Express app is created via createApp() function from backend/src/app.ts
 - Use mock data factories from `@grouchess/test-utils` where applicable.
     - See ./packages/test-utils/README.md for available factories and usage examples.
-- Running tests:
-    - From the monorepo root: `pnpm test <package-name>` (e.g. `pnpm test frontend`)
-    - From within a package: `pnpm test`
-    - To run a specific test file: `pnpm test <test-file-name>` (e.g. `pnpm test GameRoomForm.test.ts`)
-    - Without coverage: `pnpm test:run <test-file-name>` (e.g. `pnpm test:run GameRoomForm.test.ts`)
 
 ### Frontend Testing
 
@@ -44,6 +52,38 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     ```
 
 - See ChallengerWaitingRoom.test.tsx for an example of well-structured frontend test cases and mocks.
+- Test case structure:
+
+    ```ts
+    describe('ComponentName', () => {
+        // Setup and common utilities
+
+        describe('Specific feature or prop', () => {
+            it('changes title text when button is clicked', async () => {
+                // Setup: setup component with props, context, mocks
+                const { getByRole } = await renderComponentName({
+                    propOverrides: { ... },
+                    contextOverrides: { ... },
+                });
+
+                // Locate relevant elements
+                const button = getByRole('button', { name: /submit/i });
+                const title = getByRole('heading', { name: /title/i });
+
+                // Actions and assertions
+                await expect.element(title).toHaveTextContent('Original Title');
+                await expect.element(button).toBeEnabled();
+
+                await button.click();
+                await expect.element(title).toHaveTextContent('Changed Title');
+            });
+
+            // More test cases...
+        });
+
+        // More describe blocks for other features or props...
+    });
+    ```
 
 #### Locating elements
 
@@ -278,31 +318,48 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
 - There are mock context value factories available for common contexts used in the frontend
     - These can be found in the `__mocks__` directories next to the corresponding providers
     - To test components that depend on context, wrap them in the Provider with mock values
-    - Context objects are exported from their respective provider files
-    - example:
+        - Context objects are exported from their respective provider files
+        - example:
 
-        ```ts
-        import { PlayerChatSocketContext } from '../../../providers/PlayerChatSocketProvider';
-        import { createMockPlayerChatSocketContextValues } from '../../../providers/__mocks__/PlayerChatSocketProvider';
+            ```ts
+            import { render } from 'vitest-browser-react';
+            import PlayerChatPanel, { type PlayerChatPanelProps } from '../PlayerChatPanel';
+            import {
+                PlayerChatSocketContext,
+                type PlayerChatSocketContextType
+            } from '../../../providers/PlayerChatSocketProvider';
+            import { createMockPlayerChatSocketContextValues } from '../../../providers/__mocks__/PlayerChatSocketProvider';
 
-        const renderPlayerChatPanel = ({ propOverrides = {}, contextOverrides = {} } = {}) => {
-            const contextValue = createMockPlayerChatSocketContextValues(contextOverrides);
-            return render(
-                <PlayerChatSocketContext.Provider value={contextValue}>
-                    <PlayerChatPanel {...defaultProps} {...propOverrides} />
-                </PlayerChatSocketContext.Provider>
-            );
-        };
+            type RenderPlayerChatPanelOptions = {
+                propOverrides?: Partial<PlayerChatPanelProps>;
+                playerChatSocketContextValues?: PlayerChatSocketContextType;
+            };
+            function renderPlayerChatPanel(
+                {
+                    propOverrides = {},
+                    playerChatSocketContextValues = createMockPlayerChatSocketContextValues()
+                }: RenderPlayerChatPanelOptions = {}
+            ) {
+                return render(
+                    <PlayerChatSocketContext.Provider value={playerChatSocketContextValues}>
+                        <PlayerChatPanel {...defaultProps} {...propOverrides} />
+                    </PlayerChatSocketContext.Provider>
+                );
+            };
 
-        // Usage in tests:
-        it('sends message when Enter key is pressed', async () => {
-            const sendStandardMessage = vi.fn();
-            await renderPlayerChatPanel({
-                contextOverrides: { sendStandardMessage }
+            // Usage in tests:
+            it('sends message when Enter key is pressed', async () => {
+                const sendStandardMessage = vi.fn();
+                const playerChatSocketContextValues = createMockPlayerChatSocketContextValues();
+                playerChatSocketContextValues.sendStandardMessage = sendStandardMessage;
+
+                await renderPlayerChatPanel({
+                    playerChatSocketContextValues
+                });
+
+                // ... test implementation
             });
-            // ... test implementation
-        });
-        ```
+            ```
 
 - For mocking fetches, refer to docs/FrontendFetching.md for guidelines and examples
 - Mocking modules in react tests:

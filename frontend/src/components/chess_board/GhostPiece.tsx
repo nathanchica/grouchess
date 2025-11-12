@@ -1,39 +1,53 @@
-import type { PieceAlias } from '@grouchess/models';
+import { forwardRef, memo } from 'react';
 
-import type { DragProps } from './ChessBoard';
+import type { PieceAlias } from '@grouchess/models';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
+import DraggableItem from '../common/DraggableItem';
 
-type Props = {
-    dragProps: DragProps;
+export type GhostPieceProps = {
+    squareSize: number;
+    initialX: number;
+    initialY: number;
     pieceAlias: PieceAlias;
 };
 
 /**
- * Ghost piece overlay following the pointer while dragging
+ * Memoized piece image - won't re-render during drag movements
  */
-function GhostPiece({ dragProps, pieceAlias }: Props) {
+const DraggablePieceImage = memo(({ pieceAlias }: { pieceAlias: PieceAlias }) => {
     const { imgSrcMap } = useImages();
-    const { x, y, squareSize } = dragProps;
     const { imgSrc, altText } = aliasToPieceImageData[pieceAlias];
     const resolvedImgSrc = imgSrcMap[imgSrc] ?? imgSrc;
 
     return (
-        <div className="pointer-events-none absolute inset-0 z-10">
-            <div
-                style={{
-                    position: 'absolute',
-                    left: `${x - squareSize / 2}px`,
-                    top: `${y - squareSize / 2}px`,
-                    width: `${squareSize}px`,
-                    height: `${squareSize}px`,
-                }}
-            >
-                <img src={resolvedImgSrc} alt={altText} className="w-full h-full drop-shadow-lg" draggable={false} />
-            </div>
-        </div>
+        <img
+            src={resolvedImgSrc}
+            alt={altText}
+            className="w-full h-full drop-shadow-lg will-change-[filter]"
+            draggable={false}
+        />
     );
-}
+});
+
+DraggablePieceImage.displayName = 'DraggablePieceImage';
+
+/**
+ * Ghost piece overlay following the pointer while dragging.
+ * Position is updated via ref for optimal performance (no re-renders on mouse move).
+ * Initial position is set via inline style for the first render.
+ */
+const GhostPiece = forwardRef<HTMLDivElement, GhostPieceProps>(
+    ({ squareSize, initialX, initialY, pieceAlias }, ref) => {
+        return (
+            <DraggableItem ref={ref} x={initialX} y={initialY} width={squareSize} height={squareSize}>
+                <DraggablePieceImage pieceAlias={pieceAlias} />
+            </DraggableItem>
+        );
+    }
+);
+
+GhostPiece.displayName = 'GhostPiece';
 
 export default GhostPiece;

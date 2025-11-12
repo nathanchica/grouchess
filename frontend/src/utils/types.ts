@@ -24,3 +24,18 @@ export type GlowingSquareProps = {
     canCapture?: boolean;
     canMove?: boolean;
 };
+
+export type ChessSquareLegends = {
+    rowLegend?: string;
+    colLegend?: string;
+};
+
+export type Position = {
+    x: number;
+    y: number;
+};
+
+export type Rect = {
+    width: number;
+    height: number;
+};

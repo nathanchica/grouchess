@@ -1,4 +1,4 @@
-import type { PointerEventHandler } from 'react';
+import { memo, type PointerEventHandler } from 'react';
 
 import type { Piece } from '@grouchess/models';
 
@@ -39,4 +39,14 @@ function ChessPiece({ piece, showTextDisplay = false, onPointerDown, onImgLoadEr
     );
 }
 
-export default ChessPiece;
+export function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
+    // Compare piece by alias (pieces with same alias are identical)
+    return (
+        prevProps.piece.alias === nextProps.piece.alias &&
+        prevProps.showTextDisplay === nextProps.showTextDisplay &&
+        prevProps.onPointerDown === nextProps.onPointerDown &&
+        prevProps.onImgLoadError === nextProps.onImgLoadError
+    );
+}
+
+export default memo(ChessPiece, arePropsEqual);
