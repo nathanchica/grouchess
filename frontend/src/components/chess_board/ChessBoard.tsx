@@ -12,6 +12,7 @@ import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider
 import { useImages } from '../../providers/ImagesProvider';
 import { getRowColFromXY, xyFromPointerEvent } from '../../utils/board';
 import { type GlowingSquareProps } from '../../utils/types';
+import GameBoard from '../common/GameBoard';
 
 export type DragProps = {
     pointerId: number;
@@ -125,10 +126,8 @@ function ChessBoard() {
     }, [glowingSquarePropsByIndex, drag, dragOverIndex]);
 
     return (
-        <div
+        <GameBoard
             ref={boardRef}
-            role="grid"
-            className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-2xl shadow-white/25"
             onPointerDown={(event) => {
                 if (boardInteractionIsDisabled || !boardRef.current) return;
 
@@ -251,7 +250,7 @@ function ChessBoard() {
                     onDismiss={clearSelection}
                 />
             )}
-        </div>
+        </GameBoard>
     );
 }
 
