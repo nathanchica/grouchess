@@ -35,7 +35,12 @@ function ChessSquare({ index, glowingSquareProps = {}, children, isFlipped }: Ch
             {showCaptureOverlay ? <CaptureOverlay isDarkSquare={isDarkSquare} /> : null}
             {children}
             {legends ? (
-                <Legends {...legends} isDarkSquare={isDarkSquare} isPreviousMoveSquare={Boolean(isPreviousMove)} />
+                <Legends
+                    {...legends}
+                    isDarkSquare={isDarkSquare}
+                    isPreviousMoveSquare={Boolean(isPreviousMove)}
+                    isSelectedSquare={Boolean(isSelected)}
+                />
             ) : null}
         </div>
     );

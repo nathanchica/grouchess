@@ -1,18 +1,22 @@
 import { memo, type ReactNode } from 'react';
 
+const LIGHT_FONT_COLOR = 'text-zinc-100';
+const DARK_FONT_COLOR = 'text-zinc-500';
+
 export type LegendsProps = {
     colLegend?: string;
     rowLegend?: string;
     isDarkSquare: boolean;
     isPreviousMoveSquare: boolean;
+    isSelectedSquare?: boolean;
 };
 
 /**
  * Renders the row and column legends for a chess square.
  */
-function Legends({ colLegend, rowLegend, isDarkSquare, isPreviousMoveSquare }: LegendsProps) {
-    let legendFontColor = isDarkSquare ? 'text-zinc-100' : 'text-zinc-500';
-    if (isPreviousMoveSquare) legendFontColor = 'text-zinc-500';
+function Legends({ colLegend, rowLegend, isDarkSquare, isPreviousMoveSquare, isSelectedSquare }: LegendsProps) {
+    const useDarkFontColor = isPreviousMoveSquare || isSelectedSquare || !isDarkSquare;
+    const legendFontColor = useDarkFontColor ? DARK_FONT_COLOR : LIGHT_FONT_COLOR;
     const legendBaseClasses = `absolute text-xs font-bold pointer-events-none ${legendFontColor}`;
 
     let rowLegendContent: ReactNode = null;

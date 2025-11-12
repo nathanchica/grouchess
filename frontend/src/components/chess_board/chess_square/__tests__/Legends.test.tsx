@@ -18,19 +18,42 @@ describe('Legends', () => {
 
     describe('Conditional Rendering', () => {
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false },
-            { scenario: 'light square (previous move)', isDarkSquare: false, isPreviousMoveSquare: true },
-            { scenario: 'dark square (previous move)', isDarkSquare: true, isPreviousMoveSquare: true },
+            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
+            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
+            {
+                scenario: 'light square (previous move)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'dark square (previous move)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'light square (selected)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
+            {
+                scenario: 'dark square (selected)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
         ])(
             'renders both legends when both colLegend and rowLegend are provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare }) => {
+            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
                 const { getByTestId } = await renderLegends({
                     propOverrides: {
                         colLegend: 'a',
                         rowLegend: '1',
                         isDarkSquare,
                         isPreviousMoveSquare,
+                        isSelectedSquare,
                     },
                 });
 
@@ -45,18 +68,41 @@ describe('Legends', () => {
         );
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false },
-            { scenario: 'light square (previous move)', isDarkSquare: false, isPreviousMoveSquare: true },
-            { scenario: 'dark square (previous move)', isDarkSquare: true, isPreviousMoveSquare: true },
+            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
+            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
+            {
+                scenario: 'light square (previous move)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'dark square (previous move)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'light square (selected)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
+            {
+                scenario: 'dark square (selected)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
         ])(
             'renders only row legend when only rowLegend is provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare }) => {
+            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
                 const { getByTestId } = await renderLegends({
                     propOverrides: {
                         rowLegend: '1',
                         isDarkSquare,
                         isPreviousMoveSquare,
+                        isSelectedSquare,
                     },
                 });
 
@@ -71,18 +117,41 @@ describe('Legends', () => {
         );
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false },
-            { scenario: 'light square (previous move)', isDarkSquare: false, isPreviousMoveSquare: true },
-            { scenario: 'dark square (previous move)', isDarkSquare: true, isPreviousMoveSquare: true },
+            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
+            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
+            {
+                scenario: 'light square (previous move)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'dark square (previous move)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'light square (selected)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
+            {
+                scenario: 'dark square (selected)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
         ])(
             'renders only column legend when only colLegend is provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare }) => {
+            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
                 const { getByTestId } = await renderLegends({
                     propOverrides: {
                         colLegend: 'a',
                         isDarkSquare,
                         isPreviousMoveSquare,
+                        isSelectedSquare,
                     },
                 });
 
@@ -97,17 +166,40 @@ describe('Legends', () => {
         );
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false },
-            { scenario: 'light square (previous move)', isDarkSquare: false, isPreviousMoveSquare: true },
-            { scenario: 'dark square (previous move)', isDarkSquare: true, isPreviousMoveSquare: true },
+            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
+            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
+            {
+                scenario: 'light square (previous move)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'dark square (previous move)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'light square (selected)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
+            {
+                scenario: 'dark square (selected)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
         ])(
             'renders nothing when both legends are undefined on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare }) => {
+            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
                 const { container } = await renderLegends({
                     propOverrides: {
                         isDarkSquare,
                         isPreviousMoveSquare,
+                        isSelectedSquare,
                     },
                 });
 
@@ -116,19 +208,42 @@ describe('Legends', () => {
         );
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false },
-            { scenario: 'light square (previous move)', isDarkSquare: false, isPreviousMoveSquare: true },
-            { scenario: 'dark square (previous move)', isDarkSquare: true, isPreviousMoveSquare: true },
+            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
+            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
+            {
+                scenario: 'light square (previous move)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'dark square (previous move)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: true,
+                isSelectedSquare: false,
+            },
+            {
+                scenario: 'light square (selected)',
+                isDarkSquare: false,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
+            {
+                scenario: 'dark square (selected)',
+                isDarkSquare: true,
+                isPreviousMoveSquare: false,
+                isSelectedSquare: true,
+            },
         ])(
             'does not render legends when empty strings are provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare }) => {
+            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
                 const { container } = await renderLegends({
                     propOverrides: {
                         colLegend: '',
                         rowLegend: '',
                         isDarkSquare,
                         isPreviousMoveSquare,
+                        isSelectedSquare,
                     },
                 });
 
