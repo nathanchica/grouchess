@@ -1,74 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 
-import { getKingIndices, getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
-import {
-    NUM_COLS,
-    NUM_SQUARES,
-    type ChessBoardType,
-    type Move,
-    type PieceAlias,
-    type PieceColor,
-} from '@grouchess/models';
+import { getPiece } from '@grouchess/chess';
+import { NUM_SQUARES } from '@grouchess/models';
 
 import ChessPiece from './ChessPiece';
 import GhostPiece from './GhostPiece';
 import PawnPromotionPrompt from './PawnPromotionPrompt';
 import ChessSquare from './chess_square/ChessSquare';
 
+import { useChessBoardInteractions } from '../../hooks/useChessBoardInteractions';
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
-import { getRowColFromXY, xyFromPointerEvent } from '../../utils/board';
-import { type GlowingSquareProps } from '../../utils/types';
 import GameBoard from '../common/GameBoard';
-
-export function calculateSelectedPieceAndGlowingSquares(
-    board: ChessBoardType,
-    previousMoveIndices: number[],
-    checkedColor: PieceColor | undefined,
-    selectedIndex: number | null,
-    legalMovesForSelectedPiece: Move[]
-) {
-    let glowingSquarePropsByIndex: Record<number, GlowingSquareProps> = {};
-    previousMoveIndices.forEach((index) => {
-        glowingSquarePropsByIndex[index] = { isPreviousMove: true };
-    });
-
-    if (checkedColor !== undefined) {
-        const kingIndex = getKingIndices(board)[checkedColor];
-        glowingSquarePropsByIndex[kingIndex] ??= {};
-        glowingSquarePropsByIndex[kingIndex].isCheck = true;
-    }
-
-    if (selectedIndex === null) {
-        return {
-            selectedPiece: null,
-            indexToMoveDataForSelectedPiece: {} as Record<number, Move>,
-            glowingSquarePropsByIndex,
-        };
-    }
-
-    legalMovesForSelectedPiece.forEach(({ endIndex, type }) => {
-        glowingSquarePropsByIndex[endIndex] ??= {};
-        glowingSquarePropsByIndex[endIndex] = {
-            ...glowingSquarePropsByIndex[endIndex],
-            ...(type === 'capture' ? { canCapture: true } : { canMove: true }),
-        };
-    });
-
-    glowingSquarePropsByIndex[selectedIndex] ??= {};
-    glowingSquarePropsByIndex[selectedIndex].isSelected = true;
-
-    const indexToMoveDataForSelectedPiece: Record<number, Move> = {};
-    legalMovesForSelectedPiece.forEach((move) => {
-        indexToMoveDataForSelectedPiece[move.endIndex] = move;
-    });
-
-    return {
-        selectedPiece: getPiece(board[selectedIndex] as PieceAlias),
-        indexToMoveDataForSelectedPiece,
-        glowingSquarePropsByIndex,
-    };
-}
 
 export type DragProps = {
     pointerId: number;
@@ -95,11 +38,6 @@ function ChessBoard() {
     const { chessGame, movePiece } = useChessGame();
     const { gameRoom, currentPlayerColor } = useGameRoom();
 
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const [drag, setDrag] = useState<DragProps | null>(null);
-    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-    const [promotionBoardRect, setPromotionBoardRect] = useState<DOMRect | null>(null);
-
     const boardRef = useRef<HTMLDivElement | null>(null);
     const ghostPieceRef = useRef<HTMLDivElement | null>(null);
 
@@ -112,150 +50,42 @@ function ChessBoard() {
     const isGameOver = status !== 'in-progress';
     const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver || !isCurrentPlayerTurn;
 
-    // Memoize derived values to only recompute when selectedIndex and the other deps changes
-    const { selectedPiece, indexToMoveDataForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
-        const legalMoves = selectedIndex !== null ? (legalMovesStore.byStartIndex[selectedIndex] ?? []) : [];
-        return calculateSelectedPieceAndGlowingSquares(
-            board,
-            previousMoveIndices,
-            checkedColor,
-            selectedIndex,
-            legalMoves
-        );
-    }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore.byStartIndex]);
-
-    // Attach isDraggingOver to glowingSquareProps here to account for drag state
-    const glowingSquarePropsWithDragByIndex = useMemo(
-        () =>
-            Object.entries(glowingSquarePropsByIndex).reduce(
-                (result, [key, value]) => {
-                    const index = Number(key);
-                    result[index] = {
-                        ...value,
-                        isDraggingOver: Boolean(drag && dragOverIndex === index),
-                    };
-                    return result;
-                },
-                {} as Record<number, GlowingSquareProps>
-            ),
-        [glowingSquarePropsByIndex, drag, dragOverIndex]
-    );
+    const {
+        drag,
+        selectedIndex,
+        selectedPiece,
+        glowingSquarePropsByIndex,
+        getSquareSize,
+        clearSelection,
+        clearDragStates,
+        handlePointerDown,
+        handlePointerMove,
+        handlePointerUp,
+    } = useChessBoardInteractions({
+        board,
+        playerTurn,
+        legalMovesStore,
+        checkedColor,
+        previousMoveIndices,
+        boardInteractionIsDisabled,
+        boardIsFlipped,
+        movePiece,
+        boardRef,
+        ghostPieceRef,
+    });
 
     // Memoize board array to render based on flipped state
     const boardToRender = useMemo(() => {
         return boardIsFlipped ? [...board].reverse() : board;
     }, [board, boardIsFlipped]);
 
-    const clearSelection = useCallback(() => {
-        setSelectedIndex(null);
-    }, []);
-
-    const clearDrag = useCallback(() => {
-        setDrag(null);
-        setDragOverIndex(null);
-    }, []);
-
-    // Update promotionBoardRect when pendingPromotion appears
-    useEffect(() => {
-        if (pendingPromotion && boardRef.current) {
-            setPromotionBoardRect(boardRef.current.getBoundingClientRect());
-        } else {
-            setPromotionBoardRect(null);
-        }
-    }, [pendingPromotion]);
-
     return (
         <GameBoard
             ref={boardRef}
-            onPointerDown={(event) => {
-                if (boardInteractionIsDisabled || !boardRef.current) return;
-
-                const boardRect = boardRef.current.getBoundingClientRect();
-                const { x, y } = xyFromPointerEvent(event, boardRect);
-                const squareSize = boardRect.width / NUM_COLS;
-                const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
-
-                if (!isRowColInBounds(rowCol)) return;
-
-                const boardIndex = rowColToIndex(rowCol);
-                const pieceAlias = board[boardIndex];
-                const isPossibleMoveSquare = boardIndex in indexToMoveDataForSelectedPiece;
-
-                // If clicking on a possible move square while a piece is selected, execute the move
-                if (selectedPiece && isPossibleMoveSquare) {
-                    movePiece(indexToMoveDataForSelectedPiece[boardIndex]);
-                    clearSelection();
-                    return;
-                }
-
-                // If clicking on own piece, select it and prepare for potential drag
-                if (pieceAlias) {
-                    const piece = getPiece(pieceAlias);
-                    if (piece.color === playerTurn) {
-                        event.preventDefault();
-                        event.stopPropagation();
-
-                        try {
-                            boardRef.current.setPointerCapture(event.pointerId);
-                        } catch {
-                            // ignore errors
-                        }
-
-                        setSelectedIndex(boardIndex);
-                        setDrag({
-                            pointerId: event.pointerId,
-                            squareSize,
-                            boardRect,
-                            initialX: x,
-                            initialY: y,
-                        });
-                        setDragOverIndex(boardIndex);
-                        return;
-                    }
-                    // If clicking on opponent piece (non-capture), do nothing
-                    return;
-                }
-
-                // If clicking on empty square (not a possible move square), clear selection
-                clearSelection();
-            }}
-            onPointerMove={(event) => {
-                if (boardInteractionIsDisabled || !drag || !ghostPieceRef.current) return;
-                if (event.pointerId !== drag.pointerId) return;
-                const { x, y } = xyFromPointerEvent(event, drag.boardRect);
-
-                // Update ghost position directly without re-render
-                const offsetX = -drag.squareSize / 2;
-                const offsetY = -drag.squareSize / 2;
-                ghostPieceRef.current.style.transform = `translate(${x + offsetX}px, ${y + offsetY}px)`;
-
-                // Only update state when hovering over a different square
-                const rowCol = getRowColFromXY(x, y, drag.squareSize, boardIsFlipped);
-                const newDragOverIndex = isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null;
-                if (newDragOverIndex !== dragOverIndex) {
-                    setDragOverIndex(newDragOverIndex);
-                }
-            }}
-            onPointerUp={(event) => {
-                if (!drag || event.pointerId !== drag.pointerId || selectedIndex === null) return;
-
-                const endIndex = dragOverIndex ?? selectedIndex;
-
-                // Only handle drag behavior (when pointer moved to different square)
-                if (endIndex === selectedIndex) {
-                    clearDrag();
-                    return;
-                }
-
-                // We dragged to a legal move square
-                if (endIndex in indexToMoveDataForSelectedPiece) {
-                    movePiece(indexToMoveDataForSelectedPiece[endIndex]);
-                }
-
-                clearSelection();
-                clearDrag();
-            }}
-            onPointerCancel={clearDrag}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={clearDragStates}
         >
             {boardToRender.map((pieceAlias, visualIndex) => {
                 const boardIndex = boardIsFlipped ? NUM_SQUARES - 1 - visualIndex : visualIndex;
@@ -265,7 +95,7 @@ function ChessBoard() {
                     <ChessSquare
                         key={`square-${visualIndex}`}
                         index={boardIndex}
-                        glowingSquareProps={glowingSquarePropsWithDragByIndex[boardIndex]}
+                        glowingSquareProps={glowingSquarePropsByIndex[boardIndex]}
                         isFlipped={boardIsFlipped}
                     >
                         {showChessPiece ? <ChessPiece piece={getPiece(pieceAlias)} /> : null}
@@ -281,9 +111,9 @@ function ChessBoard() {
                     pieceAlias={selectedPiece.alias}
                 />
             )}
-            {pendingPromotion && promotionBoardRect && (
+            {pendingPromotion && (
                 <PawnPromotionPrompt
-                    boardRect={promotionBoardRect}
+                    squareSize={getSquareSize()}
                     promotionIndex={pendingPromotion.move.endIndex}
                     color={pendingPromotion.move.piece.color}
                     isFlipped={boardIsFlipped}
