@@ -3,7 +3,7 @@ import { memo, type ReactNode } from 'react';
 import { indexToAlgebraicNotation } from '@grouchess/chess';
 
 import CaptureOverlay from './CaptureOverlay';
-import Legends from './Legends';
+import Legends, { type LegendVariant } from './Legends';
 
 import { getLegendsForIndex, getIsDarkSquare, getSquareVisualClasses } from '../../../utils/square';
 import { type GlowingSquareProps } from '../../../utils/types';
@@ -22,9 +22,12 @@ function ChessSquare({ index, glowingSquareProps = {}, children, isFlipped }: Ch
     const isDarkSquare = getIsDarkSquare(index);
     const legends = getLegendsForIndex(index, isFlipped);
 
-    const { isPreviousMove, isSelected, canCapture } = glowingSquareProps;
+    const { isSelected, canCapture, isPreviousMove, isDraggingOver } = glowingSquareProps;
     const squareVisualClasses = getSquareVisualClasses(glowingSquareProps, isDarkSquare);
     const showCaptureOverlay = !isSelected && Boolean(canCapture);
+
+    const shouldUseDarkLegends = isPreviousMove || isSelected || !isDarkSquare || isDraggingOver;
+    const legendVariant: LegendVariant = shouldUseDarkLegends ? 'dark' : 'light';
 
     return (
         <div
@@ -34,14 +37,7 @@ function ChessSquare({ index, glowingSquareProps = {}, children, isFlipped }: Ch
         >
             {showCaptureOverlay ? <CaptureOverlay isDarkSquare={isDarkSquare} /> : null}
             {children}
-            {legends ? (
-                <Legends
-                    {...legends}
-                    isDarkSquare={isDarkSquare}
-                    isPreviousMoveSquare={Boolean(isPreviousMove)}
-                    isSelectedSquare={Boolean(isSelected)}
-                />
-            ) : null}
+            {legends ? <Legends {...legends} variant={legendVariant} /> : null}
         </div>
     );
 }

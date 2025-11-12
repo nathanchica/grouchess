@@ -3,10 +3,7 @@ import { render } from 'vitest-browser-react';
 import Legends, { type LegendsProps } from '../Legends';
 
 describe('Legends', () => {
-    const defaultProps: LegendsProps = {
-        isDarkSquare: false,
-        isPreviousMoveSquare: false,
-    };
+    const defaultProps: LegendsProps = {};
 
     type RenderLegendsOptions = {
         propOverrides?: Partial<LegendsProps>;
@@ -18,42 +15,17 @@ describe('Legends', () => {
 
     describe('Conditional Rendering', () => {
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
-            {
-                scenario: 'light square (previous move)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'dark square (previous move)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'light square (selected)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-            {
-                scenario: 'dark square (selected)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
+            { scenario: 'default (dark) variant', variant: undefined },
+            { scenario: 'dark variant', variant: 'dark' as const },
+            { scenario: 'light variant', variant: 'light' as const },
         ])(
-            'renders both legends when both colLegend and rowLegend are provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
+            'renders both legends when both colLegend and rowLegend are provided with $scenario',
+            async ({ variant }) => {
                 const { getByTestId } = await renderLegends({
                     propOverrides: {
                         colLegend: 'a',
                         rowLegend: '1',
-                        isDarkSquare,
-                        isPreviousMoveSquare,
-                        isSelectedSquare,
+                        variant,
                     },
                 });
 
@@ -68,188 +40,76 @@ describe('Legends', () => {
         );
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
-            {
-                scenario: 'light square (previous move)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'dark square (previous move)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'light square (selected)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-            {
-                scenario: 'dark square (selected)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-        ])(
-            'renders only row legend when only rowLegend is provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
-                const { getByTestId } = await renderLegends({
-                    propOverrides: {
-                        rowLegend: '1',
-                        isDarkSquare,
-                        isPreviousMoveSquare,
-                        isSelectedSquare,
-                    },
-                });
+            { scenario: 'default (dark) variant', variant: undefined },
+            { scenario: 'dark variant', variant: 'dark' as const },
+            { scenario: 'light variant', variant: 'light' as const },
+        ])('renders only row legend when only rowLegend is provided with $scenario', async ({ variant }) => {
+            const { getByTestId } = await renderLegends({
+                propOverrides: {
+                    rowLegend: '1',
+                    variant,
+                },
+            });
 
-                const rowLegend = getByTestId('row-legend');
-                await expect.element(rowLegend).toBeVisible();
-                await expect.element(rowLegend).toHaveTextContent('1');
+            const rowLegend = getByTestId('row-legend');
+            await expect.element(rowLegend).toBeVisible();
+            await expect.element(rowLegend).toHaveTextContent('1');
 
-                // Column legend should not be present
-                const colLegend = getByTestId('col-legend');
-                await expect.element(colLegend).not.toBeInTheDocument();
-            }
-        );
+            // Column legend should not be present
+            const colLegend = getByTestId('col-legend');
+            await expect.element(colLegend).not.toBeInTheDocument();
+        });
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
-            {
-                scenario: 'light square (previous move)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'dark square (previous move)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'light square (selected)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-            {
-                scenario: 'dark square (selected)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-        ])(
-            'renders only column legend when only colLegend is provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
-                const { getByTestId } = await renderLegends({
-                    propOverrides: {
-                        colLegend: 'a',
-                        isDarkSquare,
-                        isPreviousMoveSquare,
-                        isSelectedSquare,
-                    },
-                });
+            { scenario: 'default (dark) variant', variant: undefined },
+            { scenario: 'dark variant', variant: 'dark' as const },
+            { scenario: 'light variant', variant: 'light' as const },
+        ])('renders only column legend when only colLegend is provided with $scenario', async ({ variant }) => {
+            const { getByTestId } = await renderLegends({
+                propOverrides: {
+                    colLegend: 'a',
+                    variant,
+                },
+            });
 
-                const colLegend = getByTestId('col-legend');
-                await expect.element(colLegend).toBeVisible();
-                await expect.element(colLegend).toHaveTextContent('a');
+            const colLegend = getByTestId('col-legend');
+            await expect.element(colLegend).toBeVisible();
+            await expect.element(colLegend).toHaveTextContent('a');
 
-                // Row legend should not be present
-                const rowLegend = getByTestId('row-legend');
-                await expect.element(rowLegend).not.toBeInTheDocument();
-            }
-        );
+            // Row legend should not be present
+            const rowLegend = getByTestId('row-legend');
+            await expect.element(rowLegend).not.toBeInTheDocument();
+        });
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
-            {
-                scenario: 'light square (previous move)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'dark square (previous move)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'light square (selected)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-            {
-                scenario: 'dark square (selected)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-        ])(
-            'renders nothing when both legends are undefined on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
-                const { container } = await renderLegends({
-                    propOverrides: {
-                        isDarkSquare,
-                        isPreviousMoveSquare,
-                        isSelectedSquare,
-                    },
-                });
+            { scenario: 'default (dark) variant', variant: undefined },
+            { scenario: 'dark variant', variant: 'dark' as const },
+            { scenario: 'light variant', variant: 'light' as const },
+        ])('renders nothing when both legends are undefined with $scenario', async ({ variant }) => {
+            const { container } = await renderLegends({
+                propOverrides: {
+                    variant,
+                },
+            });
 
-                expect(container).toBeEmptyDOMElement();
-            }
-        );
+            expect(container).toBeEmptyDOMElement();
+        });
 
         it.each([
-            { scenario: 'light square', isDarkSquare: false, isPreviousMoveSquare: false, isSelectedSquare: false },
-            { scenario: 'dark square', isDarkSquare: true, isPreviousMoveSquare: false, isSelectedSquare: false },
-            {
-                scenario: 'light square (previous move)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'dark square (previous move)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: true,
-                isSelectedSquare: false,
-            },
-            {
-                scenario: 'light square (selected)',
-                isDarkSquare: false,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-            {
-                scenario: 'dark square (selected)',
-                isDarkSquare: true,
-                isPreviousMoveSquare: false,
-                isSelectedSquare: true,
-            },
-        ])(
-            'does not render legends when empty strings are provided on $scenario',
-            async ({ isDarkSquare, isPreviousMoveSquare, isSelectedSquare }) => {
-                const { container } = await renderLegends({
-                    propOverrides: {
-                        colLegend: '',
-                        rowLegend: '',
-                        isDarkSquare,
-                        isPreviousMoveSquare,
-                        isSelectedSquare,
-                    },
-                });
+            { scenario: 'default (dark) variant', variant: undefined },
+            { scenario: 'dark variant', variant: 'dark' as const },
+            { scenario: 'light variant', variant: 'light' as const },
+        ])('does not render legends when empty strings are provided with $scenario', async ({ variant }) => {
+            const { container } = await renderLegends({
+                propOverrides: {
+                    colLegend: '',
+                    rowLegend: '',
+                    variant,
+                },
+            });
 
-                expect(container).toBeEmptyDOMElement();
-            }
-        );
+            expect(container).toBeEmptyDOMElement();
+        });
     });
 
     describe('Different Legend Values', () => {
@@ -293,6 +153,43 @@ describe('Legends', () => {
             const rowLegendElement = getByTestId('row-legend');
             await expect.element(rowLegendElement).toBeVisible();
             await expect.element(rowLegendElement).toHaveTextContent(rowLegend);
+        });
+    });
+
+    describe('Variant Styles', () => {
+        it('applies dark text color when variant is dark', async () => {
+            const { getByTestId } = await renderLegends({
+                propOverrides: {
+                    colLegend: 'a',
+                    variant: 'dark',
+                },
+            });
+
+            const colLegend = getByTestId('col-legend');
+            expect(colLegend).toHaveClass('text-zinc-500');
+        });
+
+        it('applies dark text color by default (when variant is undefined)', async () => {
+            const { getByTestId } = await renderLegends({
+                propOverrides: {
+                    colLegend: 'a',
+                },
+            });
+
+            const colLegend = getByTestId('col-legend');
+            expect(colLegend).toHaveClass('text-zinc-500');
+        });
+
+        it('applies light text color when variant is light', async () => {
+            const { getByTestId } = await renderLegends({
+                propOverrides: {
+                    colLegend: 'a',
+                    variant: 'light',
+                },
+            });
+
+            const colLegend = getByTestId('col-legend');
+            expect(colLegend).toHaveClass('text-zinc-100');
         });
     });
 });
