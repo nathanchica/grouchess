@@ -1,7 +1,14 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getKingIndices, getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
-import { NUM_COLS, NUM_SQUARES, type Move, type PieceAlias } from '@grouchess/models';
+import {
+    NUM_COLS,
+    NUM_SQUARES,
+    type ChessBoardType,
+    type Move,
+    type PieceAlias,
+    type PieceColor,
+} from '@grouchess/models';
 
 import ChessPiece from './ChessPiece';
 import GhostPiece from './GhostPiece';
@@ -13,6 +20,55 @@ import { useImages } from '../../providers/ImagesProvider';
 import { getRowColFromXY, xyFromPointerEvent } from '../../utils/board';
 import { type GlowingSquareProps } from '../../utils/types';
 import GameBoard from '../common/GameBoard';
+
+export function calculateSelectedPieceAndGlowingSquares(
+    board: ChessBoardType,
+    previousMoveIndices: number[],
+    checkedColor: PieceColor | undefined,
+    selectedIndex: number | null,
+    legalMovesForSelectedPiece: Move[]
+) {
+    let glowingSquarePropsByIndex: Record<number, GlowingSquareProps> = {};
+    previousMoveIndices.forEach((index) => {
+        glowingSquarePropsByIndex[index] = { isPreviousMove: true };
+    });
+
+    if (checkedColor !== undefined) {
+        const kingIndex = getKingIndices(board)[checkedColor];
+        glowingSquarePropsByIndex[kingIndex] ??= {};
+        glowingSquarePropsByIndex[kingIndex].isCheck = true;
+    }
+
+    if (selectedIndex === null) {
+        return {
+            selectedPiece: null,
+            indexToMoveDataForSelectedPiece: {} as Record<number, Move>,
+            glowingSquarePropsByIndex,
+        };
+    }
+
+    legalMovesForSelectedPiece.forEach(({ endIndex, type }) => {
+        glowingSquarePropsByIndex[endIndex] ??= {};
+        glowingSquarePropsByIndex[endIndex] = {
+            ...glowingSquarePropsByIndex[endIndex],
+            ...(type === 'capture' ? { canCapture: true } : { canMove: true }),
+        };
+    });
+
+    glowingSquarePropsByIndex[selectedIndex] ??= {};
+    glowingSquarePropsByIndex[selectedIndex].isSelected = true;
+
+    const indexToMoveDataForSelectedPiece: Record<number, Move> = {};
+    legalMovesForSelectedPiece.forEach((move) => {
+        indexToMoveDataForSelectedPiece[move.endIndex] = move;
+    });
+
+    return {
+        selectedPiece: getPiece(board[selectedIndex] as PieceAlias),
+        indexToMoveDataForSelectedPiece,
+        glowingSquarePropsByIndex,
+    };
+}
 
 export type DragProps = {
     pointerId: number;
@@ -42,6 +98,7 @@ function ChessBoard() {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+    const [promotionBoardRect, setPromotionBoardRect] = useState<DOMRect | null>(null);
 
     const boardRef = useRef<HTMLDivElement | null>(null);
     const ghostPieceRef = useRef<HTMLDivElement | null>(null);
@@ -57,48 +114,15 @@ function ChessBoard() {
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
     const { selectedPiece, indexToMoveDataForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
-        let glowingSquarePropsByIndex: Record<number, GlowingSquareProps> = {};
-        previousMoveIndices.forEach((index) => {
-            glowingSquarePropsByIndex[index] = { isPreviousMove: true };
-        });
-
-        if (checkedColor !== undefined) {
-            const kingIndex = getKingIndices(board)[checkedColor];
-            glowingSquarePropsByIndex[kingIndex] ??= {};
-            glowingSquarePropsByIndex[kingIndex].isCheck = true;
-        }
-
-        if (selectedIndex === null) {
-            return {
-                selectedPiece: null,
-                indexToMoveDataForSelectedPiece: {} as Record<number, Move>,
-                glowingSquarePropsByIndex,
-            };
-        }
-
-        const possibleMovesForSelectedPiece = legalMovesStore.byStartIndex[selectedIndex] ?? [];
-        possibleMovesForSelectedPiece.forEach(({ endIndex, type }) => {
-            glowingSquarePropsByIndex[endIndex] ??= {};
-            glowingSquarePropsByIndex[endIndex] = {
-                ...glowingSquarePropsByIndex[endIndex],
-                ...(type === 'capture' ? { canCapture: true } : { canMove: true }),
-            };
-        });
-
-        glowingSquarePropsByIndex[selectedIndex] ??= {};
-        glowingSquarePropsByIndex[selectedIndex].isSelected = true;
-
-        const indexToMoveDataForSelectedPiece: Record<number, Move> = {};
-        possibleMovesForSelectedPiece.forEach((move) => {
-            indexToMoveDataForSelectedPiece[move.endIndex] = move;
-        });
-
-        return {
-            selectedPiece: getPiece(board[selectedIndex] as PieceAlias),
-            indexToMoveDataForSelectedPiece,
-            glowingSquarePropsByIndex,
-        };
-    }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore]);
+        const legalMoves = selectedIndex !== null ? (legalMovesStore.byStartIndex[selectedIndex] ?? []) : [];
+        return calculateSelectedPieceAndGlowingSquares(
+            board,
+            previousMoveIndices,
+            checkedColor,
+            selectedIndex,
+            legalMoves
+        );
+    }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore.byStartIndex]);
 
     // Attach isDraggingOver to glowingSquareProps here to account for drag state
     const glowingSquarePropsWithDragByIndex = useMemo(
@@ -122,14 +146,23 @@ function ChessBoard() {
         return boardIsFlipped ? [...board].reverse() : board;
     }, [board, boardIsFlipped]);
 
-    const clearSelection = () => {
+    const clearSelection = useCallback(() => {
         setSelectedIndex(null);
-    };
+    }, []);
 
-    const clearDrag = () => {
+    const clearDrag = useCallback(() => {
         setDrag(null);
         setDragOverIndex(null);
-    };
+    }, []);
+
+    // Update promotionBoardRect when pendingPromotion appears
+    useEffect(() => {
+        if (pendingPromotion && boardRef.current) {
+            setPromotionBoardRect(boardRef.current.getBoundingClientRect());
+        } else {
+            setPromotionBoardRect(null);
+        }
+    }, [pendingPromotion]);
 
     return (
         <GameBoard
@@ -248,9 +281,9 @@ function ChessBoard() {
                     pieceAlias={selectedPiece.alias}
                 />
             )}
-            {pendingPromotion && boardRef.current && (
+            {pendingPromotion && promotionBoardRect && (
                 <PawnPromotionPrompt
-                    boardRect={boardRef.current.getBoundingClientRect()}
+                    boardRect={promotionBoardRect}
                     promotionIndex={pendingPromotion.move.endIndex}
                     color={pendingPromotion.move.piece.color}
                     isFlipped={boardIsFlipped}
