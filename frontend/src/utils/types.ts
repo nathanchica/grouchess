@@ -7,13 +7,19 @@ export type WaitingRoom = {
     isCreator?: boolean;
 };
 
+export type PendingPromotion = {
+    move: Move;
+    preChessGame: ChessGame;
+    prePreviousMoveIndices: BoardIndex[];
+};
+
 export type ChessGameUI = ChessGame & {
     // Indices of the squares involved in the previous move used for highlighting
     previousMoveIndices: BoardIndex[];
     // Version number to force re-renders when resetting/loading games
     timelineVersion: number;
     // Pending promotion info (if a pawn has reached the last rank and is awaiting promotion choice)
-    pendingPromotion: { move: Move; preChessGame: ChessGame; prePreviousMoveIndices: BoardIndex[] } | null;
+    pendingPromotion: PendingPromotion | null;
 };
 
 export type GlowingSquareProps = {

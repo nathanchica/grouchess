@@ -21,15 +21,13 @@ export function getPawnPromotionOptions(color: PieceColor, isFlipped: boolean): 
     return options;
 }
 
-export function getPromptPositionAndSize(
-    boardRect: DOMRect,
+export function getPromptPosition(
+    squareSize: number,
     promotionIndex: number,
     color: PieceColor,
     isFlipped: boolean,
     numOptions: number
 ) {
-    const { width } = boardRect;
-    const squareSize = width / NUM_COLS;
     const { row, col } = indexToRowCol(promotionIndex);
 
     // When the board is flipped (black's perspective), we need to mirror the
@@ -49,24 +47,18 @@ export function getPromptPositionAndSize(
 }
 
 export type PawnPromotionPromptProps = {
-    boardRect: DOMRect;
+    squareSize: number;
     promotionIndex: number;
     color: PieceColor;
     onDismiss: () => void;
     isFlipped: boolean;
 };
 
-function PawnPromotionPrompt({ boardRect, promotionIndex, color, onDismiss, isFlipped }: PawnPromotionPromptProps) {
+function PawnPromotionPrompt({ squareSize, promotionIndex, color, onDismiss, isFlipped }: PawnPromotionPromptProps) {
     const { promotePawn, cancelPromotion } = useChessGame();
     const displayOptions = getPawnPromotionOptions(color, isFlipped);
 
-    const { top, left, squareSize } = getPromptPositionAndSize(
-        boardRect,
-        promotionIndex,
-        color,
-        isFlipped,
-        displayOptions.length
-    );
+    const { top, left } = getPromptPosition(squareSize, promotionIndex, color, isFlipped, displayOptions.length);
 
     const handleDismiss = useCallback(() => {
         cancelPromotion();
