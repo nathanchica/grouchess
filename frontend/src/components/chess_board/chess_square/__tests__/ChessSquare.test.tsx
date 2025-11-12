@@ -26,7 +26,6 @@ describe('ChessSquare', () => {
     const defaultProps: ChessSquareProps = {
         index: 0,
         glowingSquareProps: defaultGlowingSquareProps,
-        hideContent: false,
         children: <div data-testid="test-child">Child Content</div>,
         isFlipped: false,
     };
@@ -61,14 +60,6 @@ describe('ChessSquare', () => {
             await expect.element(gridcell).toBeInTheDocument();
         });
 
-        it('renders children when hideContent is false', async () => {
-            const { getByTestId } = await renderChessSquare({
-                propOverrides: { hideContent: false },
-            });
-            const child = getByTestId('test-child');
-            await expect.element(child).toBeInTheDocument();
-        });
-
         it('renders with different child content', async () => {
             const customChild = <span data-testid="custom-child">Custom Content</span>;
             const { getByTestId } = await renderChessSquare({
@@ -77,32 +68,6 @@ describe('ChessSquare', () => {
             const child = getByTestId('custom-child');
             await expect.element(child).toBeInTheDocument();
             await expect.element(child).toHaveTextContent('Custom Content');
-        });
-    });
-
-    describe('hideContent Prop', () => {
-        it('hides children when hideContent is true', async () => {
-            const { getByTestId } = await renderChessSquare({
-                propOverrides: { hideContent: true },
-            });
-            const child = getByTestId('test-child');
-            await expect.element(child).not.toBeInTheDocument();
-        });
-
-        it('shows children when hideContent is false', async () => {
-            const { getByTestId } = await renderChessSquare({
-                propOverrides: { hideContent: false },
-            });
-            const child = getByTestId('test-child');
-            await expect.element(child).toBeInTheDocument();
-        });
-
-        it('shows children when hideContent is undefined (defaults to false)', async () => {
-            const { getByTestId } = await renderChessSquare({
-                propOverrides: { hideContent: undefined },
-            });
-            const child = getByTestId('test-child');
-            await expect.element(child).toBeInTheDocument();
         });
     });
 
@@ -157,6 +122,16 @@ describe('ChessSquare', () => {
                         canCapture: undefined,
                         isSelected: false,
                     },
+                },
+            });
+            const overlay = getByTestId('capture-overlay');
+            await expect.element(overlay).not.toBeInTheDocument();
+        });
+
+        it('hides capture overlay when glowingSquareProps is undefined', async () => {
+            const { getByTestId } = await renderChessSquare({
+                propOverrides: {
+                    glowingSquareProps: undefined,
                 },
             });
             const overlay = getByTestId('capture-overlay');
@@ -293,6 +268,16 @@ describe('ChessSquare', () => {
             const gridcell = getByRole('gridcell');
             await expect.element(gridcell).toBeInTheDocument();
         });
+
+        it('renders correctly when glowingSquareProps is undefined', async () => {
+            const { getByRole } = await renderChessSquare({
+                propOverrides: {
+                    glowingSquareProps: undefined,
+                },
+            });
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
+        });
     });
 
     describe('arePropsEqual Memoization', () => {
@@ -306,13 +291,6 @@ describe('ChessSquare', () => {
         it('returns false when index changes', () => {
             const props1: ChessSquareProps = { ...defaultProps };
             const props2: ChessSquareProps = { ...defaultProps, index: 1 };
-
-            expect(arePropsEqual(props1, props2)).toBe(false);
-        });
-
-        it('returns false when hideContent changes', () => {
-            const props1: ChessSquareProps = { ...defaultProps };
-            const props2: ChessSquareProps = { ...defaultProps, hideContent: true };
 
             expect(arePropsEqual(props1, props2)).toBe(false);
         });
@@ -370,6 +348,45 @@ describe('ChessSquare', () => {
             };
 
             expect(arePropsEqual(props1, props2)).toBe(true);
+        });
+
+        it('returns true when both glowingSquareProps are undefined', () => {
+            const props1: ChessSquareProps = {
+                ...defaultProps,
+                glowingSquareProps: undefined,
+            };
+            const props2: ChessSquareProps = {
+                ...defaultProps,
+                glowingSquareProps: undefined,
+            };
+
+            expect(arePropsEqual(props1, props2)).toBe(true);
+        });
+
+        it('returns false when one glowingSquareProps is undefined and the other is defined', () => {
+            const props1: ChessSquareProps = {
+                ...defaultProps,
+                glowingSquareProps: undefined,
+            };
+            const props2: ChessSquareProps = {
+                ...defaultProps,
+                glowingSquareProps: defaultGlowingSquareProps,
+            };
+
+            expect(arePropsEqual(props1, props2)).toBe(false);
+        });
+
+        it('returns false when one glowingSquareProps is defined and the other is undefined', () => {
+            const props1: ChessSquareProps = {
+                ...defaultProps,
+                glowingSquareProps: defaultGlowingSquareProps,
+            };
+            const props2: ChessSquareProps = {
+                ...defaultProps,
+                glowingSquareProps: undefined,
+            };
+
+            expect(arePropsEqual(props1, props2)).toBe(false);
         });
     });
 });

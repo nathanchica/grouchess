@@ -13,13 +13,12 @@ const CHESS_SQUARE_BASE_CLASSES =
 
 export type ChessSquareProps = {
     index: number;
-    glowingSquareProps: GlowingSquareProps;
-    hideContent?: boolean;
+    glowingSquareProps?: GlowingSquareProps;
     children: ReactNode;
     isFlipped: boolean;
 };
 
-function ChessSquare({ index, glowingSquareProps, hideContent = false, children, isFlipped }: ChessSquareProps) {
+function ChessSquare({ index, glowingSquareProps = {}, children, isFlipped }: ChessSquareProps) {
     const isDarkSquare = getIsDarkSquare(index);
     const legends = getLegendsForIndex(index, isFlipped);
 
@@ -34,7 +33,7 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, children,
             className={`${CHESS_SQUARE_BASE_CLASSES} ${squareVisualClasses}`}
         >
             {showCaptureOverlay ? <CaptureOverlay isDarkSquare={isDarkSquare} /> : null}
-            {!hideContent ? children : null}
+            {children}
             {legends ? (
                 <Legends {...legends} isDarkSquare={isDarkSquare} isPreviousMoveSquare={Boolean(isPreviousMove)} />
             ) : null}
@@ -46,7 +45,6 @@ export function arePropsEqual(prevProps: ChessSquareProps, nextProps: ChessSquar
     // Compare primitive props
     if (
         prevProps.index !== nextProps.index ||
-        prevProps.hideContent !== nextProps.hideContent ||
         prevProps.isFlipped !== nextProps.isFlipped ||
         prevProps.children !== nextProps.children
     ) {
@@ -57,6 +55,17 @@ export function arePropsEqual(prevProps: ChessSquareProps, nextProps: ChessSquar
     const prevGlowing = prevProps.glowingSquareProps;
     const nextGlowing = nextProps.glowingSquareProps;
 
+    // if both are undefined or same reference
+    if (prevGlowing === nextGlowing) {
+        return true;
+    }
+
+    // if one is undefined
+    if (!prevGlowing || !nextGlowing) {
+        return false;
+    }
+
+    // Both are defined, compare their properties
     return (
         prevGlowing.isPreviousMove === nextGlowing.isPreviousMove &&
         prevGlowing.isSelected === nextGlowing.isSelected &&

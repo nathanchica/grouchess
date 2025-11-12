@@ -42,6 +42,7 @@ function ChessBoard() {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
     const boardRef = useRef<HTMLDivElement | null>(null);
     const ghostPieceRef = useRef<HTMLDivElement | null>(null);
 
@@ -53,11 +54,6 @@ function ChessBoard() {
     const { status, check: checkedColor } = gameState;
     const isGameOver = status !== 'in-progress';
     const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver || !isCurrentPlayerTurn;
-
-    // Memoize board array to render based on flipped state
-    const boardToRender = useMemo(() => {
-        return boardIsFlipped ? [...board].reverse() : board;
-    }, [board, boardIsFlipped]);
 
     // Memoize derived values to only recompute when selectedIndex and the other deps changes
     const { selectedPiece, indexToMoveDataForSelectedPiece, glowingSquarePropsByIndex } = useMemo(() => {
@@ -104,6 +100,28 @@ function ChessBoard() {
         };
     }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore]);
 
+    // Attach isDraggingOver to glowingSquareProps here to account for drag state
+    const glowingSquarePropsWithDragByIndex = useMemo(
+        () =>
+            Object.entries(glowingSquarePropsByIndex).reduce(
+                (result, [key, value]) => {
+                    const index = Number(key);
+                    result[index] = {
+                        ...value,
+                        isDraggingOver: Boolean(drag && dragOverIndex === index),
+                    };
+                    return result;
+                },
+                {} as Record<number, GlowingSquareProps>
+            ),
+        [glowingSquarePropsByIndex, drag, dragOverIndex]
+    );
+
+    // Memoize board array to render based on flipped state
+    const boardToRender = useMemo(() => {
+        return boardIsFlipped ? [...board].reverse() : board;
+    }, [board, boardIsFlipped]);
+
     const clearSelection = () => {
         setSelectedIndex(null);
     };
@@ -112,18 +130,6 @@ function ChessBoard() {
         setDrag(null);
         setDragOverIndex(null);
     };
-
-    // Memoize glowing square props for each square to avoid re-renders
-    const glowingSquarePropsWithDragByIndex = useMemo(() => {
-        const propsMap: Record<number, GlowingSquareProps> = {};
-        for (let index = 0; index < NUM_SQUARES; index++) {
-            propsMap[index] = {
-                ...(glowingSquarePropsByIndex[index] ?? {}),
-                isDraggingOver: Boolean(drag && dragOverIndex === index),
-            };
-        }
-        return propsMap;
-    }, [glowingSquarePropsByIndex, drag, dragOverIndex]);
 
     return (
         <GameBoard
@@ -220,15 +226,16 @@ function ChessBoard() {
         >
             {boardToRender.map((pieceAlias, visualIndex) => {
                 const boardIndex = boardIsFlipped ? NUM_SQUARES - 1 - visualIndex : visualIndex;
+                const pieceIsDragged = Boolean(drag && selectedIndex === boardIndex);
+                const showChessPiece = isFinishedLoadingImages && pieceAlias && !pieceIsDragged;
                 return (
                     <ChessSquare
                         key={`square-${visualIndex}`}
                         index={boardIndex}
                         glowingSquareProps={glowingSquarePropsWithDragByIndex[boardIndex]}
-                        hideContent={Boolean(drag && selectedIndex === boardIndex)}
                         isFlipped={boardIsFlipped}
                     >
-                        {isFinishedLoadingImages && pieceAlias ? <ChessPiece piece={getPiece(pieceAlias)} /> : null}
+                        {showChessPiece ? <ChessPiece piece={getPiece(pieceAlias)} /> : null}
                     </ChessSquare>
                 );
             })}

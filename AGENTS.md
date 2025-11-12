@@ -313,6 +313,45 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
     expect(container).toBeEmptyDOMElement();
     ```
 
+- For testing pointer events, see examples in GameBoard.test.tsx
+
+    ```tsx
+    it('handles pointer event sequence (down → move → up)', async () => {
+        const onPointerDown = vi.fn();
+        const onPointerMove = vi.fn();
+        const onPointerUp = vi.fn();
+        const { getByRole } = await renderGameBoard({
+            onPointerDown,
+            onPointerMove,
+            onPointerUp,
+        });
+
+        const grid = getByRole('grid');
+
+        grid.element().dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        expect(onPointerDown).toHaveBeenCalledOnce();
+
+        grid.element().dispatchEvent(new PointerEvent('pointermove', { bubbles: true }));
+        expect(onPointerMove).toHaveBeenCalledOnce();
+
+        grid.element().dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+        expect(onPointerUp).toHaveBeenCalledOnce();
+    });
+    ```
+
+- For testing ref forwarding, see examples in GameBoard.test.tsx
+
+    ```tsx
+    it('forwards ref to the grid div element', async () => {
+        const ref = createRef<HTMLDivElement>();
+        await render(<GameBoard {...defaultProps} ref={ref} />);
+
+        expect(ref.current).not.toBeNull();
+        expect(ref.current).toBeInstanceOf(HTMLDivElement);
+        expect(ref.current?.getAttribute('role')).toBe('grid');
+    });
+    ```
+
 #### Mocking strategies
 
 - There are mock context value factories available for common contexts used in the frontend
