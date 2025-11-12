@@ -24,7 +24,7 @@ const DraggablePieceImage = memo(({ pieceAlias }: { pieceAlias: PieceAlias }) =>
     return (
         <img
             src={resolvedImgSrc}
-            alt={altText}
+            alt={`Dragging piece: ${altText}`}
             className="w-full h-full drop-shadow-lg will-change-[filter]"
             draggable={false}
         />

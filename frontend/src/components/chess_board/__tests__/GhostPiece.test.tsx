@@ -6,22 +6,14 @@ import { createMockImageContextValues } from '../../../providers/__mocks__/Image
 import GhostPiece, { type GhostPieceProps } from '../GhostPiece';
 
 type RenderGhostPieceOptions = {
-    propOverrides?: {
-        dragProps?: GhostPieceProps['dragProps'];
-        pieceAlias?: PieceAlias;
-    };
+    propOverrides?: Partial<GhostPieceProps>;
     imageContextValues?: ImageContextType;
 };
 
-const defaultDragProps: GhostPieceProps['dragProps'] = {
-    x: 100,
-    y: 150,
-    width: 80,
-    height: 80,
-};
-
-const defaultProps = {
-    dragProps: defaultDragProps,
+const defaultProps: GhostPieceProps = {
+    squareSize: 80,
+    initialX: 100,
+    initialY: 150,
     pieceAlias: 'P' as PieceAlias,
 };
 
@@ -43,26 +35,26 @@ describe('GhostPiece', () => {
                 propOverrides: { pieceAlias: 'P' },
             });
 
-            const image = getByRole('img', { name: /white pawn/i });
+            const image = getByRole('img', { name: /dragging piece: white pawn/i });
             await expect.element(image).toBeInTheDocument();
         });
 
         it('renders with non-draggable attribute', async () => {
             const { getByRole } = await renderGhostPiece();
 
-            const image = getByRole('img', { name: /white pawn/i });
+            const image = getByRole('img', { name: /dragging piece: white pawn/i });
             expect(image).toHaveAttribute('draggable', 'false');
         });
     });
 
     describe('Piece Variations', () => {
         it.each([
-            { pieceAlias: 'P' as PieceAlias, expectedAlt: 'White Pawn' },
-            { pieceAlias: 'N' as PieceAlias, expectedAlt: 'White Knight' },
-            { pieceAlias: 'B' as PieceAlias, expectedAlt: 'White Bishop' },
-            { pieceAlias: 'R' as PieceAlias, expectedAlt: 'White Rook' },
-            { pieceAlias: 'Q' as PieceAlias, expectedAlt: 'White Queen' },
-            { pieceAlias: 'K' as PieceAlias, expectedAlt: 'White King' },
+            { pieceAlias: 'P' as PieceAlias, expectedAlt: 'Dragging piece: White Pawn' },
+            { pieceAlias: 'N' as PieceAlias, expectedAlt: 'Dragging piece: White Knight' },
+            { pieceAlias: 'B' as PieceAlias, expectedAlt: 'Dragging piece: White Bishop' },
+            { pieceAlias: 'R' as PieceAlias, expectedAlt: 'Dragging piece: White Rook' },
+            { pieceAlias: 'Q' as PieceAlias, expectedAlt: 'Dragging piece: White Queen' },
+            { pieceAlias: 'K' as PieceAlias, expectedAlt: 'Dragging piece: White King' },
         ])('renders white piece $pieceAlias with correct alt text', async ({ pieceAlias, expectedAlt }) => {
             const { getByRole } = await renderGhostPiece({
                 propOverrides: { pieceAlias },
@@ -74,12 +66,12 @@ describe('GhostPiece', () => {
         });
 
         it.each([
-            { pieceAlias: 'p' as PieceAlias, expectedAlt: 'Black Pawn' },
-            { pieceAlias: 'n' as PieceAlias, expectedAlt: 'Black Knight' },
-            { pieceAlias: 'b' as PieceAlias, expectedAlt: 'Black Bishop' },
-            { pieceAlias: 'r' as PieceAlias, expectedAlt: 'Black Rook' },
-            { pieceAlias: 'q' as PieceAlias, expectedAlt: 'Black Queen' },
-            { pieceAlias: 'k' as PieceAlias, expectedAlt: 'Black King' },
+            { pieceAlias: 'p' as PieceAlias, expectedAlt: 'Dragging piece: Black Pawn' },
+            { pieceAlias: 'n' as PieceAlias, expectedAlt: 'Dragging piece: Black Knight' },
+            { pieceAlias: 'b' as PieceAlias, expectedAlt: 'Dragging piece: Black Bishop' },
+            { pieceAlias: 'r' as PieceAlias, expectedAlt: 'Dragging piece: Black Rook' },
+            { pieceAlias: 'q' as PieceAlias, expectedAlt: 'Dragging piece: Black Queen' },
+            { pieceAlias: 'k' as PieceAlias, expectedAlt: 'Dragging piece: Black King' },
         ])('renders black piece $pieceAlias with correct alt text', async ({ pieceAlias, expectedAlt }) => {
             const { getByRole } = await renderGhostPiece({
                 propOverrides: { pieceAlias },
@@ -103,7 +95,7 @@ describe('GhostPiece', () => {
                 imageContextValues: mockImageContextValues,
             });
 
-            const image = getByRole('img', { name: /white pawn/i });
+            const image = getByRole('img', { name: /dragging piece: white pawn/i });
             expect(image).toHaveAttribute('src', '/resolved/wP.svg');
         });
 
@@ -116,7 +108,7 @@ describe('GhostPiece', () => {
                 imageContextValues: mockImageContextValues,
             });
 
-            const image = getByRole('img', { name: /white pawn/i });
+            const image = getByRole('img', { name: /dragging piece: white pawn/i });
             expect(image).toHaveAttribute('src', '/pieces/staunty/wP.svg');
         });
 
@@ -129,7 +121,7 @@ describe('GhostPiece', () => {
                 imageContextValues: mockImageContextValues,
             });
 
-            const image = getByRole('img', { name: /white pawn/i });
+            const image = getByRole('img', { name: /dragging piece: white pawn/i });
             await expect.element(image).toBeInTheDocument();
             expect(image).toHaveAttribute('src', '/pieces/staunty/wP.svg');
         });
