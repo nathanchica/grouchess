@@ -1,4 +1,4 @@
-import { getIsDarkSquare, getLegendsForIndex } from '../square';
+import { getIsDarkSquare, getLegendsForIndex, getSquareVisualClasses } from '../square';
 
 describe('getLegendsForIndex', () => {
     describe("Non-flipped Board (White's Perspective)", () => {
@@ -189,9 +189,77 @@ describe('getIsDarkSquare', () => {
         { index: 13, expectedIsDark: false },
         { index: 14, expectedIsDark: true },
         { index: 15, expectedIsDark: false },
-        { index: 63, expectedIsDark: true },
+        { index: 63, expectedIsDark: false },
     ])('correctly identifies dark squares for index $index', ({ index, expectedIsDark }) => {
         const result = getIsDarkSquare(index);
         expect(result).toBe(expectedIsDark);
+    });
+});
+
+describe('getSquareVisualClasses', () => {
+    it.each([
+        { scenario: 'default dark square', props: {}, isDarkSquare: true, expected: 'bg-slate-400' },
+        { scenario: 'default light square', props: {}, isDarkSquare: false, expected: 'bg-stone-200' },
+        { scenario: 'selected square', props: { isSelected: true }, isDarkSquare: true, expected: 'bg-emerald-300' },
+    ])('returns expected background for $scenario', ({ props, isDarkSquare, expected }) => {
+        const result = getSquareVisualClasses(props, isDarkSquare);
+        expect(result).toBe(expected);
+    });
+
+    it.each([
+        {
+            scenario: 'check on dark square',
+            props: { isCheck: true },
+            isDarkSquare: true,
+            expectedBackground: 'bg-red-400',
+        },
+        {
+            scenario: 'check on light square',
+            props: { isCheck: true },
+            isDarkSquare: false,
+            expectedBackground: 'bg-red-300',
+        },
+        {
+            scenario: 'previous move on dark square',
+            props: { isPreviousMove: true },
+            isDarkSquare: true,
+            expectedBackground: 'bg-amber-100/85',
+        },
+        {
+            scenario: 'previous move on light square',
+            props: { isPreviousMove: true },
+            isDarkSquare: false,
+            expectedBackground: 'bg-amber-100/90',
+        },
+    ])('returns expected highlight for $scenario', ({ props, isDarkSquare, expectedBackground }) => {
+        const result = getSquareVisualClasses(props, isDarkSquare);
+        expect(result.split(' ')[0]).toBe(expectedBackground);
+    });
+
+    it('adds capture hover styling and keeps default background when capture is allowed', () => {
+        const result = getSquareVisualClasses({ canCapture: true }, true);
+
+        expect(result).toContain('bg-slate-400');
+        expect(result).toContain('hover:bg-emerald-300');
+    });
+
+    it('uses selected glow when dragging over a capturable square', () => {
+        const result = getSquareVisualClasses({ canCapture: true, isDraggingOver: true }, true);
+
+        expect(result.split(' ')[0]).toBe('bg-emerald-300');
+    });
+
+    it('adds move dot classes and hover styling for movable squares', () => {
+        const result = getSquareVisualClasses({ canMove: true }, false);
+
+        expect(result).toContain('bg-stone-200');
+        expect(result).toContain('after:absolute');
+        expect(result).toContain('hover:bg-emerald-300');
+    });
+
+    it('uses drag-over glow for movable squares being dragged over', () => {
+        const result = getSquareVisualClasses({ canMove: true, isDraggingOver: true }, false);
+
+        expect(result.split(' ')[0]).toBe('bg-emerald-300');
     });
 });

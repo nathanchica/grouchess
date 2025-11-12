@@ -18,6 +18,7 @@ export type DragProps = {
     x: number; // pointer X relative to board
     y: number; // pointer Y relative to board
     squareSize: number;
+    boardRect: DOMRect; // cached to avoid layout thrashing on pointer move
 };
 
 /**
@@ -185,6 +186,7 @@ function ChessBoard() {
                 x,
                 y,
                 squareSize,
+                boardRect,
             });
             const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
             setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
@@ -223,7 +225,7 @@ function ChessBoard() {
             onPointerMove={(event) => {
                 if (boardInteractionIsDisabled || !drag || !boardRef.current) return;
                 if (event.pointerId !== drag.pointerId) return;
-                const { x, y } = xyFromPointerEvent(event, boardRef.current.getBoundingClientRect());
+                const { x, y } = xyFromPointerEvent(event, drag.boardRect);
                 setDrag((prevDragData) => (prevDragData ? { ...prevDragData, x, y } : prevDragData));
                 const rowCol = getRowColFromXY(x, y, drag.squareSize, boardIsFlipped);
                 setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
@@ -268,7 +270,15 @@ function ChessBoard() {
                 );
             })}
             {drag && !pendingPromotion && selectedPiece && (
-                <GhostPiece dragProps={drag} pieceAlias={selectedPiece.alias} />
+                <GhostPiece
+                    dragProps={{
+                        x: drag.x,
+                        y: drag.y,
+                        width: drag.squareSize,
+                        height: drag.squareSize,
+                    }}
+                    pieceAlias={selectedPiece.alias}
+                />
             )}
             {pendingPromotion && boardRef.current && (
                 <PawnPromotionPrompt

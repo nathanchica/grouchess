@@ -1,38 +1,46 @@
-import type { PieceAlias } from '@grouchess/models';
+import { memo } from 'react';
 
-import type { DragProps } from './ChessBoard';
+import type { PieceAlias } from '@grouchess/models';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
+import type { Position, Rect } from '../../utils/types';
+import DraggableItem from '../common/DraggableItem';
 
-type Props = {
-    dragProps: DragProps;
+export type GhostPieceProps = {
+    dragProps: Position & Rect;
     pieceAlias: PieceAlias;
 };
 
 /**
- * Ghost piece overlay following the pointer while dragging
+ * Memoized piece image - won't re-render during drag movements
  */
-function GhostPiece({ dragProps, pieceAlias }: Props) {
+const DraggablePieceImage = memo(({ pieceAlias }: { pieceAlias: PieceAlias }) => {
     const { imgSrcMap } = useImages();
-    const { x, y, squareSize } = dragProps;
     const { imgSrc, altText } = aliasToPieceImageData[pieceAlias];
     const resolvedImgSrc = imgSrcMap[imgSrc] ?? imgSrc;
 
     return (
-        <div className="pointer-events-none absolute inset-0 z-10">
-            <div
-                style={{
-                    position: 'absolute',
-                    left: `${x - squareSize / 2}px`,
-                    top: `${y - squareSize / 2}px`,
-                    width: `${squareSize}px`,
-                    height: `${squareSize}px`,
-                }}
-            >
-                <img src={resolvedImgSrc} alt={altText} className="w-full h-full drop-shadow-lg" draggable={false} />
-            </div>
-        </div>
+        <img
+            src={resolvedImgSrc}
+            alt={altText}
+            className="w-full h-full drop-shadow-lg will-change-[filter]"
+            draggable={false}
+        />
+    );
+});
+
+DraggablePieceImage.displayName = 'DraggablePieceImage';
+
+/**
+ * Ghost piece overlay following the pointer while dragging.
+ * Uses CSS transforms for hardware-accelerated smooth movement.
+ */
+function GhostPiece({ dragProps, pieceAlias }: GhostPieceProps) {
+    return (
+        <DraggableItem {...dragProps}>
+            <DraggablePieceImage pieceAlias={pieceAlias} />
+        </DraggableItem>
     );
 }
 

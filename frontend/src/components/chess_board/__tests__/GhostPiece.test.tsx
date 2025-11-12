@@ -3,22 +3,21 @@ import { render } from 'vitest-browser-react';
 
 import { ImageContext, type ImageContextType } from '../../../providers/ImagesProvider';
 import { createMockImageContextValues } from '../../../providers/__mocks__/ImagesProvider';
-import type { DragProps } from '../ChessBoard';
-import GhostPiece from '../GhostPiece';
+import GhostPiece, { type GhostPieceProps } from '../GhostPiece';
 
 type RenderGhostPieceOptions = {
     propOverrides?: {
-        dragProps?: DragProps;
+        dragProps?: GhostPieceProps['dragProps'];
         pieceAlias?: PieceAlias;
     };
     imageContextValues?: ImageContextType;
 };
 
-const defaultDragProps: DragProps = {
+const defaultDragProps: GhostPieceProps['dragProps'] = {
     x: 100,
     y: 150,
-    squareSize: 80,
-    pointerId: 1,
+    width: 80,
+    height: 80,
 };
 
 const defaultProps = {
