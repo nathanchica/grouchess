@@ -11,7 +11,7 @@ import { type GlowingSquareProps } from '../../../utils/types';
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
 
-type Props = {
+export type ChessSquareProps = {
     index: number;
     glowingSquareProps: GlowingSquareProps;
     hideContent?: boolean;
@@ -20,7 +20,14 @@ type Props = {
     isFlipped: boolean;
 };
 
-function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, children, isFlipped }: Props) {
+function ChessSquare({
+    index,
+    glowingSquareProps,
+    hideContent = false,
+    onClick,
+    children,
+    isFlipped,
+}: ChessSquareProps) {
     const isDarkSquare = getIsDarkSquare(index);
     const legends = getLegendsForIndex(index, isFlipped);
 
@@ -44,7 +51,7 @@ function ChessSquare({ index, glowingSquareProps, hideContent = false, onClick, 
     );
 }
 
-export function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
+export function arePropsEqual(prevProps: ChessSquareProps, nextProps: ChessSquareProps): boolean {
     // Compare primitive props
     if (
         prevProps.index !== nextProps.index ||
