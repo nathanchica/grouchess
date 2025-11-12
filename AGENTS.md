@@ -4,6 +4,19 @@
 - `pnpm` is used as the monorepo package manager
 - See packages/models/README.md for common schemas and types
 
+## Common commands
+
+- Rebuild all packages: `pnpm build:packages` from the monorepo root
+    - Needed after making changes to shared packages (e.g. models)
+- Running tests:
+    - From the monorepo root: `pnpm test <package-name>` (e.g. `pnpm test frontend`)
+    - From within a package: `pnpm test`
+    - To run a specific test file: `pnpm test <test-file-name>` (e.g. `pnpm test GameRoomForm.test.ts`)
+    - Without coverage: `pnpm test:run <test-file-name>` (e.g. `pnpm test:run GameRoomForm.test.ts`)
+- Linting: `pnpm lint` from the monorepo root
+- Formatting: `pnpm format` from the monorepo root
+- Typechecking: `pnpm typecheck` from the monorepo root
+
 ## Unit tests
 
 - Unit tests are written using vitest.
@@ -20,11 +33,6 @@
 - Backend tests HTTP routes using supertest, Express app is created via createApp() function from backend/src/app.ts
 - Use mock data factories from `@grouchess/test-utils` where applicable.
     - See ./packages/test-utils/README.md for available factories and usage examples.
-- Running tests:
-    - From the monorepo root: `pnpm test <package-name>` (e.g. `pnpm test frontend`)
-    - From within a package: `pnpm test`
-    - To run a specific test file: `pnpm test <test-file-name>` (e.g. `pnpm test GameRoomForm.test.ts`)
-    - Without coverage: `pnpm test:run <test-file-name>` (e.g. `pnpm test:run GameRoomForm.test.ts`)
 
 ### Frontend Testing
 

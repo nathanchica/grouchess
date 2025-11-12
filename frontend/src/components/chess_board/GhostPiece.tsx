@@ -1,14 +1,15 @@
-import { memo } from 'react';
+import { forwardRef, memo } from 'react';
 
 import type { PieceAlias } from '@grouchess/models';
 
 import { useImages } from '../../providers/ImagesProvider';
 import { aliasToPieceImageData } from '../../utils/pieces';
-import type { Position, Rect } from '../../utils/types';
 import DraggableItem from '../common/DraggableItem';
 
 export type GhostPieceProps = {
-    dragProps: Position & Rect;
+    squareSize: number;
+    initialX: number;
+    initialY: number;
     pieceAlias: PieceAlias;
 };
 
@@ -34,14 +35,19 @@ DraggablePieceImage.displayName = 'DraggablePieceImage';
 
 /**
  * Ghost piece overlay following the pointer while dragging.
- * Uses CSS transforms for hardware-accelerated smooth movement.
+ * Position is updated via ref for optimal performance (no re-renders on mouse move).
+ * Initial position is set via inline style for the first render.
  */
-function GhostPiece({ dragProps, pieceAlias }: GhostPieceProps) {
-    return (
-        <DraggableItem {...dragProps}>
-            <DraggablePieceImage pieceAlias={pieceAlias} />
-        </DraggableItem>
-    );
-}
+const GhostPiece = forwardRef<HTMLDivElement, GhostPieceProps>(
+    ({ squareSize, initialX, initialY, pieceAlias }, ref) => {
+        return (
+            <DraggableItem ref={ref} x={initialX} y={initialY} width={squareSize} height={squareSize}>
+                <DraggablePieceImage pieceAlias={pieceAlias} />
+            </DraggableItem>
+        );
+    }
+);
+
+GhostPiece.displayName = 'GhostPiece';
 
 export default GhostPiece;

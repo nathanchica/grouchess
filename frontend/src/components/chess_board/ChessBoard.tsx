@@ -15,10 +15,10 @@ import { type GlowingSquareProps } from '../../utils/types';
 
 export type DragProps = {
     pointerId: number;
-    x: number; // pointer X relative to board
-    y: number; // pointer Y relative to board
     squareSize: number;
     boardRect: DOMRect; // cached to avoid layout thrashing on pointer move
+    initialX: number; // initial pointer X for first render
+    initialY: number; // initial pointer Y for first render
 };
 
 /**
@@ -43,6 +43,7 @@ function ChessBoard() {
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const boardRef = useRef<HTMLDivElement | null>(null);
+    const ghostPieceRef = useRef<HTMLDivElement | null>(null);
 
     const { boardState, previousMoveIndices, pendingPromotion, gameState, legalMovesStore } = chessGame;
     const { board, playerTurn } = boardState;
@@ -183,11 +184,12 @@ function ChessBoard() {
             setSelectedIndex(boardIndex);
             setDrag({
                 pointerId: event.pointerId,
-                x,
-                y,
                 squareSize,
                 boardRect,
+                initialX: x,
+                initialY: y,
             });
+
             const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
             setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
         },
@@ -223,12 +225,21 @@ function ChessBoard() {
             ref={boardRef}
             className="relative select-none touch-none grid grid-cols-8 rounded-lg overflow-hidden shadow-2xl shadow-white/25"
             onPointerMove={(event) => {
-                if (boardInteractionIsDisabled || !drag || !boardRef.current) return;
+                if (boardInteractionIsDisabled || !drag || !ghostPieceRef.current) return;
                 if (event.pointerId !== drag.pointerId) return;
                 const { x, y } = xyFromPointerEvent(event, drag.boardRect);
-                setDrag((prevDragData) => (prevDragData ? { ...prevDragData, x, y } : prevDragData));
+
+                // Update ghost position directly without re-render
+                const offsetX = -drag.squareSize / 2;
+                const offsetY = -drag.squareSize / 2;
+                ghostPieceRef.current.style.transform = `translate(${x + offsetX}px, ${y + offsetY}px)`;
+
+                // Only update state when hovering over a different square
                 const rowCol = getRowColFromXY(x, y, drag.squareSize, boardIsFlipped);
-                setDragOverIndex(isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null);
+                const newDragOverIndex = isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null;
+                if (newDragOverIndex !== dragOverIndex) {
+                    setDragOverIndex(newDragOverIndex);
+                }
             }}
             onPointerUp={(event) => {
                 if (boardInteractionIsDisabled || !drag || event.pointerId !== drag.pointerId) return;
@@ -271,12 +282,10 @@ function ChessBoard() {
             })}
             {drag && !pendingPromotion && selectedPiece && (
                 <GhostPiece
-                    dragProps={{
-                        x: drag.x,
-                        y: drag.y,
-                        width: drag.squareSize,
-                        height: drag.squareSize,
-                    }}
+                    ref={ghostPieceRef}
+                    squareSize={drag.squareSize}
+                    initialX={drag.initialX}
+                    initialY={drag.initialY}
                     pieceAlias={selectedPiece.alias}
                 />
             )}

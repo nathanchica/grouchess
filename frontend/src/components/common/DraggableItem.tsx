@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 
 import type { Position, Rect } from '../../utils/types';
 
@@ -29,18 +29,25 @@ export type DraggableItemProps = Position &
  *
  * Uses an absolute overlay container with pointer-events-none to ensure
  * the item doesn't interfere with underlying interactions.
+ *
+ * Supports ref forwarding to the inner positioned div for direct DOM manipulation.
  */
-function DraggableItem({ x, y, width, height, children, centered = true, className = '' }: DraggableItemProps) {
-    return (
-        <div className="pointer-events-none absolute inset-0 z-10">
-            <div
-                className={`will-change-transform absolute ${className}`}
-                style={calculateStyle(x, y, width, height, centered)}
-            >
-                {children}
+const DraggableItem = forwardRef<HTMLDivElement, DraggableItemProps>(
+    ({ x, y, width, height, children, centered = true, className = '' }, ref) => {
+        return (
+            <div className="pointer-events-none absolute inset-0 z-10">
+                <div
+                    ref={ref}
+                    className={`will-change-transform absolute ${className}`}
+                    style={calculateStyle(x, y, width, height, centered)}
+                >
+                    {children}
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+    }
+);
+
+DraggableItem.displayName = 'DraggableItem';
 
 export default DraggableItem;
