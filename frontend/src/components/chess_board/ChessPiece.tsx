@@ -1,4 +1,4 @@
-import { memo, type PointerEventHandler } from 'react';
+import { memo, useState } from 'react';
 
 import type { Piece } from '@grouchess/models';
 
@@ -7,17 +7,16 @@ import { aliasToPieceImageData } from '../../utils/pieces';
 
 type Props = {
     piece: Piece;
-    showTextDisplay: boolean;
-    onPointerDown: PointerEventHandler<HTMLImageElement>;
-    onImgLoadError: () => void;
+    showTextDisplay?: boolean;
 };
 
-function ChessPiece({ piece, showTextDisplay = false, onPointerDown, onImgLoadError }: Props) {
+function ChessPiece({ piece, showTextDisplay = false }: Props) {
     const { imgSrcMap } = useImages();
     const { alias } = piece;
     const { altText, imgSrc } = aliasToPieceImageData[alias];
+    const [imgLoadFailed, setImgLoadFailed] = useState(false);
 
-    if (showTextDisplay) {
+    if (showTextDisplay || imgLoadFailed) {
         return (
             <span aria-label={altText} className="text-xl font-semibold select-none">
                 {alias}
@@ -33,20 +32,14 @@ function ChessPiece({ piece, showTextDisplay = false, onPointerDown, onImgLoadEr
             decoding="async"
             alt={altText}
             draggable={false}
-            onPointerDown={onPointerDown}
-            onError={onImgLoadError}
+            onError={() => setImgLoadFailed(true)}
         />
     );
 }
 
 export function arePropsEqual(prevProps: Props, nextProps: Props): boolean {
     // Compare piece by alias (pieces with same alias are identical)
-    return (
-        prevProps.piece.alias === nextProps.piece.alias &&
-        prevProps.showTextDisplay === nextProps.showTextDisplay &&
-        prevProps.onPointerDown === nextProps.onPointerDown &&
-        prevProps.onImgLoadError === nextProps.onImgLoadError
-    );
+    return prevProps.piece.alias === nextProps.piece.alias && prevProps.showTextDisplay === nextProps.showTextDisplay;
 }
 
 export default memo(ChessPiece, arePropsEqual);

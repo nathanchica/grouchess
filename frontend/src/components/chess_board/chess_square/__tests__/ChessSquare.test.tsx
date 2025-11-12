@@ -27,7 +27,6 @@ describe('ChessSquare', () => {
         index: 0,
         glowingSquareProps: defaultGlowingSquareProps,
         hideContent: false,
-        onClick: vi.fn(),
         children: <div data-testid="test-child">Child Content</div>,
         isFlipped: false,
     };
@@ -41,10 +40,10 @@ describe('ChessSquare', () => {
     }
 
     describe('Basic Rendering', () => {
-        it('renders a button with proper role', async () => {
+        it('renders a gridcell with proper role', async () => {
             const { getByRole } = await renderChessSquare();
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it.each([
@@ -58,8 +57,8 @@ describe('ChessSquare', () => {
             const { getByRole } = await renderChessSquare({
                 propOverrides: { index },
             });
-            const button = getByRole('button', { name: expectedLabel });
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell', { name: expectedLabel });
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it('renders children when hideContent is false', async () => {
@@ -78,41 +77,6 @@ describe('ChessSquare', () => {
             const child = getByTestId('custom-child');
             await expect.element(child).toBeInTheDocument();
             await expect.element(child).toHaveTextContent('Custom Content');
-        });
-    });
-
-    describe('Click Interactions', () => {
-        it('calls onClick when button is clicked', async () => {
-            const onClick = vi.fn();
-            const { getByRole } = await renderChessSquare({
-                propOverrides: { onClick },
-            });
-            const button = getByRole('button');
-            await button.click();
-            expect(onClick).toHaveBeenCalledOnce();
-        });
-
-        it('calls different onClick handlers for different instances', async () => {
-            const onClick1 = vi.fn();
-            const onClick2 = vi.fn();
-
-            const { getByRole: getByRole1 } = await renderChessSquare({
-                propOverrides: { onClick: onClick1, index: 0 },
-            });
-            const { getByRole: getByRole2 } = await renderChessSquare({
-                propOverrides: { onClick: onClick2, index: 1 },
-            });
-
-            const button1 = getByRole1('button', { name: 'a8' });
-            const button2 = getByRole2('button', { name: 'b8' });
-
-            await button1.click();
-            expect(onClick1).toHaveBeenCalledOnce();
-            expect(onClick2).not.toHaveBeenCalled();
-
-            await button2.click();
-            expect(onClick2).toHaveBeenCalledOnce();
-            expect(onClick1).toHaveBeenCalledOnce();
         });
     });
 
@@ -257,8 +221,8 @@ describe('ChessSquare', () => {
                     },
                 },
             });
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it('renders with isCheck true', async () => {
@@ -270,8 +234,8 @@ describe('ChessSquare', () => {
                     },
                 },
             });
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it('renders with isSelected true', async () => {
@@ -283,8 +247,8 @@ describe('ChessSquare', () => {
                     },
                 },
             });
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it('renders with isDraggingOver true', async () => {
@@ -296,8 +260,8 @@ describe('ChessSquare', () => {
                     },
                 },
             });
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it('renders with canMove true', async () => {
@@ -309,8 +273,8 @@ describe('ChessSquare', () => {
                     },
                 },
             });
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
 
         it('renders with multiple glowing props enabled', async () => {
@@ -326,8 +290,8 @@ describe('ChessSquare', () => {
                     },
                 },
             });
-            const button = getByRole('button');
-            await expect.element(button).toBeInTheDocument();
+            const gridcell = getByRole('gridcell');
+            await expect.element(gridcell).toBeInTheDocument();
         });
     });
 
@@ -356,13 +320,6 @@ describe('ChessSquare', () => {
         it('returns false when isFlipped changes', () => {
             const props1: ChessSquareProps = { ...defaultProps };
             const props2: ChessSquareProps = { ...defaultProps, isFlipped: true };
-
-            expect(arePropsEqual(props1, props2)).toBe(false);
-        });
-
-        it('returns false when onClick changes', () => {
-            const props1: ChessSquareProps = { ...defaultProps };
-            const props2: ChessSquareProps = { ...defaultProps, onClick: vi.fn() };
 
             expect(arePropsEqual(props1, props2)).toBe(false);
         });

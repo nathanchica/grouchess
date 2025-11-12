@@ -15,19 +15,11 @@ export type ChessSquareProps = {
     index: number;
     glowingSquareProps: GlowingSquareProps;
     hideContent?: boolean;
-    onClick: () => void;
     children: ReactNode;
     isFlipped: boolean;
 };
 
-function ChessSquare({
-    index,
-    glowingSquareProps,
-    hideContent = false,
-    onClick,
-    children,
-    isFlipped,
-}: ChessSquareProps) {
+function ChessSquare({ index, glowingSquareProps, hideContent = false, children, isFlipped }: ChessSquareProps) {
     const isDarkSquare = getIsDarkSquare(index);
     const legends = getLegendsForIndex(index, isFlipped);
 
@@ -36,9 +28,8 @@ function ChessSquare({
     const showCaptureOverlay = !isSelected && Boolean(canCapture);
 
     return (
-        <button
-            type="button"
-            onClick={onClick}
+        <div
+            role="gridcell"
             aria-label={indexToAlgebraicNotation(index)}
             className={`${CHESS_SQUARE_BASE_CLASSES} ${squareVisualClasses}`}
         >
@@ -47,7 +38,7 @@ function ChessSquare({
             {legends ? (
                 <Legends {...legends} isDarkSquare={isDarkSquare} isPreviousMoveSquare={Boolean(isPreviousMove)} />
             ) : null}
-        </button>
+        </div>
     );
 }
 
@@ -57,7 +48,6 @@ export function arePropsEqual(prevProps: ChessSquareProps, nextProps: ChessSquar
         prevProps.index !== nextProps.index ||
         prevProps.hideContent !== nextProps.hideContent ||
         prevProps.isFlipped !== nextProps.isFlipped ||
-        prevProps.onClick !== nextProps.onClick ||
         prevProps.children !== nextProps.children
     ) {
         return false;
