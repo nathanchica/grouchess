@@ -13,6 +13,34 @@ import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider
 import { useImages } from '../../providers/ImagesProvider';
 import GameBoard from '../common/GameBoard';
 
+export type ProcessContextValuesParams = {
+    chessGame: ReturnType<typeof useChessGame>['chessGame'];
+    gameRoom: ReturnType<typeof useGameRoom>['gameRoom'];
+    currentPlayerColor: ReturnType<typeof useGameRoom>['currentPlayerColor'];
+};
+
+export function processContextValues({ chessGame, gameRoom, currentPlayerColor }: ProcessContextValuesParams) {
+    const { boardState, previousMoveIndices, pendingPromotion, gameState, legalMovesStore } = chessGame;
+    const { board, playerTurn } = boardState;
+    const { type: roomType } = gameRoom;
+    const boardIsFlipped = currentPlayerColor === 'black';
+    const isCurrentPlayerTurn = roomType === 'self' || currentPlayerColor === playerTurn;
+    const { status, check: checkedColor } = gameState;
+    const isGameOver = status !== 'in-progress';
+    const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver || !isCurrentPlayerTurn;
+
+    return {
+        board,
+        playerTurn,
+        previousMoveIndices,
+        legalMovesStore,
+        boardIsFlipped,
+        boardInteractionIsDisabled,
+        pendingPromotion,
+        checkedColor,
+    };
+}
+
 export type DragProps = {
     pointerId: number;
     squareSize: number;
@@ -41,14 +69,20 @@ function ChessBoard() {
     const boardRef = useRef<HTMLDivElement | null>(null);
     const ghostPieceRef = useRef<HTMLDivElement | null>(null);
 
-    const { boardState, previousMoveIndices, pendingPromotion, gameState, legalMovesStore } = chessGame;
-    const { board, playerTurn } = boardState;
-    const { type: roomType } = gameRoom;
-    const boardIsFlipped = currentPlayerColor === 'black';
-    const isCurrentPlayerTurn = roomType === 'self' || currentPlayerColor === playerTurn;
-    const { status, check: checkedColor } = gameState;
-    const isGameOver = status !== 'in-progress';
-    const boardInteractionIsDisabled = Boolean(pendingPromotion) || isGameOver || !isCurrentPlayerTurn;
+    const {
+        board,
+        playerTurn,
+        previousMoveIndices,
+        legalMovesStore,
+        boardIsFlipped,
+        boardInteractionIsDisabled,
+        pendingPromotion,
+        checkedColor,
+    } = processContextValues({
+        chessGame,
+        gameRoom,
+        currentPlayerColor,
+    });
 
     const {
         drag,

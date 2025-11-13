@@ -73,7 +73,14 @@ function PawnPromotionPrompt({ squareSize, promotionIndex, color, onDismiss, isF
     };
 
     return (
-        <div className="absolute inset-0 z-20" onClick={handleDismiss} role="dialog" aria-modal="true" tabIndex={-1}>
+        <div
+            className="absolute inset-0 z-20"
+            onClick={handleDismiss}
+            role="dialog"
+            aria-modal="true"
+            tabIndex={-1}
+            aria-label="Pawn Promotion Options"
+        >
             <div className="absolute inset-0 bg-black/40" data-testid="backdrop" />
             <PromotionCard
                 onSelect={handleOptionSelect}
