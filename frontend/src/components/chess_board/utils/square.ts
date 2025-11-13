@@ -1,7 +1,7 @@
 import { indexToRowCol } from '@grouchess/chess';
 import type { BoardIndex } from '@grouchess/models';
 
-import type { ChessSquareLegends, GlowingSquareProps } from './types';
+import type { ChessSquareLegends, GlowingSquareProps } from '../../../utils/types';
 
 const DEFAULT_DARK_SQUARE_COLOR = 'bg-slate-400';
 const DEFAULT_LIGHT_SQUARE_COLOR = 'bg-stone-200';

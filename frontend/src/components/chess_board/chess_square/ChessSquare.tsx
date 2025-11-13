@@ -5,8 +5,8 @@ import { indexToAlgebraicNotation } from '@grouchess/chess';
 import CaptureOverlay from './CaptureOverlay';
 import Legends, { type LegendVariant } from './Legends';
 
-import { getLegendsForIndex, getIsDarkSquare, getSquareVisualClasses } from '../../../utils/square';
 import { type GlowingSquareProps } from '../../../utils/types';
+import { getLegendsForIndex, getIsDarkSquare, getSquareVisualClasses } from '../utils/square';
 
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
