@@ -1,92 +1,19 @@
 import { useCallback, useMemo, useState, type PointerEvent, type RefObject } from 'react';
 
-import { getKingIndices, getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
+import { getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
 import {
-    NUM_COLS,
     type BoardIndex,
     type ChessBoardType,
     type LegalMovesStore,
     type Move,
     type Piece,
-    type PieceAlias,
     type PieceColor,
 } from '@grouchess/models';
 
-import { getRowColFromXY, xyFromPointerEvent } from '../utils/board';
-import type { GlowingSquareProps } from '../utils/types';
+import { getRowColFromXY, getSquareSizeFromBoardRect, xyFromPointerEvent } from './board';
+import { calculateGhostPieceTransform, calculateSelectedPieceAndGlowingSquares } from './interactions';
 
-export type GlowingSquarePropsByIndex = Record<number, GlowingSquareProps>;
-
-export function getSquareSizeFromBoardRect(boardRect: DOMRect): number {
-    return boardRect.width / NUM_COLS;
-}
-
-export function calculateGhostPieceTransform(squareSize: number, x: number, y: number) {
-    const offsetX = -squareSize / 2;
-    const offsetY = -squareSize / 2;
-    return `translate(${x + offsetX}px, ${y + offsetY}px)`;
-}
-
-export function calculateSelectedPieceAndGlowingSquares(
-    board: ChessBoardType,
-    previousMoveIndices: number[],
-    checkedColor: PieceColor | undefined,
-    selectedIndex: number | null,
-    legalMovesForSelectedPiece: Move[]
-): {
-    selectedPiece: Piece | null;
-    indexToMoveDataForSelectedPiece: Record<number, Move>;
-    baseGlowingSquarePropsByIndex: GlowingSquarePropsByIndex;
-} {
-    let baseGlowingSquarePropsByIndex: GlowingSquarePropsByIndex = {};
-    previousMoveIndices.forEach((index) => {
-        baseGlowingSquarePropsByIndex[index] = { isPreviousMove: true };
-    });
-
-    if (checkedColor !== undefined) {
-        const kingIndex = getKingIndices(board)[checkedColor];
-        baseGlowingSquarePropsByIndex[kingIndex] ??= {};
-        baseGlowingSquarePropsByIndex[kingIndex].isCheck = true;
-    }
-
-    if (selectedIndex === null) {
-        return {
-            selectedPiece: null,
-            indexToMoveDataForSelectedPiece: {} as Record<number, Move>,
-            baseGlowingSquarePropsByIndex,
-        };
-    }
-
-    legalMovesForSelectedPiece.forEach(({ endIndex, type }) => {
-        baseGlowingSquarePropsByIndex[endIndex] ??= {};
-        baseGlowingSquarePropsByIndex[endIndex] = {
-            ...baseGlowingSquarePropsByIndex[endIndex],
-            ...(type === 'capture' ? { canCapture: true } : { canMove: true }),
-        };
-    });
-
-    baseGlowingSquarePropsByIndex[selectedIndex] ??= {};
-    baseGlowingSquarePropsByIndex[selectedIndex].isSelected = true;
-
-    const indexToMoveDataForSelectedPiece: Record<number, Move> = {};
-    legalMovesForSelectedPiece.forEach((move) => {
-        indexToMoveDataForSelectedPiece[move.endIndex] = move;
-    });
-
-    return {
-        selectedPiece: getPiece(board[selectedIndex] as PieceAlias),
-        indexToMoveDataForSelectedPiece,
-        baseGlowingSquarePropsByIndex,
-    };
-}
-
-export type DragProps = {
-    pointerId: number;
-    squareSize: number;
-    boardRect: DOMRect; // cached to avoid layout thrashing on pointer move
-    initialX: number; // initial pointer X for first render
-    initialY: number; // initial pointer Y for first render
-};
+import type { DragProps, GlowingSquarePropsByIndex } from '../../../utils/types';
 
 export type UseChessBoardInteractionsPayload = {
     dragOverIndex: BoardIndex | null;

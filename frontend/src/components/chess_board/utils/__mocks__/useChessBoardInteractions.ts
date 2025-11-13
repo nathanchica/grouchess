@@ -1,17 +1,8 @@
 import { createMockPiece } from '@grouchess/test-utils';
 
-import type { DragProps, UseChessBoardInteractionsPayload } from '../useChessBoardInteractions';
+import { createMockDragProps } from './interactions';
 
-export function createMockDragProps(overrides: Partial<DragProps> = {}): DragProps {
-    return {
-        pointerId: 1,
-        squareSize: 60,
-        initialX: 0,
-        initialY: 0,
-        boardRect: new DOMRect(0, 0, 480, 480),
-        ...overrides,
-    };
-}
+import type { UseChessBoardInteractionsPayload } from '../useChessBoardInteractions';
 
 export function createMockUseChessBoardInteractionsPayload(
     overrides: Partial<UseChessBoardInteractionsPayload> = {}

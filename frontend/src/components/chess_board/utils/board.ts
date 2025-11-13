@@ -24,3 +24,10 @@ export function xyFromPointerEvent(
         y: event.clientY - rect.top,
     };
 }
+
+/**
+ * Gets the size of a square on the chess board from the board's bounding rectangle.
+ */
+export function getSquareSizeFromBoardRect(boardRect: DOMRect): number {
+    return boardRect.width / NUM_COLS;
+}

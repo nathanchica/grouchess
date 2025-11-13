@@ -31,6 +31,16 @@ export type GlowingSquareProps = {
     canMove?: boolean;
 };
 
+export type GlowingSquarePropsByIndex = Record<number, GlowingSquareProps>;
+
+export type DragProps = {
+    pointerId: number;
+    squareSize: number;
+    boardRect: DOMRect; // cached to avoid layout thrashing on pointer move
+    initialX: number; // initial pointer X for first render
+    initialY: number; // initial pointer Y for first render
+};
+
 export type ChessSquareLegends = {
     rowLegend?: string;
     colLegend?: string;
