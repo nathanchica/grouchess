@@ -1,7 +1,6 @@
 import { createMockPiece } from '@grouchess/test-utils';
 
-import { createMockDragProps } from './interactions';
-
+import { createMockDragProps } from '../../components/chess_board/utils/__mocks__/interactions';
 import type { UseChessBoardInteractionsPayload } from '../useChessBoardInteractions';
 
 export function createMockUseChessBoardInteractionsPayload(

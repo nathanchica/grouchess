@@ -10,10 +10,12 @@ import {
     type PieceColor,
 } from '@grouchess/models';
 
-import { getRowColFromXY, getSquareSizeFromBoardRect, xyFromPointerEvent } from './board';
-import { calculateGhostPieceTransform, calculateSelectedPieceAndGlowingSquares } from './interactions';
-
-import type { DragProps, GlowingSquarePropsByIndex } from '../../../utils/types';
+import { getRowColFromXY, getSquareSizeFromBoardRect, xyFromPointerEvent } from '../components/chess_board/utils/board';
+import {
+    calculateGhostPieceTransform,
+    calculateSelectedPieceAndGlowingSquares,
+} from '../components/chess_board/utils/interactions';
+import type { DragProps, GlowingSquarePropsByIndex } from '../utils/types';
 
 export type UseChessBoardInteractionsPayload = {
     dragOverIndex: BoardIndex | null;

@@ -4,6 +4,11 @@ import { createMockMove, createMockPiece, createMockLegalMovesStore } from '@gro
 import { render } from 'vitest-browser-react';
 
 import {
+    createMockUseChessBoardInteractionsPayload,
+    createMockUseChessBoardInteractionsPayloadWithSelectedPiece,
+} from '../../../hooks/__mocks__/useChessBoardInteractions';
+import * as useChessBoardInteractionsModule from '../../../hooks/useChessBoardInteractions';
+import {
     ChessGameContext,
     GameRoomContext,
     type ChessGameContextType,
@@ -16,13 +21,8 @@ import {
 } from '../../../providers/__mocks__/ChessGameRoomProvider';
 import { createMockImageContextValues } from '../../../providers/__mocks__/ImagesProvider';
 import ChessBoard, { processContextValues, type ProcessContextValuesParams } from '../ChessBoard';
-import {
-    createMockUseChessBoardInteractionsPayload,
-    createMockUseChessBoardInteractionsPayloadWithSelectedPiece,
-} from '../utils/__mocks__/useChessBoardInteractions';
-import * as useChessBoardInteractionsModule from '../utils/useChessBoardInteractions';
 
-vi.mock('../utils/useChessBoardInteractions', { spy: true });
+vi.mock('../../../hooks/useChessBoardInteractions', { spy: true });
 
 type RenderChessBoardOptions = {
     chessGameContextValues?: ChessGameContextType;

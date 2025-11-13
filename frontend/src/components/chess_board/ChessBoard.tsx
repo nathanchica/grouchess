@@ -7,8 +7,8 @@ import ChessPiece from './ChessPiece';
 import GhostPiece from './GhostPiece';
 import PawnPromotionPrompt from './PawnPromotionPrompt';
 import ChessSquare from './chess_square/ChessSquare';
-import { useChessBoardInteractions } from './utils/useChessBoardInteractions';
 
+import { useChessBoardInteractions } from '../../hooks/useChessBoardInteractions';
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
 import { useImages } from '../../providers/ImagesProvider';
 import GameBoard from '../common/GameBoard';
