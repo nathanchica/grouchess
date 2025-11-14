@@ -400,8 +400,22 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             });
             ```
 
+        - Prefer mutating the mock values returned by the factory function in order to easily mock a portion of a deep
+          object. Only use the `overrides` parameter for top-level primitive properties.
+
+            ```tsx
+            // Good:
+            const chessClockState = createMockChessClockState();
+            chessClockState.white.isActive = true;
+
+            // Bad:
+            const chessClockState = createMockChessClockState({
+                white: { isActive: true }, // rest of white clock state properties are missing
+            });
+            ```
+
 - For mocking fetches, refer to docs/FrontendFetching.md for guidelines and examples
-- Mocking modules in react tests:
+- Mocking modules in react tests must use vi.mock('...', { spy: true }) due to browser mode limitations:
 
     ```ts
     import * as useJoinGameRoomModule from '../../../hooks/useJoinGameRoom';
