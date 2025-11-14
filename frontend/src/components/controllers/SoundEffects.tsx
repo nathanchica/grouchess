@@ -6,17 +6,18 @@ import invariant from 'tiny-invariant';
 
 import { useChessGame } from '../../providers/ChessGameRoomProvider';
 import { useSound, type SoundName } from '../../providers/SoundProvider';
+import { clearTimeout, setTimeout } from '../../utils/window';
 
-const CHECK_DELAY_MS = 120;
+export const CHECK_DELAY_MS = 120;
 
-const getMoveSoundName = (san: string, isCapture: boolean): SoundName => {
+export const getMoveSoundName = (san: string, isCapture: boolean): SoundName => {
     if (isCapture) return 'capture';
     if (san.startsWith('O-O')) return 'castle';
     if (san.includes('=')) return 'promote';
     return 'move';
 };
 
-const getGameEndSoundName = (status: ChessGameStatus, winner?: 'white' | 'black'): SoundName | null => {
+export const getGameEndSoundName = (status: ChessGameStatus, winner?: 'white' | 'black'): SoundName | null => {
     if (status === 'checkmate' || status === 'resigned' || status === 'time-out') {
         invariant(winner, 'Winner must be defined for checkmate, resignation, or time-out');
         return winner === 'white' ? 'victory' : 'defeat';
@@ -31,7 +32,6 @@ const getGameEndSoundName = (status: ChessGameStatus, winner?: 'white' | 'black'
 
 function SoundEffects() {
     const { chessGame } = useChessGame();
-    invariant(chessGame, 'chessGame is required for SoundEffects component');
 
     const { moveHistory, captures, gameState } = chessGame;
     const { status, winner } = gameState;
@@ -41,6 +41,10 @@ function SoundEffects() {
     const prevStatusRef = useRef<string>(status);
     const checkTimerRef = useRef<number | null>(null);
 
+    /**
+     * Play move sound when a new move is added to the move history.
+     * Also plays "check" sound after a delay if the move results in check or checkmate.
+     */
     useEffect(() => {
         const previousCount = prevMoveCountRef.current;
         const currentCount = moveHistory.length;
@@ -53,7 +57,7 @@ function SoundEffects() {
         if (currentCount > previousCount) {
             const latestIndex = currentCount - 1;
             const lastMove = moveHistory[latestIndex];
-            const { san } = lastMove?.notation ?? { san: '' };
+            const { san } = lastMove.notation;
             const didCapture = captures.some(({ moveIndex }) => moveIndex === latestIndex);
 
             play(getMoveSoundName(san, didCapture));
@@ -63,9 +67,9 @@ function SoundEffects() {
 
             if (endsWithCheck || endsWithMate) {
                 if (checkTimerRef.current !== null) {
-                    window.clearTimeout(checkTimerRef.current);
+                    clearTimeout(checkTimerRef.current);
                 }
-                checkTimerRef.current = window.setTimeout(() => {
+                checkTimerRef.current = setTimeout(() => {
                     play('check');
                 }, CHECK_DELAY_MS);
             }
@@ -74,6 +78,9 @@ function SoundEffects() {
         prevMoveCountRef.current = currentCount;
     }, [captures, moveHistory, play]);
 
+    /**
+     * Play game end sound when status changes to an end game state.
+     */
     useEffect(() => {
         const prevStatus = prevStatusRef.current;
 
@@ -89,7 +96,7 @@ function SoundEffects() {
     useEffect(
         () => () => {
             if (checkTimerRef.current !== null) {
-                window.clearTimeout(checkTimerRef.current);
+                clearTimeout(checkTimerRef.current);
             }
         },
         []
