@@ -186,12 +186,15 @@ describe('ChessBoard', () => {
         });
     });
 
-    describe('Window Resize Handling', () => {
-        it('adds resize listener on mount', async () => {
+    describe('Window Event Handling', () => {
+        it('adds resize and scroll listeners on mount', async () => {
             await renderChessBoard();
 
-            expect(mockedAddEventListener).toHaveBeenCalledTimes(1);
-            expect(mockedAddEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
+            expect(mockedAddEventListener).toHaveBeenCalledTimes(2);
+            expect(mockedAddEventListener).toHaveBeenNthCalledWith(1, 'resize', expect.any(Function));
+            expect(mockedAddEventListener).toHaveBeenNthCalledWith(2, 'scroll', expect.any(Function), {
+                passive: true,
+            });
         });
 
         it('updates boardRect when window resizes', async () => {
@@ -212,13 +215,35 @@ describe('ChessBoard', () => {
             boundingSpy.mockRestore();
         });
 
-        it('removes resize listener on unmount', async () => {
+        it('updates boardRect when window scrolls', async () => {
+            const boundingSpy = mockBoardBoundingClientRect();
+            await renderChessBoard();
+
+            const scrollHandler = mockedAddEventListener.mock.calls[1]?.[1] as (() => void) | undefined;
+            expect(scrollHandler).toBeTypeOf('function');
+
+            const scrolledRect = new DOMRect(0, 0, 500, 500);
+            boundingSpy.mockReturnValue(scrolledRect);
+
+            scrollHandler?.();
+
+            const lastCall = mockedCreatePointerDownEventHandler.mock.calls.at(-1);
+            expect(lastCall?.[0]).toEqual(scrolledRect);
+
+            boundingSpy.mockRestore();
+        });
+
+        it('removes resize and scroll listeners on unmount', async () => {
             const { unmount } = await renderChessBoard();
             const resizeHandler = mockedAddEventListener.mock.calls[0]?.[1];
+            const scrollHandler = mockedAddEventListener.mock.calls[1]?.[1];
+            const scrollOptions = mockedAddEventListener.mock.calls[1]?.[2];
 
             unmount();
 
-            expect(mockedRemoveEventListener).toHaveBeenCalledWith('resize', resizeHandler);
+            expect(mockedRemoveEventListener).toHaveBeenCalledTimes(2);
+            expect(mockedRemoveEventListener).toHaveBeenNthCalledWith(1, 'resize', resizeHandler);
+            expect(mockedRemoveEventListener).toHaveBeenNthCalledWith(2, 'scroll', scrollHandler, scrollOptions);
         });
     });
 

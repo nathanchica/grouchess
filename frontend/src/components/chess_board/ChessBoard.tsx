@@ -45,21 +45,25 @@ function ChessBoard() {
     const ghostPieceRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        /* v8 ignore else -- @preserve */
-        if (boardRef.current) {
-            setBoardRect(boardRef.current.getBoundingClientRect());
-        }
-
-        const handleResize = () => {
+        const updateBoardRect = () => {
             /* v8 ignore else -- @preserve */
             if (boardRef.current) {
                 setBoardRect(boardRef.current.getBoundingClientRect());
             }
         };
 
-        addEventListener('resize', handleResize);
+        const scrollListenerOptions: AddEventListenerOptions = {
+            passive: true,
+        };
+
+        updateBoardRect();
+
+        addEventListener('resize', updateBoardRect);
+        addEventListener('scroll', updateBoardRect, scrollListenerOptions);
+
         return () => {
-            removeEventListener('resize', handleResize);
+            removeEventListener('resize', updateBoardRect);
+            removeEventListener('scroll', updateBoardRect, scrollListenerOptions);
         };
     }, []);
 
