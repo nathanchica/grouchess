@@ -41,9 +41,10 @@ export default [
             globals: {
                 ...globals.browser,
                 ...globals.node,
-                WindowEventMap: 'readonly',
                 AddEventListenerOptions: 'readonly',
                 EventListenerOptions: 'readonly',
+                FrameRequestCallback: 'readonly',
+                WindowEventMap: 'readonly',
             },
         },
         plugins: {
