@@ -1,89 +1,42 @@
-import { useCallback, useMemo, useState, type PointerEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react';
 
-import { getPiece, isRowColInBounds, rowColToIndex } from '@grouchess/chess';
-import {
-    type BoardIndex,
-    type ChessBoardType,
-    type LegalMovesStore,
-    type Move,
-    type Piece,
-    type PieceColor,
-} from '@grouchess/models';
+import { type BoardIndex, type ChessBoardType, type LegalMovesStore, type Move, type Piece } from '@grouchess/models';
 
-import { getRowColFromXY, getSquareSizeFromBoardRect, xyFromPointerEvent } from '../components/chess_board/utils/board';
-import {
-    calculateGhostPieceTransform,
-    calculateSelectedPieceAndGlowingSquares,
-} from '../components/chess_board/utils/interactions';
-import type { DragProps, GlowingSquarePropsByIndex } from '../utils/types';
+import { getSelectedPieceData } from '../components/chess_board/utils/interactions';
+import type { DragProps } from '../utils/types';
 
 export type UseChessBoardInteractionsPayload = {
     dragOverIndex: BoardIndex | null;
     drag: DragProps | null;
     selectedIndex: number | null;
     selectedPiece: Piece | null;
-    glowingSquarePropsByIndex: GlowingSquarePropsByIndex;
-    getSquareSize: () => number;
+    legalMovesForSelectedPieceByEndIndex: Record<BoardIndex, Move>;
     clearSelection: () => void;
     clearDragStates: () => void;
-    handlePointerDown: (event: PointerEvent<HTMLDivElement>) => void;
-    handlePointerMove: (event: PointerEvent<HTMLDivElement>) => void;
-    handlePointerUp: (event: PointerEvent<HTMLDivElement>) => void;
+    selectIndex: (index: number) => void;
+    startDrag: (dragProps: DragProps) => void;
+    updateDragOverIndex: (index: BoardIndex | null) => void;
 };
 
 export type UseChessBoardInteractionsParams = {
     boardRef: RefObject<HTMLDivElement | null>;
-    ghostPieceRef: RefObject<HTMLDivElement | null>;
     board: ChessBoardType;
-    playerTurn: PieceColor;
     legalMovesStore: LegalMovesStore;
-    checkedColor: PieceColor | undefined;
-    previousMoveIndices: number[];
-    boardInteractionIsDisabled: boolean;
-    boardIsFlipped: boolean;
-    movePiece: (move: Move) => void;
 };
 
 export function useChessBoardInteractions({
     boardRef,
-    ghostPieceRef,
     board,
-    playerTurn,
     legalMovesStore,
-    checkedColor,
-    previousMoveIndices,
-    boardInteractionIsDisabled,
-    boardIsFlipped,
-    movePiece,
 }: UseChessBoardInteractionsParams): UseChessBoardInteractionsPayload {
     const [dragOverIndex, setDragOverIndex] = useState<BoardIndex | null>(null);
     const [drag, setDrag] = useState<DragProps | null>(null);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-    // Memoize derived values to only recompute when selectedIndex and the other deps changes
-    const { selectedPiece, indexToMoveDataForSelectedPiece, baseGlowingSquarePropsByIndex } = useMemo(() => {
-        const legalMoves = selectedIndex !== null ? (legalMovesStore.byStartIndex[selectedIndex] ?? []) : [];
-        return calculateSelectedPieceAndGlowingSquares(
-            board,
-            previousMoveIndices,
-            checkedColor,
-            selectedIndex,
-            legalMoves
-        );
-    }, [selectedIndex, board, previousMoveIndices, checkedColor, legalMovesStore.byStartIndex]);
-
-    // Attach isDraggingOver to glowingSquareProps here to account for drag state
-    const glowingSquarePropsByIndex = useMemo(
-        () =>
-            Object.entries(baseGlowingSquarePropsByIndex).reduce((result, [key, value]) => {
-                const index = Number(key);
-                result[index] = {
-                    ...value,
-                    isDraggingOver: Boolean(drag && dragOverIndex === index),
-                };
-                return result;
-            }, {} as GlowingSquarePropsByIndex),
-        [baseGlowingSquarePropsByIndex, drag, dragOverIndex]
+    // Memoize derived values to only recompute when selectedIndex changes
+    const { selectedPiece, legalMovesForSelectedPieceByEndIndex } = useMemo(
+        () => getSelectedPieceData(board, selectedIndex, legalMovesStore),
+        [selectedIndex, board, legalMovesStore]
     );
 
     const clearSelection = useCallback(() => {
@@ -95,143 +48,52 @@ export function useChessBoardInteractions({
         setDragOverIndex(null);
     }, []);
 
-    const getSquareSize = useCallback((): number => {
-        const boardRect = boardRef.current?.getBoundingClientRect();
-        if (!boardRect) {
-            return 0;
+    const selectIndex = useCallback((index: number) => {
+        setSelectedIndex(index);
+        setDragOverIndex(index);
+    }, []);
+
+    const startDrag = useCallback((dragProps: DragProps) => {
+        setDrag(dragProps);
+    }, []);
+
+    const updateDragOverIndex = useCallback((index: BoardIndex | null) => {
+        setDragOverIndex(index);
+    }, []);
+
+    useEffect(() => {
+        if (!drag) return;
+
+        const boardElement = boardRef.current;
+        const pointerId = drag.pointerId;
+
+        if (!boardElement) return;
+
+        try {
+            boardElement.setPointerCapture(pointerId);
+        } catch {
+            // Ignore errors if pointer capture is not supported or fails
         }
-        return getSquareSizeFromBoardRect(boardRect);
-    }, [boardRef]);
 
-    const handlePointerDown = useCallback(
-        (event: PointerEvent<HTMLDivElement>) => {
-            if (boardInteractionIsDisabled || !boardRef.current) return;
-
-            const boardRect = boardRef.current.getBoundingClientRect();
-            const { x, y } = xyFromPointerEvent(event, boardRect);
-            const squareSize = getSquareSizeFromBoardRect(boardRect);
-            const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
-
-            if (!isRowColInBounds(rowCol)) return;
-
-            const boardIndex = rowColToIndex(rowCol);
-            const pieceAlias = board[boardIndex];
-            const isPossibleMoveSquare = boardIndex in indexToMoveDataForSelectedPiece;
-
-            // If clicking on a possible move square while a piece is selected, execute the move
-            if (selectedPiece && isPossibleMoveSquare) {
-                movePiece(indexToMoveDataForSelectedPiece[boardIndex]);
-                clearSelection();
-                return;
+        return () => {
+            try {
+                boardElement.releasePointerCapture(pointerId);
+            } catch {
+                // Ignore errors if pointer release is not supported or fails
             }
-
-            // If clicking on own piece, select it and prepare for potential drag
-            if (pieceAlias) {
-                const piece = getPiece(pieceAlias);
-                if (piece.color === playerTurn) {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    try {
-                        boardRef.current.setPointerCapture(event.pointerId);
-                    } catch {
-                        // ignore errors
-                    }
-
-                    setSelectedIndex(boardIndex);
-                    setDrag({
-                        pointerId: event.pointerId,
-                        squareSize,
-                        boardRect,
-                        initialX: x,
-                        initialY: y,
-                    });
-                    setDragOverIndex(boardIndex);
-                    return;
-                }
-                // If clicking on opponent piece (non-capture), do nothing
-                return;
-            }
-
-            // If clicking on empty square (not a possible move square), clear selection
-            clearSelection();
-        },
-        [
-            board,
-            boardInteractionIsDisabled,
-            boardIsFlipped,
-            clearSelection,
-            indexToMoveDataForSelectedPiece,
-            movePiece,
-            playerTurn,
-            selectedPiece,
-            boardRef,
-        ]
-    );
-
-    const handlePointerMove = useCallback(
-        (event: PointerEvent<HTMLDivElement>) => {
-            if (boardInteractionIsDisabled || !drag || !ghostPieceRef.current) return;
-            if (event.pointerId !== drag.pointerId) return;
-
-            const { squareSize, boardRect } = drag;
-            const { x, y } = xyFromPointerEvent(event, boardRect);
-
-            // Update ghost position directly without re-render
-            ghostPieceRef.current.style.transform = calculateGhostPieceTransform(squareSize, x, y);
-
-            // Only update state when hovering over a different square
-            const rowCol = getRowColFromXY(x, y, squareSize, boardIsFlipped);
-            const newDragOverIndex = isRowColInBounds(rowCol) ? rowColToIndex(rowCol) : null;
-            if (newDragOverIndex !== dragOverIndex) {
-                setDragOverIndex(newDragOverIndex);
-            }
-        },
-        [boardInteractionIsDisabled, drag, dragOverIndex, boardIsFlipped, ghostPieceRef]
-    );
-
-    const handlePointerUp = useCallback(
-        (event: PointerEvent<HTMLDivElement>) => {
-            if (!drag || event.pointerId !== drag.pointerId || selectedIndex === null) return;
-
-            const endIndex = dragOverIndex ?? selectedIndex;
-
-            // Only handle drag behavior (when pointer moved to different square)
-            if (endIndex === selectedIndex) {
-                clearDragStates();
-                return;
-            }
-
-            // We dragged to a legal move square
-            if (endIndex in indexToMoveDataForSelectedPiece) {
-                movePiece(indexToMoveDataForSelectedPiece[endIndex]);
-            }
-
-            clearSelection();
-            clearDragStates();
-        },
-        [
-            drag,
-            dragOverIndex,
-            selectedIndex,
-            indexToMoveDataForSelectedPiece,
-            movePiece,
-            clearSelection,
-            clearDragStates,
-        ]
-    );
+        };
+    }, [boardRef, drag]);
 
     return {
         dragOverIndex,
         drag,
         selectedIndex,
         selectedPiece,
-        glowingSquarePropsByIndex,
-        getSquareSize,
+        legalMovesForSelectedPieceByEndIndex,
         clearSelection,
         clearDragStates,
-        handlePointerDown,
-        handlePointerMove,
-        handlePointerUp,
+        selectIndex,
+        startDrag,
+        updateDragOverIndex,
     };
 }

@@ -1,683 +1,353 @@
-import { type PointerEvent } from 'react';
-
-import { createMockMove, createMockPiece, createMockLegalMovesStore } from '@grouchess/test-utils';
+import type { LegalMovesStore, Move, Piece } from '@grouchess/models';
+import { createMockChessGame } from '@grouchess/test-utils';
 import { render } from 'vitest-browser-react';
 
-import {
-    createMockUseChessBoardInteractionsPayload,
-    createMockUseChessBoardInteractionsPayloadWithSelectedPiece,
-} from '../../../hooks/__mocks__/useChessBoardInteractions';
+import * as useChessBoardModule from '../../../hooks/useChessBoard';
 import * as useChessBoardInteractionsModule from '../../../hooks/useChessBoardInteractions';
-import {
-    ChessGameContext,
-    GameRoomContext,
-    type ChessGameContextType,
-    type GameRoomContextType,
-} from '../../../providers/ChessGameRoomProvider';
-import { ImageContext, type ImageContextType } from '../../../providers/ImagesProvider';
-import {
-    createMockChessGameContextValues,
-    createMockGameRoomContextValues,
-} from '../../../providers/__mocks__/ChessGameRoomProvider';
-import { createMockImageContextValues } from '../../../providers/__mocks__/ImagesProvider';
-import ChessBoard, { processContextValues, type ProcessContextValuesParams } from '../ChessBoard';
+import type { DragProps, PendingPromotion } from '../../../utils/types';
+import * as windowUtilsModule from '../../../utils/window';
+import ChessBoard from '../ChessBoard';
+import ChessBoardSquares from '../ChessBoardSquares';
+import GhostPiece from '../GhostPiece';
+import PawnPromotionPrompt from '../PawnPromotionPrompt';
+import * as interactionsModule from '../utils/interactions';
 
+// Mock child components
+vi.mock('../ChessBoardSquares', () => ({
+    default: vi.fn(() => <div data-testid="chess-board-squares" />),
+}));
+
+vi.mock('../GhostPiece', () => ({
+    default: vi.fn(() => <div data-testid="ghost-piece" />),
+}));
+
+vi.mock('../PawnPromotionPrompt', () => ({
+    default: vi.fn(() => <div data-testid="pawn-promotion-prompt" />),
+}));
+
+// Mock hooks
+vi.mock('../../../hooks/useChessBoard', { spy: true });
 vi.mock('../../../hooks/useChessBoardInteractions', { spy: true });
 
-type RenderChessBoardOptions = {
-    chessGameContextValues?: ChessGameContextType;
-    gameRoomContextValues?: GameRoomContextType;
-    imageContextValues?: ImageContextType;
+// Mock interaction handler creators
+vi.mock('../utils/interactions', { spy: true });
+
+// Mock window utilities
+vi.mock('../../../utils/window', { spy: true });
+
+const mockedUseChessBoard = vi.mocked(useChessBoardModule.useChessBoard);
+const mockedUseChessBoardInteractions = vi.mocked(useChessBoardInteractionsModule.useChessBoardInteractions);
+const mockedCreatePointerDownEventHandler = vi.mocked(interactionsModule.createPointerDownEventHandler);
+const mockedAddEventListener = vi.mocked(windowUtilsModule.addEventListener);
+const mockedRemoveEventListener = vi.mocked(windowUtilsModule.removeEventListener);
+const mockedChessBoardSquares = vi.mocked(ChessBoardSquares);
+const mockedGhostPiece = vi.mocked(GhostPiece);
+const mockedPawnPromotionPrompt = vi.mocked(PawnPromotionPrompt);
+
+const mockBoard = Array(64).fill(null);
+const mockBoardRect = new DOMRect(0, 0, 800, 800);
+const mockSelectedPiece: Piece = {
+    alias: 'P',
+    color: 'white',
+    type: 'pawn',
+    value: 1,
+};
+const defaultDragState: DragProps = {
+    pointerId: 1,
+    squareSize: 100,
+    boardRect: mockBoardRect,
+    initialX: 40,
+    initialY: 60,
 };
 
-function renderChessBoard({
-    chessGameContextValues = createMockChessGameContextValues(),
-    gameRoomContextValues = createMockGameRoomContextValues(),
-    imageContextValues = createMockImageContextValues(),
-}: RenderChessBoardOptions = {}) {
-    return render(
-        <ImageContext.Provider value={imageContextValues}>
-            <ChessGameContext.Provider value={chessGameContextValues}>
-                <GameRoomContext.Provider value={gameRoomContextValues}>
-                    <ChessBoard />
-                </GameRoomContext.Provider>
-            </ChessGameContext.Provider>
-        </ImageContext.Provider>
-    );
+type UseChessBoardHookReturn = ReturnType<typeof useChessBoardModule.useChessBoard>;
+type UseChessBoardInteractionsReturn = ReturnType<typeof useChessBoardInteractionsModule.useChessBoardInteractions>;
+
+function createLegalMovesStore(): LegalMovesStore {
+    return {
+        allMoves: [],
+        byStartIndex: {},
+        typeAndEndIndexToStartIndex: {},
+    };
+}
+
+function createUseChessBoardValues(overrides: Partial<UseChessBoardHookReturn> = {}): UseChessBoardHookReturn {
+    return {
+        board: mockBoard,
+        playerTurn: 'white',
+        previousMoveIndices: [],
+        legalMovesStore: createLegalMovesStore(),
+        boardIsFlipped: false,
+        boardInteractionIsDisabled: false,
+        pendingPromotion: null,
+        checkedColor: undefined,
+        movePiece: vi.fn(),
+        ...overrides,
+    };
+}
+
+function createUseChessBoardInteractionsValues(
+    overrides: Partial<UseChessBoardInteractionsReturn> = {}
+): UseChessBoardInteractionsReturn {
+    return {
+        drag: null,
+        dragOverIndex: null,
+        selectedIndex: null,
+        selectedPiece: null,
+        legalMovesForSelectedPieceByEndIndex: {},
+        clearSelection: vi.fn(),
+        clearDragStates: vi.fn(),
+        selectIndex: vi.fn(),
+        startDrag: vi.fn(),
+        updateDragOverIndex: vi.fn(),
+        ...overrides,
+    };
+}
+
+function createPendingPromotion(overrides: Partial<PendingPromotion> = {}): PendingPromotion {
+    const defaultMove: Move = {
+        startIndex: 8,
+        endIndex: 0,
+        type: 'standard',
+        piece: mockSelectedPiece,
+    };
+
+    return {
+        move: {
+            ...defaultMove,
+            ...(overrides.move ?? {}),
+        },
+        preChessGame: overrides.preChessGame ?? createMockChessGame(),
+        prePreviousMoveIndices: overrides.prePreviousMoveIndices ?? [],
+    };
+}
+
+function mockBoardBoundingClientRect(rect: DOMRect = mockBoardRect) {
+    const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    spy.mockReturnValue(rect);
+    return spy;
+}
+
+function renderChessBoard() {
+    return render(<ChessBoard />);
 }
 
 describe('ChessBoard', () => {
-    let mockChessGameContextValues: ChessGameContextType;
-    let mockGameRoomContextValues: GameRoomContextType;
-    let mockImageContextValues: ImageContextType;
-    let mockUseChessBoardInteractionsPayload: useChessBoardInteractionsModule.UseChessBoardInteractionsPayload;
-
     beforeEach(() => {
-        mockChessGameContextValues = createMockChessGameContextValues();
-        mockGameRoomContextValues = createMockGameRoomContextValues();
-        mockImageContextValues = createMockImageContextValues();
-        mockUseChessBoardInteractionsPayload = createMockUseChessBoardInteractionsPayload();
+        vi.clearAllMocks();
+
+        // Default mock for useChessBoard
+        const defaultUseChessBoardValues = createUseChessBoardValues();
+        vi.spyOn(useChessBoardModule, 'useChessBoard').mockReturnValue(defaultUseChessBoardValues);
+
+        // Default mock for useChessBoardInteractions
+        const defaultInteractionsValues = createUseChessBoardInteractionsValues();
         vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-            mockUseChessBoardInteractionsPayload
+            defaultInteractionsValues
         );
+
+        // Default mocks for handler creators
+        vi.spyOn(interactionsModule, 'createPointerDownEventHandler').mockReturnValue(vi.fn());
+        vi.spyOn(interactionsModule, 'createPointerMoveEventHandler').mockReturnValue(vi.fn());
+        vi.spyOn(interactionsModule, 'createPointerUpEventHandler').mockReturnValue(vi.fn());
+
+        // Default mocks for window utilities
+        vi.spyOn(windowUtilsModule, 'addEventListener').mockImplementation(vi.fn());
+        vi.spyOn(windowUtilsModule, 'removeEventListener').mockImplementation(vi.fn());
     });
 
-    describe('Initial Rendering and Image Loading', () => {
-        it('renders 64 chess squares on initial mount', async () => {
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
+    describe('Initial Render and Component Structure', () => {
+        it('renders GameBoard with ChessBoardSquares', async () => {
+            const { getByRole, getByTestId } = await renderChessBoard();
 
             const grid = getByRole('grid');
-            const squares = grid.getByRole('gridcell').elements();
+            await expect.element(grid).toBeInTheDocument();
 
-            expect(squares.length).toBe(64);
+            const squares = getByTestId('chess-board-squares');
+            await expect.element(squares).toBeInTheDocument();
+
+            expect(mockedChessBoardSquares).toHaveBeenCalled();
         });
 
-        it('hides pieces when images are not ready', async () => {
-            // prettier-ignore
-            mockChessGameContextValues.chessGame.boardState.board = [
-                'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
-                'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p',
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
-                'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R',
-            ];
-            mockImageContextValues.isReady = false;
+        it('does not render GhostPiece initially', async () => {
+            const { getByTestId } = await renderChessBoard();
 
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            const grid = getByRole('grid');
-            const images = grid.getByRole('img').elements();
-
-            expect(images.length).toBe(0);
-        });
-
-        it('shows pieces after images are loaded', async () => {
-            // prettier-ignore
-            mockChessGameContextValues.chessGame.boardState.board = [
-                'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
-                'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p',
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
-                'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R',
-            ];
-            mockImageContextValues.isReady = true;
-
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            const grid = getByRole('grid');
-            const images = grid.getByRole('img').elements();
-
-            // 32 pieces should be rendered when images are ready (16 white + 16 black)
-            expect(images.length).toBe(32);
-        });
-
-        it('renders empty squares correctly', async () => {
-            mockChessGameContextValues.chessGame.boardState.board = Array(64).fill(null);
-            mockImageContextValues.isReady = true;
-
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            const grid = getByRole('grid');
-            const squares = grid.getByRole('gridcell').elements();
-            const images = grid.getByRole('img').elements();
-
-            expect(squares.length).toBe(64);
-            expect(images.length).toBe(0);
-        });
-    });
-
-    describe('Board Flipping and Perspective', () => {
-        it('passes correct isFlipped prop to ChessSquare components', async () => {
-            mockGameRoomContextValues.currentPlayerColor = 'white';
-
-            const { getByRole, rerender } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            // When not flipped: bottom-left visual corner shows a1 legends
-            const a1Square = getByRole('gridcell', { name: /a1/i });
-            const a1ColLegend = a1Square.getByTestId('col-legend');
-            const a1RowLegend = a1Square.getByTestId('row-legend');
-
-            await expect.element(a1ColLegend).toHaveTextContent('a');
-            await expect.element(a1RowLegend).toHaveTextContent('1');
-
-            // Now test with black perspective (flipped)
-            mockGameRoomContextValues.currentPlayerColor = 'black';
-
-            await rerender(
-                <ImageContext.Provider value={mockImageContextValues}>
-                    <ChessGameContext.Provider value={mockChessGameContextValues}>
-                        <GameRoomContext.Provider value={mockGameRoomContextValues}>
-                            <ChessBoard />
-                        </GameRoomContext.Provider>
-                    </ChessGameContext.Provider>
-                </ImageContext.Provider>
-            );
-
-            // When flipped: bottom-left visual corner should now show h8 legend
-            const h8Square = getByRole('gridcell', { name: /h8/i });
-            const h8ColLegend = h8Square.getByTestId('col-legend');
-            const h8RowLegend = h8Square.getByTestId('row-legend');
-
-            await expect.element(h8ColLegend).toHaveTextContent('h');
-            await expect.element(h8RowLegend).toHaveTextContent('8');
-        });
-
-        it('passes correct isFlipped prop to PawnPromotionPrompt', async () => {
-            mockImageContextValues.isReady = true;
-            mockGameRoomContextValues.currentPlayerColor = 'white';
-            const whitePromotionMove = createMockMove();
-            whitePromotionMove.startIndex = 8;
-            whitePromotionMove.endIndex = 0;
-            whitePromotionMove.piece = createMockPiece({ alias: 'P', color: 'white', type: 'pawn', value: 1 });
-            mockChessGameContextValues.chessGame.pendingPromotion = {
-                move: whitePromotionMove,
-                preChessGame: mockChessGameContextValues.chessGame,
-                prePreviousMoveIndices: [],
-            };
-
-            const { getByRole, rerender } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            let dialog = getByRole('dialog', { name: /pawn promotion options/i });
-            await expect.element(dialog).toBeVisible();
-
-            let options = dialog.getByRole('button').elements();
-            expect(options.length).toBe(4);
-            expect(options[0]).toHaveAccessibleName(/promote to white queen/i);
-
-            // Now test with black perspective (flipped)
-            mockGameRoomContextValues.currentPlayerColor = 'black';
-            const blackPromotionMove = createMockMove();
-            blackPromotionMove.startIndex = 55;
-            blackPromotionMove.endIndex = 63;
-            blackPromotionMove.piece = createMockPiece({ alias: 'p', color: 'black', type: 'pawn', value: 1 });
-            mockChessGameContextValues.chessGame.pendingPromotion = {
-                move: blackPromotionMove,
-                preChessGame: mockChessGameContextValues.chessGame,
-                prePreviousMoveIndices: [],
-            };
-
-            await rerender(
-                <ImageContext.Provider value={mockImageContextValues}>
-                    <ChessGameContext.Provider value={mockChessGameContextValues}>
-                        <GameRoomContext.Provider value={mockGameRoomContextValues}>
-                            <ChessBoard />
-                        </GameRoomContext.Provider>
-                    </ChessGameContext.Provider>
-                </ImageContext.Provider>
-            );
-
-            dialog = getByRole('dialog', { name: /pawn promotion options/i });
-            options = dialog.getByRole('button').elements();
-
-            // When flipped, the queen should still be on top visually
-            await expect.element(dialog).toBeVisible();
-            expect(options.length).toBe(4);
-            expect(options[0]).toHaveAccessibleName(/promote to black queen/i);
-        });
-    });
-
-    describe('Pointer Event Delegation', () => {
-        describe('Pointer event handlers', () => {
-            it.each<{
-                scenario: string;
-                eventType: 'pointerdown' | 'pointermove' | 'pointerup';
-                handlerKey: 'handlePointerDown' | 'handlePointerMove' | 'handlePointerUp';
-            }>([
-                {
-                    scenario: 'passes pointer down events to interaction hook handler',
-                    eventType: 'pointerdown',
-                    handlerKey: 'handlePointerDown',
-                },
-                {
-                    scenario: 'passes pointer move events to interaction hook handler',
-                    eventType: 'pointermove',
-                    handlerKey: 'handlePointerMove',
-                },
-                {
-                    scenario: 'passes pointer up events to interaction hook handler',
-                    eventType: 'pointerup',
-                    handlerKey: 'handlePointerUp',
-                },
-            ])('$scenario', async ({ eventType, handlerKey }) => {
-                const mockHandler: (event: PointerEvent<HTMLDivElement>) => void = vi.fn();
-                mockUseChessBoardInteractionsPayload[handlerKey] = mockHandler;
-                vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                    mockUseChessBoardInteractionsPayload
-                );
-
-                const { getByRole } = await renderChessBoard({
-                    chessGameContextValues: mockChessGameContextValues,
-                    gameRoomContextValues: mockGameRoomContextValues,
-                    imageContextValues: mockImageContextValues,
-                });
-
-                const grid = getByRole('grid');
-                grid.element().dispatchEvent(new PointerEvent(eventType, { bubbles: true }));
-
-                expect(mockHandler).toHaveBeenCalledOnce();
-            });
-        });
-
-        it('passes pointer cancel events to clearDragStates', async () => {
-            const mockClearDragStates: () => void = vi.fn();
-            mockUseChessBoardInteractionsPayload.clearDragStates = mockClearDragStates;
-            vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                mockUseChessBoardInteractionsPayload
-            );
-
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            const grid = getByRole('grid');
-            grid.element().dispatchEvent(new PointerEvent('pointercancel', { bubbles: true }));
-
-            expect(mockClearDragStates).toHaveBeenCalledOnce();
-        });
-    });
-
-    describe('Drag State and Ghost Piece', () => {
-        it('shows ghost piece during active drag', async () => {
-            mockImageContextValues.isReady = true;
-            const whitePiece = createMockPiece({ alias: 'N', color: 'white' });
-            mockUseChessBoardInteractionsPayload = createMockUseChessBoardInteractionsPayloadWithSelectedPiece({
-                selectedIndex: 1,
-                selectedPiece: whitePiece,
-            });
-            vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                mockUseChessBoardInteractionsPayload
-            );
-
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            const ghostPiece = getByRole('img', { name: /dragging piece/i });
-            await expect.element(ghostPiece).toBeInTheDocument();
-        });
-
-        it('hides ghost piece when no drag is active', async () => {
-            mockImageContextValues.isReady = true;
-            mockUseChessBoardInteractionsPayload.drag = null;
-            mockUseChessBoardInteractionsPayload.selectedIndex = null;
-            mockUseChessBoardInteractionsPayload.selectedPiece = null;
-            vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                mockUseChessBoardInteractionsPayload
-            );
-
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            const ghostPiece = getByRole('img', { name: /dragging piece/i });
+            const ghostPiece = getByTestId('ghost-piece');
             await expect.element(ghostPiece).not.toBeInTheDocument();
+            expect(mockedGhostPiece).not.toHaveBeenCalled();
         });
 
-        it('hides ghost piece during pawn promotion', async () => {
-            mockImageContextValues.isReady = true;
-            const whitePiece = createMockPiece({ alias: 'P', color: 'white', type: 'pawn' });
-            const promotionMove = createMockMove();
-            promotionMove.startIndex = 8;
-            promotionMove.endIndex = 0;
-            promotionMove.piece = whitePiece;
+        it('does not render PawnPromotionPrompt initially', async () => {
+            const { getByTestId } = await renderChessBoard();
 
-            mockChessGameContextValues.chessGame.pendingPromotion = {
-                move: promotionMove,
-                preChessGame: mockChessGameContextValues.chessGame,
-                prePreviousMoveIndices: [],
-            };
+            const pawnPromotionPrompt = getByTestId('pawn-promotion-prompt');
+            await expect.element(pawnPromotionPrompt).not.toBeInTheDocument();
+            expect(mockedPawnPromotionPrompt).not.toHaveBeenCalled();
+        });
+    });
 
-            mockUseChessBoardInteractionsPayload = createMockUseChessBoardInteractionsPayloadWithSelectedPiece({
-                selectedIndex: 0,
-                selectedPiece: whitePiece,
-            });
-            vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                mockUseChessBoardInteractionsPayload
-            );
+    describe('Window Resize Handling', () => {
+        it('adds resize listener on mount', async () => {
+            await renderChessBoard();
 
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
-
-            // Pawn promotion dialog should be visible
-            const dialog = getByRole('dialog', { name: /pawn promotion options/i });
-            await expect.element(dialog).toBeInTheDocument();
-
-            // Ghost piece should not be rendered
-            const ghostPiece = getByRole('img', { name: /dragging piece/i });
-            await expect.element(ghostPiece).not.toBeInTheDocument();
+            expect(mockedAddEventListener).toHaveBeenCalledTimes(1);
+            expect(mockedAddEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
         });
 
-        it('hides dragged piece from original square during drag', async () => {
-            // prettier-ignore
-            mockChessGameContextValues.chessGame.boardState.board = [
-                'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r',
-                'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p',
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null,
-                'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
-                'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R',
-            ];
-            mockImageContextValues.isReady = true;
+        it('updates boardRect when window resizes', async () => {
+            const boundingSpy = mockBoardBoundingClientRect();
+            await renderChessBoard();
 
-            const selectedSquareIndex = 57; // White knight on b1
-            const whitePiece = createMockPiece({ alias: 'N', color: 'white' });
-            mockUseChessBoardInteractionsPayload = createMockUseChessBoardInteractionsPayloadWithSelectedPiece({
-                selectedIndex: selectedSquareIndex,
-                selectedPiece: whitePiece,
-            });
-            vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                mockUseChessBoardInteractionsPayload
+            const resizeHandler = mockedAddEventListener.mock.calls[0]?.[1] as (() => void) | undefined;
+            expect(resizeHandler).toBeTypeOf('function');
+
+            const resizedRect = new DOMRect(0, 0, 600, 600);
+            boundingSpy.mockReturnValue(resizedRect);
+
+            resizeHandler?.();
+
+            const lastCall = mockedCreatePointerDownEventHandler.mock.calls.at(-1);
+            expect(lastCall?.[0]).toEqual(resizedRect);
+
+            boundingSpy.mockRestore();
+        });
+
+        it('removes resize listener on unmount', async () => {
+            const { unmount } = await renderChessBoard();
+            const resizeHandler = mockedAddEventListener.mock.calls[0]?.[1];
+
+            unmount();
+
+            expect(mockedRemoveEventListener).toHaveBeenCalledWith('resize', resizeHandler);
+        });
+    });
+
+    describe('Conditional Rendering - GhostPiece', () => {
+        it('renders GhostPiece when drag is active and piece is selected', async () => {
+            const drag: DragProps = { ...defaultDragState };
+            const selectedPiece: Piece = { ...mockSelectedPiece };
+            mockedUseChessBoardInteractions.mockReturnValue(
+                createUseChessBoardInteractionsValues({
+                    drag,
+                    selectedPiece,
+                    selectedIndex: 12,
+                })
             );
 
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
+            const { getByTestId } = await renderChessBoard();
 
-            // Ghost piece should be visible (dragging)
-            const ghostPiece = getByRole('img', { name: /dragging piece/i });
+            const ghostPiece = getByTestId('ghost-piece');
             await expect.element(ghostPiece).toBeInTheDocument();
 
-            // Get all images and separate them
-            const allImages = getByRole('img').elements();
-            const ghostPieceImages = allImages.filter((img) => img.getAttribute('alt')?.match(/dragging piece/i));
-            const piecesOnBoard = allImages.filter((img) => !img.getAttribute('alt')?.match(/dragging piece/i));
-
-            // Should have exactly 1 ghost piece and 31 pieces on the board (32 total - 1 being dragged)
-            expect(ghostPieceImages.length).toBe(1);
-            expect(piecesOnBoard.length).toBe(31);
+            const ghostProps = mockedGhostPiece.mock.calls.at(-1)?.[0];
+            expect(ghostProps).toBeDefined();
+            expect(ghostProps).toMatchObject({
+                squareSize: drag.squareSize,
+                initialX: drag.initialX,
+                initialY: drag.initialY,
+                pieceAlias: selectedPiece.alias,
+            });
         });
 
-        it('ghost piece ref is forwarded correctly', async () => {
-            mockImageContextValues.isReady = true;
-            const whitePiece = createMockPiece({ alias: 'K', color: 'white' });
-
-            mockUseChessBoardInteractionsPayload = createMockUseChessBoardInteractionsPayloadWithSelectedPiece({
-                selectedIndex: 4,
-                selectedPiece: whitePiece,
-            });
-            vi.spyOn(useChessBoardInteractionsModule, 'useChessBoardInteractions').mockReturnValue(
-                mockUseChessBoardInteractionsPayload
+        it('does not render GhostPiece when drag is null', async () => {
+            mockedUseChessBoardInteractions.mockReturnValue(
+                createUseChessBoardInteractionsValues({
+                    drag: null,
+                    selectedPiece: { ...mockSelectedPiece },
+                })
             );
 
-            const { getByRole } = await renderChessBoard({
-                chessGameContextValues: mockChessGameContextValues,
-                gameRoomContextValues: mockGameRoomContextValues,
-                imageContextValues: mockImageContextValues,
-            });
+            const { getByTestId } = await renderChessBoard();
 
-            // Verify the ghost piece is rendered
-            const ghostPieceImage = getByRole('img', { name: /dragging piece.*king/i });
-            await expect.element(ghostPieceImage).toBeInTheDocument();
-
-            // The ghost piece's parent div should be the ref-forwarded element
-            const ghostPiece = ghostPieceImage.element().parentElement;
-            expect(ghostPiece).not.toBeNull();
-            expect(ghostPiece).toBeInstanceOf(HTMLDivElement);
+            const ghostPiece = getByTestId('ghost-piece');
+            await expect.element(ghostPiece).not.toBeInTheDocument();
+            expect(mockedGhostPiece).not.toHaveBeenCalled();
         });
-    });
-});
 
-describe('processContextValues', () => {
-    describe('boardIsFlipped', () => {
-        it.each([
-            {
-                scenario: 'returns true when current player is black',
-                currentPlayerColor: 'black' as const,
-                expected: true,
-            },
-            {
-                scenario: 'returns false when current player is white',
-                currentPlayerColor: 'white' as const,
-                expected: false,
-            },
-        ])('$scenario', ({ currentPlayerColor, expected }) => {
-            const { chessGame } = createMockChessGameContextValues();
-            const { gameRoom } = createMockGameRoomContextValues();
+        it('does not render GhostPiece when selectedPiece is null', async () => {
+            mockedUseChessBoardInteractions.mockReturnValue(
+                createUseChessBoardInteractionsValues({
+                    drag: { ...defaultDragState },
+                    selectedPiece: null,
+                })
+            );
 
-            const params: ProcessContextValuesParams = {
-                chessGame,
-                gameRoom,
-                currentPlayerColor,
-            };
+            const { getByTestId } = await renderChessBoard();
 
-            const { boardIsFlipped } = processContextValues(params);
+            const ghostPiece = getByTestId('ghost-piece');
+            await expect.element(ghostPiece).not.toBeInTheDocument();
+            expect(mockedGhostPiece).not.toHaveBeenCalled();
+        });
 
-            expect(boardIsFlipped).toBe(expected);
+        it('does not render GhostPiece during pending promotion', async () => {
+            mockedUseChessBoard.mockReturnValue(
+                createUseChessBoardValues({
+                    pendingPromotion: createPendingPromotion(),
+                })
+            );
+            mockedUseChessBoardInteractions.mockReturnValue(
+                createUseChessBoardInteractionsValues({
+                    drag: { ...defaultDragState },
+                    selectedPiece: { ...mockSelectedPiece },
+                })
+            );
+
+            const { getByTestId } = await renderChessBoard();
+
+            const ghostPiece = getByTestId('ghost-piece');
+            await expect.element(ghostPiece).not.toBeInTheDocument();
+            expect(mockedGhostPiece).not.toHaveBeenCalled();
         });
     });
 
-    describe('isCurrentPlayerTurn (affects boardInteractionIsDisabled)', () => {
-        it('enables interaction in self-play mode regardless of player turn', () => {
-            const { chessGame } = createMockChessGameContextValues();
-            chessGame.boardState.playerTurn = 'white';
-
-            const { gameRoom } = createMockGameRoomContextValues();
-            gameRoom.type = 'self';
-
-            const { boardInteractionIsDisabled } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'black', // Different from playerTurn
+    describe('Conditional Rendering - PawnPromotionPrompt', () => {
+        it('renders PawnPromotionPrompt when pendingPromotion exists', async () => {
+            const pendingPromotion = createPendingPromotion({
+                move: {
+                    startIndex: 10,
+                    endIndex: 63,
+                    type: 'standard',
+                    piece: { ...mockSelectedPiece, color: 'black' },
+                },
             });
+            const clearSelection = vi.fn();
+            mockedUseChessBoard.mockReturnValue(
+                createUseChessBoardValues({
+                    pendingPromotion,
+                    boardIsFlipped: true,
+                })
+            );
+            mockedUseChessBoardInteractions.mockReturnValue(
+                createUseChessBoardInteractionsValues({
+                    clearSelection,
+                })
+            );
+            const boundingSpy = mockBoardBoundingClientRect();
 
-            expect(boardInteractionIsDisabled).toBe(false);
+            const { getByTestId } = await renderChessBoard();
+
+            const prompt = getByTestId('pawn-promotion-prompt');
+            await expect.element(prompt).toBeInTheDocument();
+
+            const promptProps = mockedPawnPromotionPrompt.mock.calls.at(-1)?.[0];
+            expect(promptProps).toBeDefined();
+            expect(promptProps).toMatchObject({
+                squareSize: 100,
+                promotionIndex: pendingPromotion.move.endIndex,
+                color: pendingPromotion.move.piece.color,
+                isFlipped: true,
+            });
+            expect(promptProps?.onDismiss).toBe(clearSelection);
+
+            boundingSpy.mockRestore();
         });
 
-        it.each([
-            {
-                scenario: 'enables interaction when current player color matches player turn in multiplayer',
-                currentPlayerColor: 'white' as const,
-                playerTurn: 'white' as const,
-                expectedDisabled: false,
-            },
-            {
-                scenario: 'disables interaction when current player color does not match player turn in multiplayer',
-                currentPlayerColor: 'black' as const,
-                playerTurn: 'white' as const,
-                expectedDisabled: true,
-            },
-        ])('$scenario', ({ currentPlayerColor, playerTurn, expectedDisabled }) => {
-            const { chessGame } = createMockChessGameContextValues();
-            chessGame.boardState.playerTurn = playerTurn;
+        it('does not render PawnPromotionPrompt when pendingPromotion is null', async () => {
+            const { getByTestId } = await renderChessBoard();
 
-            const { gameRoom } = createMockGameRoomContextValues();
-            gameRoom.type = 'player-vs-player';
-
-            const { boardInteractionIsDisabled } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor,
-            });
-
-            expect(boardInteractionIsDisabled).toBe(expectedDisabled);
-        });
-    });
-
-    describe('boardInteractionIsDisabled', () => {
-        it('disables interaction when there is a pending promotion', () => {
-            const { chessGame } = createMockChessGameContextValues();
-            const promotionMove = createMockMove();
-            promotionMove.startIndex = 8;
-            promotionMove.endIndex = 0;
-            promotionMove.piece = createMockPiece({ type: 'pawn', color: 'white', alias: 'P' });
-
-            chessGame.pendingPromotion = {
-                move: promotionMove,
-                preChessGame: chessGame,
-                prePreviousMoveIndices: [],
-            };
-
-            const { gameRoom } = createMockGameRoomContextValues();
-            gameRoom.type = 'self';
-
-            const { boardInteractionIsDisabled } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'white',
-            });
-
-            expect(boardInteractionIsDisabled).toBe(true);
-        });
-
-        it.each([
-            { scenario: 'checkmate', status: 'checkmate' as const, winner: 'black' as const },
-            { scenario: 'stalemate', status: 'stalemate' as const, winner: undefined },
-            { scenario: '50-move draw', status: '50-move-draw' as const, winner: undefined },
-            { scenario: 'threefold repetition', status: 'threefold-repetition' as const, winner: undefined },
-        ])('disables interaction when game is over ($scenario)', ({ status, winner }) => {
-            const { chessGame } = createMockChessGameContextValues();
-            chessGame.gameState.status = status;
-            chessGame.gameState.winner = winner ?? undefined;
-
-            const { gameRoom } = createMockGameRoomContextValues();
-            gameRoom.type = 'self';
-
-            const { boardInteractionIsDisabled } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'white',
-            });
-
-            expect(boardInteractionIsDisabled).toBe(true);
-        });
-
-        it('enables interaction when game is in progress, no pending promotion, and is current player turn', () => {
-            const { chessGame } = createMockChessGameContextValues();
-            chessGame.gameState.status = 'in-progress';
-            chessGame.pendingPromotion = null;
-
-            const { gameRoom } = createMockGameRoomContextValues();
-            gameRoom.type = 'self';
-
-            const { boardInteractionIsDisabled } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'white',
-            });
-
-            expect(boardInteractionIsDisabled).toBe(false);
-        });
-    });
-
-    describe('returned values', () => {
-        it('returns all expected values from input contexts', () => {
-            const { chessGame } = createMockChessGameContextValues();
-
-            const mockBoard = Array(64).fill(null);
-            chessGame.boardState.board = mockBoard;
-            chessGame.boardState.playerTurn = 'black';
-
-            const mockPreviousMoveIndices = [12, 28];
-            chessGame.previousMoveIndices = mockPreviousMoveIndices;
-
-            const mockLegalMovesStore = createMockLegalMovesStore();
-            chessGame.legalMovesStore = mockLegalMovesStore;
-            chessGame.pendingPromotion = null;
-            chessGame.gameState.check = 'white';
-
-            const { gameRoom } = createMockGameRoomContextValues();
-            gameRoom.type = 'player-vs-player';
-
-            const {
-                board,
-                playerTurn,
-                previousMoveIndices,
-                legalMovesStore,
-                boardIsFlipped,
-                boardInteractionIsDisabled,
-                pendingPromotion,
-                checkedColor,
-            } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'black',
-            });
-
-            expect(board).toBe(mockBoard);
-            expect(playerTurn).toBe('black');
-            expect(previousMoveIndices).toBe(mockPreviousMoveIndices);
-            expect(legalMovesStore).toBe(mockLegalMovesStore);
-            expect(boardIsFlipped).toBe(true);
-            expect(boardInteractionIsDisabled).toBe(false);
-            expect(pendingPromotion).toBe(null);
-            expect(checkedColor).toBe('white');
-        });
-
-        it('correctly extracts all boardState properties', () => {
-            const { chessGame } = createMockChessGameContextValues();
-
-            const mockBoard = Array(64).fill('P');
-            chessGame.boardState.board = mockBoard;
-            chessGame.boardState.playerTurn = 'white';
-
-            const { gameRoom } = createMockGameRoomContextValues();
-
-            const { board, playerTurn } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'white',
-            });
-
-            expect(board).toBe(mockBoard);
-            expect(playerTurn).toBe('white');
-        });
-
-        it('correctly extracts gameState properties', () => {
-            const { chessGame } = createMockChessGameContextValues();
-            chessGame.gameState.check = 'black';
-
-            const { gameRoom } = createMockGameRoomContextValues();
-
-            const { checkedColor } = processContextValues({
-                chessGame,
-                gameRoom,
-                currentPlayerColor: 'white',
-            });
-
-            expect(checkedColor).toBe('black');
+            const prompt = getByTestId('pawn-promotion-prompt');
+            await expect.element(prompt).not.toBeInTheDocument();
+            expect(mockedPawnPromotionPrompt).not.toHaveBeenCalled();
         });
     });
 });

@@ -7,6 +7,8 @@ import {
     getStoredValue,
     returnToMainMenu,
     setStoredValue,
+    addEventListener,
+    removeEventListener,
 } from '../window';
 
 describe('getLocationOrigin', () => {
@@ -369,6 +371,152 @@ describe('returnToMainMenu', () => {
         delete global.window;
 
         expect(() => returnToMainMenu()).not.toThrow();
+
+        global.window = originalWindow;
+    });
+});
+
+describe('addEventListener', () => {
+    let addEventListenerSpy: Mock<typeof window.addEventListener>;
+
+    beforeEach(() => {
+        addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+    });
+
+    afterEach(() => {
+        addEventListenerSpy.mockRestore();
+    });
+
+    it('calls window.addEventListener with correct event type and listener', () => {
+        const listener = vi.fn();
+
+        addEventListener('resize', listener);
+
+        expect(addEventListenerSpy).toHaveBeenCalledWith('resize', listener, undefined);
+    });
+
+    it('calls window.addEventListener with boolean options', () => {
+        const listener = vi.fn();
+
+        addEventListener('click', listener, true);
+
+        expect(addEventListenerSpy).toHaveBeenCalledWith('click', listener, true);
+    });
+
+    it('calls window.addEventListener with object options', () => {
+        const listener = vi.fn();
+        const options = { capture: true, passive: true };
+
+        addEventListener('scroll', listener, options);
+
+        expect(addEventListenerSpy).toHaveBeenCalledWith('scroll', listener, options);
+    });
+
+    it.each([
+        {
+            scenario: 'resize event',
+            eventType: 'resize' as const,
+        },
+        {
+            scenario: 'scroll event',
+            eventType: 'scroll' as const,
+        },
+        {
+            scenario: 'click event',
+            eventType: 'click' as const,
+        },
+        {
+            scenario: 'keydown event',
+            eventType: 'keydown' as const,
+        },
+    ])('handles $scenario correctly', ({ eventType }) => {
+        const listener = vi.fn();
+
+        addEventListener(eventType, listener);
+
+        expect(addEventListenerSpy).toHaveBeenCalledWith(eventType, listener, undefined);
+    });
+
+    it('does nothing when window is undefined', () => {
+        const originalWindow = global.window;
+        // @ts-expect-error - Testing SSR scenario
+        delete global.window;
+        const listener = vi.fn();
+
+        expect(() => addEventListener('resize', listener)).not.toThrow();
+
+        global.window = originalWindow;
+    });
+});
+
+describe('removeEventListener', () => {
+    let removeEventListenerSpy: Mock<typeof window.removeEventListener>;
+
+    beforeEach(() => {
+        removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+    });
+
+    afterEach(() => {
+        removeEventListenerSpy.mockRestore();
+    });
+
+    it('calls window.removeEventListener with correct event type and listener', () => {
+        const listener = vi.fn();
+
+        removeEventListener('resize', listener);
+
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('resize', listener, undefined);
+    });
+
+    it('calls window.removeEventListener with boolean options', () => {
+        const listener = vi.fn();
+
+        removeEventListener('click', listener, true);
+
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('click', listener, true);
+    });
+
+    it('calls window.removeEventListener with object options', () => {
+        const listener = vi.fn();
+        const options = { capture: true };
+
+        removeEventListener('scroll', listener, options);
+
+        expect(removeEventListenerSpy).toHaveBeenCalledWith('scroll', listener, options);
+    });
+
+    it.each([
+        {
+            scenario: 'resize event',
+            eventType: 'resize' as const,
+        },
+        {
+            scenario: 'scroll event',
+            eventType: 'scroll' as const,
+        },
+        {
+            scenario: 'click event',
+            eventType: 'click' as const,
+        },
+        {
+            scenario: 'keydown event',
+            eventType: 'keydown' as const,
+        },
+    ])('handles $scenario correctly', ({ eventType }) => {
+        const listener = vi.fn();
+
+        removeEventListener(eventType, listener);
+
+        expect(removeEventListenerSpy).toHaveBeenCalledWith(eventType, listener, undefined);
+    });
+
+    it('does nothing when window is undefined', () => {
+        const originalWindow = global.window;
+        // @ts-expect-error - Testing SSR scenario
+        delete global.window;
+        const listener = vi.fn();
+
+        expect(() => removeEventListener('resize', listener)).not.toThrow();
 
         global.window = originalWindow;
     });

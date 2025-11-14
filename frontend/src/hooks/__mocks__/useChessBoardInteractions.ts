@@ -11,13 +11,12 @@ export function createMockUseChessBoardInteractionsPayload(
         drag: null,
         selectedIndex: null,
         selectedPiece: null,
-        glowingSquarePropsByIndex: {},
-        getSquareSize: () => 60,
+        legalMovesForSelectedPieceByEndIndex: {},
         clearSelection: () => {},
         clearDragStates: () => {},
-        handlePointerDown: () => {},
-        handlePointerMove: () => {},
-        handlePointerUp: () => {},
+        selectIndex: () => {},
+        startDrag: () => {},
+        updateDragOverIndex: () => {},
         ...overrides,
     };
 }
@@ -29,12 +28,7 @@ export function createMockUseChessBoardInteractionsPayloadWithSelectedPiece(
         selectedIndex: 0,
         selectedPiece: createMockPiece({ alias: 'N' }),
         drag: createMockDragProps(),
-        glowingSquarePropsByIndex: {
-            0: {
-                isSelected: true,
-                isDraggingOver: true,
-            },
-        },
+        legalMovesForSelectedPieceByEndIndex: {},
         ...overrides,
     });
 }
