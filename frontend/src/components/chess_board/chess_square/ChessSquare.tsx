@@ -3,51 +3,42 @@ import { memo, type ReactNode } from 'react';
 import { indexToAlgebraicNotation } from '@grouchess/chess';
 
 import CaptureOverlay from './CaptureOverlay';
-import Legends from './Legends';
+import Legends, { type LegendVariant } from './Legends';
 
-import { getLegendsForIndex, getIsDarkSquare, getSquareVisualClasses } from '../../../utils/square';
 import { type GlowingSquareProps } from '../../../utils/types';
+import { getLegendsForIndex, getIsDarkSquare, getSquareVisualClasses } from '../utils/square';
 
 const CHESS_SQUARE_BASE_CLASSES =
     'relative aspect-square cursor-pointer flex items-center justify-center transition-colors group';
 
 export type ChessSquareProps = {
     index: number;
-    glowingSquareProps: GlowingSquareProps;
-    hideContent?: boolean;
-    onClick: () => void;
+    glowingSquareProps?: GlowingSquareProps;
     children: ReactNode;
     isFlipped: boolean;
 };
 
-function ChessSquare({
-    index,
-    glowingSquareProps,
-    hideContent = false,
-    onClick,
-    children,
-    isFlipped,
-}: ChessSquareProps) {
+function ChessSquare({ index, glowingSquareProps = {}, children, isFlipped }: ChessSquareProps) {
     const isDarkSquare = getIsDarkSquare(index);
     const legends = getLegendsForIndex(index, isFlipped);
 
-    const { isPreviousMove, isSelected, canCapture } = glowingSquareProps;
+    const { isSelected, canCapture, isPreviousMove, isDraggingOver } = glowingSquareProps;
     const squareVisualClasses = getSquareVisualClasses(glowingSquareProps, isDarkSquare);
     const showCaptureOverlay = !isSelected && Boolean(canCapture);
 
+    const shouldUseDarkLegends = isPreviousMove || isSelected || !isDarkSquare || isDraggingOver;
+    const legendVariant: LegendVariant = shouldUseDarkLegends ? 'dark' : 'light';
+
     return (
-        <button
-            type="button"
-            onClick={onClick}
+        <div
+            role="gridcell"
             aria-label={indexToAlgebraicNotation(index)}
             className={`${CHESS_SQUARE_BASE_CLASSES} ${squareVisualClasses}`}
         >
             {showCaptureOverlay ? <CaptureOverlay isDarkSquare={isDarkSquare} /> : null}
-            {!hideContent ? children : null}
-            {legends ? (
-                <Legends {...legends} isDarkSquare={isDarkSquare} isPreviousMoveSquare={Boolean(isPreviousMove)} />
-            ) : null}
-        </button>
+            {children}
+            {legends ? <Legends {...legends} variant={legendVariant} /> : null}
+        </div>
     );
 }
 
@@ -55,9 +46,7 @@ export function arePropsEqual(prevProps: ChessSquareProps, nextProps: ChessSquar
     // Compare primitive props
     if (
         prevProps.index !== nextProps.index ||
-        prevProps.hideContent !== nextProps.hideContent ||
         prevProps.isFlipped !== nextProps.isFlipped ||
-        prevProps.onClick !== nextProps.onClick ||
         prevProps.children !== nextProps.children
     ) {
         return false;
@@ -67,6 +56,17 @@ export function arePropsEqual(prevProps: ChessSquareProps, nextProps: ChessSquar
     const prevGlowing = prevProps.glowingSquareProps;
     const nextGlowing = nextProps.glowingSquareProps;
 
+    // if both are undefined or same reference
+    if (prevGlowing === nextGlowing) {
+        return true;
+    }
+
+    // if one is undefined
+    if (!prevGlowing || !nextGlowing) {
+        return false;
+    }
+
+    // Both are defined, compare their properties
     return (
         prevGlowing.isPreviousMove === nextGlowing.isPreviousMove &&
         prevGlowing.isSelected === nextGlowing.isSelected &&

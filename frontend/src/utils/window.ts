@@ -57,3 +57,25 @@ export function returnToMainMenu(): void {
     }
     window.location.href = '/';
 }
+
+export function addEventListener<K extends keyof WindowEventMap>(
+    type: K,
+    listener: (this: Window, ev: WindowEventMap[K]) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    options?: boolean | AddEventListenerOptions
+): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    window.addEventListener(type, listener, options);
+}
+
+export function removeEventListener<K extends keyof WindowEventMap>(
+    type: K,
+    listener: (this: Window, ev: WindowEventMap[K]) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    options?: boolean | EventListenerOptions
+): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    window.removeEventListener(type, listener, options);
+}

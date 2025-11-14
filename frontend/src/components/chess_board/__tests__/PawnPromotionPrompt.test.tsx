@@ -6,7 +6,7 @@ import { ChessGameContext, type ChessGameContextType } from '../../../providers/
 import { createMockChessGameContextValues } from '../../../providers/__mocks__/ChessGameRoomProvider';
 import PawnPromotionPrompt, {
     getPawnPromotionOptions,
-    getPromptPositionAndSize,
+    getPromptPosition,
     type PawnPromotionPromptProps,
 } from '../PawnPromotionPrompt';
 import type { PromotionCardProps } from '../PromotionCard';
@@ -37,24 +37,12 @@ type RenderPawnPromotionPromptOptions = {
     chessGameContextValues?: ChessGameContextType;
 };
 
-const defaultBoardRect: DOMRect = {
-    width: 800,
-    height: 800,
-    top: 0,
-    left: 0,
-    right: 800,
-    bottom: 800,
-    x: 0,
-    y: 0,
-    toJSON: () => {},
-};
-
 function renderPawnPromotionPrompt({
     propOverrides = {},
     chessGameContextValues = createMockChessGameContextValues(),
 }: RenderPawnPromotionPromptOptions = {}) {
     const defaultProps: PawnPromotionPromptProps = {
-        boardRect: defaultBoardRect,
+        squareSize: 100,
         promotionIndex: 0,
         color: 'white' as const,
         onDismiss: vi.fn(),
@@ -103,7 +91,9 @@ describe('PawnPromotionPrompt', () => {
         });
     });
 
-    describe('getPromptPositionAndSize', () => {
+    describe('getPromptPosition', () => {
+        const squareSize = 100;
+
         it.each([
             {
                 scenario: 'white pawn at top-left corner, normal orientation',
@@ -156,19 +146,19 @@ describe('PawnPromotionPrompt', () => {
         ])(
             'calculates correct position for $scenario',
             ({ promotionIndex, color, isFlipped, expectedTop, expectedLeft }) => {
-                const result = getPromptPositionAndSize(defaultBoardRect, promotionIndex, color, isFlipped, 4);
+                const result = getPromptPosition(squareSize, promotionIndex, color, isFlipped, 4);
                 expect(result.top).toBe(expectedTop);
                 expect(result.left).toBe(expectedLeft);
             }
         );
 
-        it('returns correct square size based on board width', () => {
-            const result = getPromptPositionAndSize(defaultBoardRect, 0, 'white', false, 4);
-            expect(result.squareSize).toBe(100); // 800 / 8
+        it('returns the provided square size', () => {
+            const result = getPromptPosition(squareSize, 0, 'white', false, 4);
+            expect(result.squareSize).toBe(100);
         });
 
         it('calculates correct height for promotion card based on number of options', () => {
-            const result = getPromptPositionAndSize(defaultBoardRect, 0, 'white', false, 4);
+            const result = getPromptPosition(squareSize, 0, 'white', false, 4);
             expect(result.squareSize * 4).toBe(400); // squareSize (100) * numOptions (4)
         });
     });
@@ -230,21 +220,9 @@ describe('PawnPromotionPrompt', () => {
         });
 
         it('passes calculated position and size to PromotionCard', async () => {
-            const boardRect: DOMRect = {
-                width: 800,
-                height: 800,
-                top: 0,
-                left: 0,
-                right: 800,
-                bottom: 800,
-                x: 0,
-                y: 0,
-                toJSON: () => {},
-            };
-
             const { getByTestId } = await renderPawnPromotionPrompt({
                 propOverrides: {
-                    boardRect,
+                    squareSize: 100,
                     promotionIndex: 0,
                     color: 'white',
                     isFlipped: false,
@@ -355,22 +333,10 @@ describe('PawnPromotionPrompt', () => {
     });
 
     describe('Edge Cases', () => {
-        it('handles non-square board rectangles gracefully', async () => {
-            const nonSquareRect: DOMRect = {
-                width: 800,
-                height: 600, // Different height
-                top: 0,
-                left: 0,
-                right: 800,
-                bottom: 600,
-                x: 0,
-                y: 0,
-                toJSON: () => {},
-            };
-
+        it('handles different square sizes correctly', async () => {
             const { getByTestId } = await renderPawnPromotionPrompt({
                 propOverrides: {
-                    boardRect: nonSquareRect,
+                    squareSize: 75,
                     promotionIndex: 0,
                     color: 'white',
                 },
@@ -379,9 +345,8 @@ describe('PawnPromotionPrompt', () => {
             const promotionCard = getByTestId('promotion-card');
             await expect.element(promotionCard).toBeInTheDocument();
 
-            // Should use width for square size calculation (800 / 8 = 100)
             const squareSizeText = promotionCard.getByText(/squareSize:/);
-            await expect.element(squareSizeText).toHaveTextContent('100');
+            await expect.element(squareSizeText).toHaveTextContent('75');
         });
     });
 

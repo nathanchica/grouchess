@@ -8,8 +8,6 @@ import ChessPiece, { arePropsEqual } from '../ChessPiece';
 const defaultProps = {
     piece: { alias: 'P' } as Piece,
     showTextDisplay: false,
-    onPointerDown: vi.fn(),
-    onImgLoadError: vi.fn(),
 };
 
 type RenderChessPieceOptions = {
@@ -29,9 +27,67 @@ function renderChessPiece({
 }
 
 describe('ChessPiece', () => {
-    describe('Text Display Mode', () => {
-        it('renders span with piece alias when showTextDisplay is true', async () => {
-            const { getByText } = await renderChessPiece({
+    describe('Fallback Text Display', () => {
+        it('switches to text display when image fails to load', async () => {
+            const { getByRole, getByText } = await renderChessPiece({
+                propOverrides: {
+                    piece: { alias: 'P' } as Piece,
+                },
+            });
+
+            const image = getByRole('img', { name: /white pawn/i });
+            await expect.element(image).toBeInTheDocument();
+
+            // Trigger the error event
+            const errorEvent = new Event('error');
+            image.element().dispatchEvent(errorEvent);
+
+            // Should now show text display
+            const pieceElement = getByText('P');
+            await expect.element(pieceElement).toBeInTheDocument();
+            expect(pieceElement).toHaveTextContent('P');
+        });
+
+        it('text fallback has correct aria-label from piece data', async () => {
+            const { getByRole, getByText } = await renderChessPiece({
+                propOverrides: {
+                    piece: { alias: 'P' } as Piece,
+                },
+            });
+
+            const image = getByRole('img', { name: /white pawn/i });
+
+            // Trigger the error event
+            const errorEvent = new Event('error');
+            image.element().dispatchEvent(errorEvent);
+
+            const pieceElement = getByText('P');
+            await expect.element(pieceElement).toBeInTheDocument();
+            expect(pieceElement).toHaveAttribute('aria-label', 'White Pawn');
+        });
+
+        it('does not render image after switching to text mode', async () => {
+            const { getByRole } = await renderChessPiece({
+                propOverrides: {
+                    piece: { alias: 'P' } as Piece,
+                },
+            });
+
+            const image = getByRole('img', { name: /white pawn/i });
+
+            // Trigger the error event
+            const errorEvent = new Event('error');
+            image.element().dispatchEvent(errorEvent);
+
+            // Image should no longer be in the document
+            const images = getByRole('img', { includeHidden: true });
+            await expect.element(images).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Optional showTextDisplay Prop', () => {
+        it('renders text display when showTextDisplay is true', async () => {
+            const { getByText, getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'P' } as Piece,
                     showTextDisplay: true,
@@ -41,39 +97,31 @@ describe('ChessPiece', () => {
             const pieceElement = getByText('P');
             await expect.element(pieceElement).toBeInTheDocument();
             expect(pieceElement).toHaveTextContent('P');
-        });
-
-        it('span has correct aria-label from piece data', async () => {
-            const { getByText } = await renderChessPiece({
-                propOverrides: {
-                    piece: { alias: 'P' } as Piece,
-                    showTextDisplay: true,
-                },
-            });
-
-            const pieceElement = getByText('P');
             expect(pieceElement).toHaveAttribute('aria-label', 'White Pawn');
-        });
 
-        it('does not render image when in text mode', async () => {
-            const { getByRole } = await renderChessPiece({
-                propOverrides: {
-                    piece: { alias: 'P' } as Piece,
-                    showTextDisplay: true,
-                },
-            });
-
+            // Should not render image
             const images = getByRole('img', { includeHidden: true });
             await expect.element(images).not.toBeInTheDocument();
         });
-    });
 
-    describe('Image Display Mode', () => {
         it('renders image when showTextDisplay is false', async () => {
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'P' } as Piece,
                     showTextDisplay: false,
+                },
+            });
+
+            const image = getByRole('img', { name: /white pawn/i });
+            await expect.element(image).toBeInTheDocument();
+        });
+    });
+
+    describe('Image Display Mode', () => {
+        it('renders image by default', async () => {
+            const { getByRole } = await renderChessPiece({
+                propOverrides: {
+                    piece: { alias: 'P' } as Piece,
                 },
             });
 
@@ -90,7 +138,6 @@ describe('ChessPiece', () => {
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'P' } as Piece,
-                    showTextDisplay: false,
                 },
                 imageContextValues: mockImageContextValues,
             });
@@ -106,7 +153,6 @@ describe('ChessPiece', () => {
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'P' } as Piece,
-                    showTextDisplay: false,
                 },
                 imageContextValues: mockImageContextValues,
             });
@@ -119,7 +165,6 @@ describe('ChessPiece', () => {
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'Q' } as Piece,
-                    showTextDisplay: false,
                 },
             });
 
@@ -131,7 +176,6 @@ describe('ChessPiece', () => {
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'P' } as Piece,
-                    showTextDisplay: false,
                 },
             });
 
@@ -143,66 +187,12 @@ describe('ChessPiece', () => {
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias: 'P' } as Piece,
-                    showTextDisplay: false,
                 },
             });
 
             const image = getByRole('img', { name: /white pawn/i });
             expect(image).toHaveAttribute('loading', 'eager');
             expect(image).toHaveAttribute('decoding', 'async');
-        });
-    });
-
-    describe('Event Handlers', () => {
-        it('calls onPointerDown when pointer down event occurs on image', async () => {
-            const onPointerDown = vi.fn();
-            const { getByRole } = await renderChessPiece({
-                propOverrides: {
-                    piece: { alias: 'P' } as Piece,
-                    showTextDisplay: false,
-                    onPointerDown,
-                },
-            });
-
-            const image = getByRole('img', { name: /white pawn/i });
-            await image.click();
-
-            expect(onPointerDown).toHaveBeenCalledOnce();
-        });
-
-        it('calls onImgLoadError when image fails to load', async () => {
-            const onImgLoadError = vi.fn();
-            const { getByRole } = await renderChessPiece({
-                propOverrides: {
-                    piece: { alias: 'P' } as Piece,
-                    showTextDisplay: false,
-                    onImgLoadError,
-                },
-            });
-
-            const image = getByRole('img', { name: /white pawn/i });
-
-            // Trigger the error event
-            const errorEvent = new Event('error');
-            image.element().dispatchEvent(errorEvent);
-
-            expect(onImgLoadError).toHaveBeenCalledOnce();
-        });
-
-        it('does not call onPointerDown in text display mode', async () => {
-            const onPointerDown = vi.fn();
-            const { getByText } = await renderChessPiece({
-                propOverrides: {
-                    piece: { alias: 'P' } as Piece,
-                    showTextDisplay: true,
-                    onPointerDown,
-                },
-            });
-
-            const pieceElement = getByText('P');
-            await pieceElement.click();
-
-            expect(onPointerDown).not.toHaveBeenCalled();
         });
     });
 
@@ -233,22 +223,9 @@ describe('ChessPiece', () => {
                 expectedImgSrc: '/pieces/staunty/bK.svg',
             },
         ])('renders correctly for $scenario', async ({ alias, expectedAltText, expectedImgSrc }) => {
-            // Test text mode
-            const { getByText } = await renderChessPiece({
-                propOverrides: {
-                    piece: { alias } as Piece,
-                    showTextDisplay: true,
-                },
-            });
-
-            const textElement = getByText(alias);
-            await expect.element(textElement).toBeInTheDocument();
-            expect(textElement).toHaveAttribute('aria-label', expectedAltText);
-
             const { getByRole } = await renderChessPiece({
                 propOverrides: {
                     piece: { alias } as Piece,
-                    showTextDisplay: false,
                 },
             });
 
@@ -261,12 +238,26 @@ describe('ChessPiece', () => {
 });
 
 describe('arePropsEqual', () => {
-    it('returns true for identical props', () => {
+    it('returns true when piece alias and showTextDisplay are the same', () => {
         const propsA = {
-            ...defaultProps,
+            piece: { alias: 'P' } as Piece,
+            showTextDisplay: false,
         };
         const propsB = {
-            ...propsA,
+            piece: { alias: 'P' } as Piece,
+            showTextDisplay: false,
+        };
+
+        const result = arePropsEqual(propsA, propsB);
+        expect(result).toBe(true);
+    });
+
+    it('returns true when both props are undefined for showTextDisplay', () => {
+        const propsA = {
+            piece: { alias: 'P' } as Piece,
+        };
+        const propsB = {
+            piece: { alias: 'P' } as Piece,
         };
 
         const result = arePropsEqual(propsA, propsB);
@@ -276,34 +267,15 @@ describe('arePropsEqual', () => {
     it.each([
         {
             scenario: 'different piece alias',
-            propsAOverrides: { piece: { alias: 'P' } as Piece },
-            propsBOverrides: { piece: { alias: 'N' } as Piece },
+            propsA: { piece: { alias: 'P' } as Piece },
+            propsB: { piece: { alias: 'N' } as Piece },
         },
         {
             scenario: 'different showTextDisplay',
-            propsAOverrides: { showTextDisplay: false },
-            propsBOverrides: { showTextDisplay: true },
+            propsA: { piece: { alias: 'P' } as Piece, showTextDisplay: false },
+            propsB: { piece: { alias: 'P' } as Piece, showTextDisplay: true },
         },
-        {
-            scenario: 'different onPointerDown',
-            propsAOverrides: { onPointerDown: vi.fn() },
-            propsBOverrides: { onPointerDown: vi.fn() },
-        },
-        {
-            scenario: 'different onImgLoadError',
-            propsAOverrides: { onImgLoadError: vi.fn() },
-            propsBOverrides: { onImgLoadError: vi.fn() },
-        },
-    ])('returns false when piece alias differs', ({ propsAOverrides, propsBOverrides }) => {
-        const propsA = {
-            ...defaultProps,
-            ...propsAOverrides,
-        };
-        const propsB = {
-            ...propsA,
-            ...propsBOverrides,
-        };
-
+    ])('returns false when $scenario', ({ propsA, propsB }) => {
         const result = arePropsEqual(propsA, propsB);
         expect(result).toBe(false);
     });

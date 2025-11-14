@@ -4,6 +4,7 @@ import { NUM_COLS, NUM_ROWS, type RowCol } from '@grouchess/models';
 
 /**
  * Gets the row and column on the board from x and y coordinates.
+ * Considers whether the board is flipped.
  */
 export function getRowColFromXY(x: number, y: number, squareSize: number, isFlipped: boolean): RowCol {
     const row = Math.floor(y / squareSize);
@@ -23,4 +24,11 @@ export function xyFromPointerEvent(
         x: event.clientX - rect.left,
         y: event.clientY - rect.top,
     };
+}
+
+/**
+ * Gets the size of a square on the chess board from the board's bounding rectangle.
+ */
+export function getSquareSizeFromBoardRect(boardRect: DOMRect): number {
+    return boardRect.width / NUM_COLS;
 }

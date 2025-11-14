@@ -1,6 +1,7 @@
 import type { PointerEvent } from 'react';
 
-import { getRowColFromXY, xyFromPointerEvent } from '../board';
+import { createMockDOMRect } from '../__mocks__/board';
+import { getRowColFromXY, getSquareSizeFromBoardRect, xyFromPointerEvent } from '../board';
 
 describe('getRowColFromXY', () => {
     describe('Non-flipped Board', () => {
@@ -228,5 +229,38 @@ describe('xyFromPointerEvent', () => {
             const imgResult = xyFromPointerEvent(imgEvent, rect);
             expect(imgResult).toEqual({ x: 150, y: 150 });
         });
+    });
+});
+
+describe('getSquareSizeFromBoardRect', () => {
+    it.each([
+        {
+            scenario: 'returns correct square size for standard 480x480 board',
+            width: 480,
+            height: 480,
+            expected: 60,
+        },
+        {
+            scenario: 'returns correct square size for larger board',
+            width: 800,
+            height: 800,
+            expected: 100,
+        },
+        {
+            scenario: 'returns correct square size for smaller board',
+            width: 320,
+            height: 320,
+            expected: 40,
+        },
+        {
+            scenario: 'handles fractional square sizes',
+            width: 500,
+            height: 500,
+            expected: 62.5,
+        },
+    ])('$scenario', ({ width, height, expected }) => {
+        const boardRect = createMockDOMRect(width, height);
+        const squareSize = getSquareSizeFromBoardRect(boardRect);
+        expect(squareSize).toBe(expected);
     });
 });
