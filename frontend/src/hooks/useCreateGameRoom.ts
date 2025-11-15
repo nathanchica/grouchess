@@ -41,7 +41,7 @@ export function useCreateGameRoom(): UseCreateGameRoomPayload {
                 successSchema: CreateGameRoomResponseSchema,
                 errorSchema: ErrorResponseSchema,
                 body: {
-                    displayName: displayName as string, // if actually null, schema will default it to "Player 1"
+                    displayName: displayName,
                     color,
                     timeControlAlias,
                     roomType,

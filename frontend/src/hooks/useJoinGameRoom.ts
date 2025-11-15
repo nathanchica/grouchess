@@ -37,7 +37,7 @@ export function useJoinGameRoom(roomId: string): UseJoinGameRoomPayload {
                 successSchema: JoinGameRoomResponseSchema,
                 errorSchema: ErrorResponseSchema,
                 body: {
-                    displayName: displayName as string, // if actually null/undefined, schema will default it to "Player 2"
+                    displayName,
                 },
                 errorMessage: 'Unable to join game room right now.',
                 onSuccess,

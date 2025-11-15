@@ -29,7 +29,7 @@ export type FetchWithSchemasOptions<
     requestSchema?: RequestSchema;
     successSchema: SuccessSchema;
     errorSchema?: ErrorSchema;
-    body?: RequestSchema extends z.ZodType ? z.infer<RequestSchema> : undefined;
+    body?: RequestSchema extends z.ZodType ? z.input<RequestSchema> : undefined;
     /**
      * Additional fetch options excluding method, body, and headers which are managed by this helper.
      */
