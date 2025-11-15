@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { PieceColor, RoomType, TimeControl } from '@grouchess/models';
+import type { PieceColor, RoomType, TimeControl, WaitingRoom } from '@grouchess/models';
 import { useNavigate } from 'react-router';
 
 import DisplayNameForm from './DisplayNameForm';
@@ -8,7 +8,6 @@ import SideSelectForm from './SideSelectForm';
 import TimeControlForm from './time_control_form/TimeControlForm';
 
 import { useCreateGameRoom } from '../../hooks/useCreateGameRoom';
-import type { WaitingRoom } from '../../utils/types';
 import Spinner from '../common/Spinner';
 
 const ROOM_OPTION_CLASSES =

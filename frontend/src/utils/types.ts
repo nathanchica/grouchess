@@ -1,11 +1,4 @@
-import type { BoardIndex, ChessGame, ChessGameRoom, Move, Player } from '@grouchess/models';
-
-export type WaitingRoom = {
-    roomId: ChessGameRoom['id'];
-    playerId: Player['id'];
-    token: string;
-    isCreator?: boolean;
-};
+import type { BoardIndex, ChessGame, Move } from '@grouchess/models';
 
 export type PendingPromotion = {
     move: Move;

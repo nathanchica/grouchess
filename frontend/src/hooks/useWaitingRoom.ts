@@ -1,22 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { WaitingRoomSchema, type WaitingRoom } from '@grouchess/models';
 import { useLocation } from 'react-router';
 
 import { useAuth } from '../providers/AuthProvider';
 import { useSocket } from '../providers/SocketProvider';
-import type { WaitingRoom } from '../utils/types';
+import { getStoredValue, setStoredValue } from '../utils/window';
 
 function isWaitingRoomData(data: unknown): data is WaitingRoom {
-    return Boolean(
-        data &&
-            typeof data === 'object' &&
-            'roomId' in data &&
-            typeof data.roomId === 'string' &&
-            'token' in data &&
-            typeof data.token === 'string' &&
-            'playerId' in data &&
-            typeof data.playerId === 'string'
-    );
+    return WaitingRoomSchema.safeParse(data).success;
 }
 
 type Payload = {
@@ -46,17 +38,9 @@ export function useWaitingRoom(roomId: string): Payload {
             return locationState;
         }
 
-        const stored = sessionStorage.getItem(sessionStorageKey);
-        if (stored) {
-            try {
-                const storedData = JSON.parse(stored);
-                if (isWaitingRoomData(storedData)) {
-                    return storedData;
-                }
-            } catch {
-                console.warn('Failed to parse waiting room data from session storage');
-                return null;
-            }
+        const storedData = getStoredValue('sessionStorage', sessionStorageKey, null);
+        if (storedData && isWaitingRoomData(storedData)) {
+            return storedData;
         }
 
         return null;
@@ -89,7 +73,7 @@ export function useWaitingRoom(roomId: string): Payload {
      */
     useEffect(() => {
         if (waitingRoomData) {
-            sessionStorage.setItem(sessionStorageKey, JSON.stringify(waitingRoomData));
+            setStoredValue('sessionStorage', sessionStorageKey, waitingRoomData);
             loadAuthData({
                 roomId: waitingRoomData.roomId,
                 playerId: waitingRoomData.playerId,
