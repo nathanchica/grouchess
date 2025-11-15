@@ -8,25 +8,14 @@ import DisplayNameForm from './DisplayNameForm';
 
 import { useJoinGameRoom } from '../../hooks/useJoinGameRoom';
 import { getEnv } from '../../utils/config';
-import { getCachedPromise } from '../../utils/fetch';
-
-const GAME_ROOM_BASE_URL = `${getEnv().VITE_API_BASE_URL}/room`;
+import { getCachedPromise, fetchWithSchemasOrThrow } from '../../utils/fetch';
 
 async function fetchRoomBasicInfo(roomId: string): Promise<GetGameRoomBasicInfoResponse> {
-    const response = await fetch(`${GAME_ROOM_BASE_URL}/${roomId}`);
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch room info.');
-    }
-
-    const data = await response.json();
-    const parsedData = GetGameRoomBasicInfoResponseSchema.safeParse(data);
-
-    if (!parsedData.success) {
-        throw new Error('Failed to parse room info.');
-    }
-
-    return parsedData.data;
+    const url = `${getEnv().VITE_API_BASE_URL}/room/${roomId}`;
+    return fetchWithSchemasOrThrow(url, {
+        successSchema: GetGameRoomBasicInfoResponseSchema,
+        errorMessage: 'Failed to fetch room info.',
+    });
 }
 
 export type ChallengerWaitingRoomProps = {

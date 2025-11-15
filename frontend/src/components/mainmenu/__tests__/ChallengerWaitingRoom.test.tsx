@@ -7,7 +7,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { render } from 'vitest-browser-react';
 
 import * as useJoinGameRoomModule from '../../../hooks/useJoinGameRoom';
-import { _resetPromiseCacheForTesting } from '../../../utils/fetch';
+import { _resetPromiseCacheForTesting, fetchWithSchemasOrThrow } from '../../../utils/fetch';
 import ChallengerWaitingRoom from '../ChallengerWaitingRoom';
 
 const mockNavigate = vi.fn();
@@ -17,25 +17,20 @@ vi.mock('react-router', () => ({
 
 vi.mock('../../../hooks/useJoinGameRoom', { spy: true });
 
-const mockGetGameRoomBasicInfoParsedResponse: GetGameRoomBasicInfoResponse = {
+vi.mock('../../../utils/fetch', async () => {
+    const actual = await vi.importActual('../../../utils/fetch');
+    return {
+        ...actual,
+        fetchWithSchemasOrThrow: vi.fn(),
+    };
+});
+
+const fetchWithSchemasOrThrowMock = vi.mocked(fetchWithSchemasOrThrow);
+
+const mockGetGameRoomBasicInfoResponse: GetGameRoomBasicInfoResponse = {
     roomId: 'test-room-123',
     timeControl: createMockTimeControl(),
 };
-
-type CreateFetchResponseArgs = {
-    data?: GetGameRoomBasicInfoResponse | null;
-    ok?: boolean;
-};
-
-function createFetchResponse({
-    data = mockGetGameRoomBasicInfoParsedResponse,
-    ok = true,
-}: CreateFetchResponseArgs = {}): Response {
-    return {
-        ok,
-        json: vi.fn().mockResolvedValue(data),
-    } as unknown as Response;
-}
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -47,8 +42,6 @@ const defaultProps = {
     onJoinGameRoom: vi.fn(),
 };
 
-const defaultFetchResponse: Response = createFetchResponse();
-
 function renderWithErrorBoundary(component: ReactNode) {
     return render(<ErrorBoundary fallbackRender={({ error }) => <p>{error.message}</p>}>{component}</ErrorBoundary>);
 }
@@ -56,7 +49,7 @@ function renderWithErrorBoundary(component: ReactNode) {
 describe('ChallengerWaitingRoom', () => {
     describe('Render', () => {
         it('renders', async () => {
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
             const { getByRole, getByPlaceholder } = await render(<ChallengerWaitingRoom {...defaultProps} />);
             await expect.element(getByRole('heading', { name: 'Join Game' })).toBeInTheDocument();
             await expect.element(getByPlaceholder('Enter your display name')).toBeInTheDocument();
@@ -88,8 +81,7 @@ describe('ChallengerWaitingRoom', () => {
                 roomId,
                 timeControl: timeControl as TimeControl | null,
             };
-            const fetchResponse = createFetchResponse({ data: mockData });
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(fetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockData);
 
             const { getByText } = await render(<ChallengerWaitingRoom {...defaultProps} roomId={roomId} />);
 
@@ -100,30 +92,27 @@ describe('ChallengerWaitingRoom', () => {
 
     describe('Room Info Fetching', () => {
         it('fetches room info on mount', async () => {
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
             await render(<ChallengerWaitingRoom {...defaultProps} />);
-            expect(window.fetch).toHaveBeenCalledWith(expect.stringContaining('/room/test-room-123'));
+            expect(fetchWithSchemasOrThrowMock).toHaveBeenCalledWith(
+                expect.stringContaining('/room/test-room-123'),
+                expect.objectContaining({
+                    errorMessage: 'Failed to fetch room info.',
+                })
+            );
         });
 
         it('throws error if fetch fails', async () => {
             vi.spyOn(console, 'error').mockImplementation(() => {}); // Suppress error boundary logging
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(createFetchResponse({ ok: false }));
+            fetchWithSchemasOrThrowMock.mockRejectedValue(new Error('Failed to fetch room info.'));
             const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
             await expect.element(getByText('Failed to fetch room info.')).toBeInTheDocument();
-        });
-
-        it('throws error if response parsing fails', async () => {
-            vi.spyOn(console, 'error').mockImplementation(() => {}); // Suppress error boundary logging
-            const invalidFetchResponse = createFetchResponse({ data: null });
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(invalidFetchResponse);
-            const { getByText } = await renderWithErrorBoundary(<ChallengerWaitingRoom {...defaultProps} />);
-            await expect.element(getByText('Failed to parse room info.')).toBeInTheDocument();
         });
     });
 
     describe('Display Name Form', () => {
         it('updates display name state on input change', async () => {
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
             const { getByPlaceholder } = await render(<ChallengerWaitingRoom {...defaultProps} />);
             const input = getByPlaceholder('Enter your display name');
             await expect.element(input).toHaveValue('');
@@ -148,7 +137,7 @@ describe('ChallengerWaitingRoom', () => {
                 loading: false,
                 error: null,
             });
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
             const mockOnJoinGameRoom = vi.fn();
 
             const { getByRole } = await render(
@@ -174,7 +163,7 @@ describe('ChallengerWaitingRoom', () => {
                 loading: false,
                 error: null,
             });
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
 
             const { getByRole } = await render(<ChallengerWaitingRoom {...defaultProps} />);
 
@@ -190,7 +179,7 @@ describe('ChallengerWaitingRoom', () => {
                 loading: true,
                 error: null,
             });
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
 
             const { getByRole } = await render(<ChallengerWaitingRoom {...defaultProps} />);
 
@@ -201,7 +190,7 @@ describe('ChallengerWaitingRoom', () => {
 
     describe('Back Button', () => {
         it('navigates back on button click', async () => {
-            vi.spyOn(window, 'fetch').mockResolvedValueOnce(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetGameRoomBasicInfoResponse);
             const { getByRole } = await render(<ChallengerWaitingRoom {...defaultProps} />);
             const button = getByRole('button', { name: 'Back' });
             await button.click();

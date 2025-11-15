@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 
+import {
+    CreateGameRoomRequestSchema,
+    CreateGameRoomResponseSchema,
+    ErrorResponseSchema,
+    type CreateGameRoomResponse,
+} from '@grouchess/http-schemas';
 import type { PieceColor, RoomType } from '@grouchess/models';
+
+import { useFetchWithSchema } from './useFetchWithSchema';
 
 import { getEnv } from '../utils/config';
 
-type CreateGameRoomResponse = {
-    roomId: string;
-    playerId: string;
-    token: string;
-};
-
-type CreateGameRoomParams = {
+export type CreateGameRoomParams = {
     displayName: string | null;
     color: PieceColor | null;
     timeControlAlias: string | null;
@@ -21,116 +23,35 @@ type CreateGameRoomParams = {
 
 export type CreateGameRoomFn = (params: CreateGameRoomParams) => Promise<CreateGameRoomResponse | null>;
 
-type Payload = {
+export type UseCreateGameRoomPayload = {
     createGameRoom: CreateGameRoomFn;
     loading: boolean;
     error: Error | null;
 };
 
-const GAME_ROOM_URL = `${getEnv().VITE_API_BASE_URL}/room`;
-
-export function useCreateGameRoom(): Payload {
-    // Dual loading tracking: state for UI reactivity, ref for race condition prevention
-    // - loading state triggers re-renders for UI updates (spinners, disabled buttons)
-    // - loadingRef prevents duplicate requests without causing dependency array issues
-    const [loading, setLoading] = useState<boolean>(false);
-    const loadingRef = useRef(false);
-
-    const [error, setError] = useState<Error | null>(null);
-    const isMountedRef = useRef(true);
-
-    useEffect(() => {
-        isMountedRef.current = true;
-        return () => {
-            isMountedRef.current = false;
-        };
-    }, []);
+export function useCreateGameRoom(): UseCreateGameRoomPayload {
+    const { execute, loading, error } = useFetchWithSchema();
 
     const createGameRoom = useCallback<CreateGameRoomFn>(
         async ({ displayName, color, timeControlAlias, roomType, onSuccess, onError }) => {
-            // Prevent duplicate requests
-            if (loadingRef.current) {
-                return null;
-            }
-
-            if (!isMountedRef.current) {
-                return null;
-            }
-
-            loadingRef.current = true;
-            setLoading(true);
-            setError(null);
-
-            try {
-                const response = await fetch(GAME_ROOM_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        displayName,
-                        color,
-                        timeControlAlias,
-                        roomType,
-                    }),
-                });
-
-                const responseText = await response.text();
-                let payload: unknown = null;
-                if (responseText) {
-                    try {
-                        payload = JSON.parse(responseText) as unknown;
-                    } catch {
-                        const parseError = new Error('Received invalid response when creating game room.');
-                        setError(parseError);
-                        onError?.(parseError);
-                        return null;
-                    }
-                }
-
-                if (!response.ok) {
-                    const errorMessage =
-                        payload &&
-                        typeof payload === 'object' &&
-                        payload !== null &&
-                        'error' in payload &&
-                        typeof (payload as { error?: unknown }).error === 'string'
-                            ? (payload as { error: string }).error
-                            : 'Unable to create game room right now.';
-                    const responseError = new Error(errorMessage);
-                    setError(responseError);
-                    onError?.(responseError);
-                    return null;
-                }
-
-                const data = payload as CreateGameRoomResponse | null;
-                if (
-                    !data ||
-                    typeof data.roomId !== 'string' ||
-                    typeof data.playerId !== 'string' ||
-                    typeof data.token !== 'string'
-                ) {
-                    const validationError = new Error('Missing data when creating game room.');
-                    setError(validationError);
-                    onError?.(validationError);
-                    return null;
-                }
-
-                setError(null);
-                onSuccess?.(data);
-                return data;
-            } catch (caughtError) {
-                const errorInstance =
-                    caughtError instanceof Error ? caughtError : new Error('Failed to create game room.');
-                setError(errorInstance);
-                onError?.(errorInstance);
-                return null;
-            } finally {
-                if (isMountedRef.current) {
-                    loadingRef.current = false;
-                    setLoading(false);
-                }
-            }
+            return execute({
+                url: `${getEnv().VITE_API_BASE_URL}/room`,
+                method: 'POST',
+                requestSchema: CreateGameRoomRequestSchema,
+                successSchema: CreateGameRoomResponseSchema,
+                errorSchema: ErrorResponseSchema,
+                body: {
+                    displayName: displayName,
+                    color,
+                    timeControlAlias,
+                    roomType,
+                },
+                errorMessage: 'Unable to create game room right now.',
+                onSuccess,
+                onError,
+            });
         },
-        []
+        [execute]
     );
 
     return {
