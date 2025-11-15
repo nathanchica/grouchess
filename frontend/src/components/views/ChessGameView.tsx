@@ -9,11 +9,11 @@ import SoundEffects from '../controllers/SoundEffects';
 import GameInfoPanel from '../game_info_panel/GameInfoPanel';
 import PlayersInfoSection from '../players_info_section/PlayersInfoSection';
 
-type Props = {
+export type ChessGameViewProps = {
     initialChessGameRoomData: ChessGameRoomState;
 };
 
-function ChessGameView({ initialChessGameRoomData: initialData }: Props) {
+function ChessGameView({ initialChessGameRoomData: initialData }: ChessGameViewProps) {
     const { gameRoom, clockState, messages: initialMessages } = initialData;
     const { type } = gameRoom;
 
