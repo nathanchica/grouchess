@@ -401,7 +401,7 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
             ```
 
         - Prefer mutating the mock values returned by the factory function in order to easily mock a portion of a deep
-          object. Only use the `overrides` parameter for top-level primitive properties.
+          object. Don't use the overrides parameter.
 
             ```tsx
             // Good:
@@ -484,3 +484,47 @@ Guidelines from https://vitest.dev/guide/browser/component-testing.html
         });
     });
     ```
+
+- Mocking components
+    - Standard way to mock a child component:
+
+        ```ts
+        vi.mock(import('../../mainmenu/GameRoomFormHealthGate'), () => ({
+            default: vi.fn(({ onSelfPlayStart }: { onSelfPlayStart: (timeControl: TimeControl | null) => void }) => (
+                <div data-testid="game-room-form-health-gate">
+                    <button onClick={() => onSelfPlayStart(null)}>Start Self Play</button>
+                </div>
+            )),
+        }));
+        ```
+
+    - To change the mock implementation in a specific test case, use spyOn:
+
+        ```ts
+        import * as GameRoomFormHealthGateModule from '../../mainmenu/GameRoomFormHealthGate';
+
+        vi.mock(import('../../mainmenu/GameRoomFormHealthGate'), { spy: true });
+
+        vi.spyOn(GameRoomFormHealthGateModule, 'default').mockImplementation(
+            ({ onSelfPlayStart }: { onSelfPlayStart: (timeControl: TimeControl | null) => void }) => (
+                <div data-testid="game-room-form-health-gate">
+                    <button onClick={() => onSelfPlayStart(null)}>Start Self Play</button>
+                </div>
+            ),
+        );
+
+        it('renders error view when child component throws', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            // Change the mock to throw an error for this test
+            vi.spyOn(GameRoomFormHealthGateModule, 'default').mockImplementationOnce(() => {
+                throw new Error('Test error from child component');
+            });
+
+            const { getByTestId } = await renderMainMenuView();
+
+            // ErrorView should be displayed
+            const errorView = getByTestId('error-view');
+            await expect.element(errorView).toBeInTheDocument();
+        });
+        ```

@@ -11,7 +11,7 @@ import ErrorView from '../mainmenu/ErrorView';
 const WaitingRoomView = lazy(() => import('../mainmenu/WaitingRoomView'));
 const GameRoomFormHealthGate = lazy(() => import('../mainmenu/GameRoomFormHealthGate'));
 
-type Props = {
+export type MainMenuViewProps = {
     onSelfPlayStart: (timeControl: TimeControl | null) => void;
 };
 
@@ -21,7 +21,7 @@ type Props = {
  * If a roomId is present in the URL path, shows the WaitingRoomView for that room.
  * Otherwise, shows the GameRoomForm to create a new room.
  */
-function MainMenuView({ onSelfPlayStart }: Props) {
+function MainMenuView({ onSelfPlayStart }: MainMenuViewProps) {
     const { imgSrcMap } = useImages();
 
     const { imgSrc: rookImgSrc, altText: rookAltText } = aliasToPieceImageData['R'];
