@@ -39,7 +39,6 @@ export default defineConfig({
                         instances: [{ browser: 'chromium' }],
                         screenshotFailures: false,
                     },
-                    testTimeout: 3000,
                 },
             },
             {

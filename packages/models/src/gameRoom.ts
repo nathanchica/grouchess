@@ -33,3 +33,11 @@ export const ChessGameRoomSchema = GameRoomSchema.extend({
     colorToPlayerId: z.record(PieceColorEnum, PlayerSchema.shape.id.nullable()),
 });
 export type ChessGameRoom = z.infer<typeof ChessGameRoomSchema>;
+
+export const WaitingRoomSchema = z.object({
+    roomId: GameRoomSchema.shape.id,
+    playerId: PlayerSchema.shape.id,
+    token: z.string(),
+    isCreator: z.boolean().optional(),
+});
+export type WaitingRoom = z.infer<typeof WaitingRoomSchema>;

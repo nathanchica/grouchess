@@ -162,4 +162,78 @@ describe('useMonotonicClock', () => {
         // cancelAnimationFrame should have been called during cleanup
         expect(window.cancelAnimationFrame).toHaveBeenCalled();
     });
+
+    it('handles stop being called when clock was never started', async () => {
+        const { result } = await renderHook(() => useMonotonicClock());
+
+        // Stop without starting - should handle gracefully
+        result.current.stop();
+
+        // Should not throw and elapsedMs should remain 0
+        expect(result.current.elapsedMs).toBe(0);
+        expect(window.cancelAnimationFrame).not.toHaveBeenCalled();
+    });
+
+    it('handles stop being called multiple times consecutively', async () => {
+        const { result } = await renderHook(() => useMonotonicClock());
+
+        mockTime = 1000;
+        result.current.start();
+
+        mockTime = 1500;
+        await flushAnimationFrame();
+        await vi.waitFor(() => expect(result.current.elapsedMs).toBe(500));
+
+        // First stop
+        result.current.stop();
+        await vi.waitFor(() => expect(result.current.elapsedMs).toBe(500));
+        const firstStopCount = vi.mocked(window.cancelAnimationFrame).mock.calls.length;
+
+        // Second stop - should handle null refs gracefully
+        result.current.stop();
+        const secondStopCount = vi.mocked(window.cancelAnimationFrame).mock.calls.length;
+
+        // cancelAnimationFrame should not be called again on second stop
+        expect(secondStopCount).toBe(firstStopCount);
+        expect(result.current.elapsedMs).toBe(500);
+    });
+
+    it('does not update elapsedMs if animation frame fires after reset', async () => {
+        const { result } = await renderHook(() => useMonotonicClock());
+
+        mockTime = 1000;
+        result.current.start();
+
+        // Reset immediately (before animation frame fires)
+        result.current.reset();
+
+        // Advance time and flush animation frames
+        mockTime = 2000;
+        await flushAnimationFrame();
+
+        // elapsedMs should remain 0 because startTime was set to null by reset
+        expect(result.current.elapsedMs).toBe(0);
+    });
+
+    it('does not update elapsedMs if animation frame fires after stop', async () => {
+        const { result } = await renderHook(() => useMonotonicClock());
+
+        mockTime = 1000;
+        result.current.start();
+
+        mockTime = 1500;
+        await flushAnimationFrame();
+        await vi.waitFor(() => expect(result.current.elapsedMs).toBe(500));
+
+        // Stop the clock at 1500ms
+        result.current.stop();
+        await vi.waitFor(() => expect(result.current.elapsedMs).toBe(500));
+
+        // Try to flush more animation frames
+        mockTime = 3000;
+        await flushAnimationFrame();
+
+        // elapsedMs should remain at the stopped value (500ms)
+        expect(result.current.elapsedMs).toBe(500);
+    });
 });

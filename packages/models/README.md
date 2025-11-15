@@ -113,6 +113,7 @@ Located in: `src/gameRoom.ts`
     - `"player-vs-cpu"`
     - `"player-vs-player"`
 - **TimeControlSchema**
+- **WaitingRoomSchema**
 
 ### Messages
 
