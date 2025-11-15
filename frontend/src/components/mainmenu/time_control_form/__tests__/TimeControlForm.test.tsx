@@ -3,8 +3,18 @@ import { createMockTimeControl } from '@grouchess/test-utils';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-react';
 
-import { _resetPromiseCacheForTesting } from '../../../../utils/fetch';
+import { _resetPromiseCacheForTesting, fetchWithSchemasOrThrow } from '../../../../utils/fetch';
 import TimeControlForm from '../TimeControlForm';
+
+vi.mock('../../../../utils/fetch', async () => {
+    const actual = await vi.importActual('../../../../utils/fetch');
+    return {
+        ...actual,
+        fetchWithSchemasOrThrow: vi.fn(),
+    };
+});
+
+const fetchWithSchemasOrThrowMock = vi.mocked(fetchWithSchemasOrThrow);
 
 const mockGetTimeControlOptionsResponse: GetTimeControlOptionsResponse = {
     supportedTimeControls: [
@@ -14,26 +24,9 @@ const mockGetTimeControlOptionsResponse: GetTimeControlOptionsResponse = {
     ],
 };
 
-type CreateFetchResponseArgs = {
-    data?: GetTimeControlOptionsResponse | null;
-    ok?: boolean;
-};
-
-function createFetchResponse({
-    data = mockGetTimeControlOptionsResponse,
-    ok = true,
-}: CreateFetchResponseArgs = {}): Response {
-    return {
-        ok,
-        json: vi.fn().mockResolvedValue(data),
-    } as unknown as Response;
-}
-
 const defaultProps = {
     onTimeControlSelect: vi.fn(),
 };
-
-const defaultFetchResponse = createFetchResponse();
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -44,7 +37,7 @@ afterEach(() => {
 describe('TimeControlForm', () => {
     describe('Initial state', () => {
         it('renders the time control heading', async () => {
-            vi.spyOn(window, 'fetch').mockResolvedValue(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetTimeControlOptionsResponse);
 
             const { getByRole } = await render(<TimeControlForm {...defaultProps} />);
 
@@ -56,10 +49,10 @@ describe('TimeControlForm', () => {
     describe('Loading State (Suspense Fallback)', () => {
         beforeEach(() => {
             // Delay the fetch response to observe the loading state
-            const delayedFetchPromise = new Promise<Response>((resolve) => {
-                setTimeout(() => resolve(defaultFetchResponse), 100);
+            const delayedFetchPromise = new Promise<GetTimeControlOptionsResponse>((resolve) => {
+                setTimeout(() => resolve(mockGetTimeControlOptionsResponse), 100);
             });
-            vi.spyOn(window, 'fetch').mockReturnValue(delayedFetchPromise);
+            fetchWithSchemasOrThrowMock.mockReturnValue(delayedFetchPromise);
         });
 
         it('shows shimmer loading state while fetching time control options', async () => {
@@ -88,27 +81,11 @@ describe('TimeControlForm', () => {
     describe('Error State (ErrorBoundary)', () => {
         it.each([
             {
-                scenario: 'fetch fails with network error',
+                scenario: 'fetch fails with error',
                 setup: () => {
-                    vi.spyOn(window, 'fetch').mockRejectedValue(new Error('Network error'));
-                },
-                expectedError: 'Network error',
-            },
-            {
-                scenario: 'API returns non-ok response',
-                setup: () => {
-                    vi.spyOn(window, 'fetch').mockResolvedValue(createFetchResponse({ ok: false }));
+                    fetchWithSchemasOrThrowMock.mockRejectedValue(new Error('Failed to fetch time control options.'));
                 },
                 expectedError: 'Failed to fetch time control options.',
-            },
-            {
-                scenario: 'API response fails schema validation',
-                setup: () => {
-                    vi.spyOn(window, 'fetch').mockResolvedValue(
-                        createFetchResponse({ data: { invalid: 'data' } as unknown as GetTimeControlOptionsResponse })
-                    );
-                },
-                expectedError: 'Failed to parse time control options.',
             },
         ])('shows error when $scenario', async ({ setup, expectedError }) => {
             vi.spyOn(console, 'error').mockImplementation(() => {}); // Suppress error boundary logging
@@ -124,7 +101,7 @@ describe('TimeControlForm', () => {
 
     describe('Successful Data Loading and User Interactions', () => {
         beforeEach(() => {
-            vi.spyOn(window, 'fetch').mockResolvedValue(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetTimeControlOptionsResponse);
         });
 
         it('displays fetched time control options', async () => {
@@ -220,7 +197,7 @@ describe('TimeControlForm', () => {
 
     describe('Accessibility', () => {
         beforeEach(() => {
-            vi.spyOn(window, 'fetch').mockResolvedValue(defaultFetchResponse);
+            fetchWithSchemasOrThrowMock.mockResolvedValue(mockGetTimeControlOptionsResponse);
         });
 
         it('time control options are accessible via keyboard', async () => {

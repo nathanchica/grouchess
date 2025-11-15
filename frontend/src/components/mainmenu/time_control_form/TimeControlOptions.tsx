@@ -6,25 +6,14 @@ import type { TimeControl } from '@grouchess/models';
 import TimeControlOption from './TimeControlOption';
 
 import { getEnv } from '../../../utils/config';
-import { getCachedPromise } from '../../../utils/fetch';
-
-const TIME_CONTROL_OPTIONS_URL = `${getEnv().VITE_API_BASE_URL}/time-control`;
+import { getCachedPromise, fetchWithSchemasOrThrow } from '../../../utils/fetch';
 
 async function fetchTimeControlOptions(): Promise<GetTimeControlOptionsResponse> {
-    const response = await fetch(TIME_CONTROL_OPTIONS_URL);
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch time control options.');
-    }
-
-    const data = await response.json();
-    const parsedData = GetTimeControlOptionsResponseSchema.safeParse(data);
-
-    if (!parsedData.success) {
-        throw new Error('Failed to parse time control options.');
-    }
-
-    return parsedData.data;
+    const url = `${getEnv().VITE_API_BASE_URL}/time-control`;
+    return fetchWithSchemasOrThrow(url, {
+        successSchema: GetTimeControlOptionsResponseSchema,
+        errorMessage: 'Failed to fetch time control options.',
+    });
 }
 
 type Props = {
