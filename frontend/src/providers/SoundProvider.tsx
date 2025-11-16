@@ -1,10 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-export type SoundName = 'move' | 'capture' | 'castle' | 'promote' | 'check' | 'victory' | 'defeat' | 'draw';
+import {
+    DEFAULT_VOLUME,
+    LOCAL_STORAGE_KEY,
+    POOL_SIZE,
+    SOUND_FILE_MAP,
+    StoredSettingsSchema,
+} from './SoundProvider.schema';
+import type { AudioPoolMap, PlayOptions, SoundName, StoredSettings } from './SoundProvider.schema';
 
-type PlayOptions = {
-    playbackRate?: number;
-};
+import { getStoredValue, setStoredValue } from '../utils/window';
 
 export type SoundContextValue = {
     play: (sound: SoundName, options?: PlayOptions) => void;
@@ -15,54 +20,24 @@ export type SoundContextValue = {
     setVolume: (nextVolume: number) => void;
 };
 
-type AudioPool = {
-    elements: HTMLAudioElement[];
-    src: string;
-};
-
-type AudioPoolMap = Partial<Record<SoundName, AudioPool>>;
-
-type StoredSettings = {
-    enabled: boolean;
-    volume: number;
-};
-
-const SOUND_FILE_MAP: Record<SoundName, string> = {
-    move: '/sounds/lisp/Move.mp3',
-    capture: '/sounds/lisp/Capture.mp3',
-    castle: '/sounds/lisp/Castles.mp3',
-    promote: '/sounds/lisp/Move.mp3',
-    check: '/sounds/lisp/Check.mp3',
-    victory: '/sounds/lisp/Victory.mp3',
-    defeat: '/sounds/lisp/Defeat.mp3',
-    draw: '/sounds/lisp/Draw.mp3',
-};
-
-const DEFAULT_VOLUME = 0.7;
-const POOL_SIZE = 3;
-const LOCAL_STORAGE_KEY = 'grouchess:sound-settings';
-
 const clampVolume = (value: number): number => {
     if (Number.isNaN(value)) return DEFAULT_VOLUME;
     return Math.min(1, Math.max(0, value));
 };
 
 const readStoredSettings = (): StoredSettings | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-        const storedValue = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (!storedValue) return null;
-        const parsed = JSON.parse(storedValue) as Partial<StoredSettings>;
-        if (typeof parsed.enabled !== 'boolean' || typeof parsed.volume !== 'number') {
-            return null;
-        }
-        return {
-            enabled: parsed.enabled,
-            volume: clampVolume(parsed.volume),
-        };
-    } catch {
-        return null;
-    }
+    const rawValue = getStoredValue('localStorage', LOCAL_STORAGE_KEY, null);
+    if (rawValue === null) return null;
+
+    const result = StoredSettingsSchema.safeParse(rawValue);
+    if (!result.success) return null;
+
+    const { enabled, volume } = result.data;
+
+    return {
+        enabled,
+        volume: clampVolume(volume),
+    };
 };
 
 const createAudioElement = (src: string): HTMLAudioElement => {
@@ -112,15 +87,14 @@ function SoundProvider({ children }: Props) {
     }, []);
 
     useEffect(() => {
-        if (typeof window === 'undefined') return;
         const settings: StoredSettings = {
             enabled,
             volume: volumeState,
         };
         try {
-            window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(settings));
+            setStoredValue('localStorage', LOCAL_STORAGE_KEY, settings);
         } catch {
-            // Ignore storage write errors (e.g., quota exceeded or disabled storage).
+            // Swallow errors (e.g., QuotaExceededError, SecurityError in private browsing)
         }
     }, [enabled, volumeState]);
 
