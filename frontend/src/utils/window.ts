@@ -29,21 +29,38 @@ export function clearTimeout(timeoutId: number): void {
 
 type Storage = 'localStorage' | 'sessionStorage';
 
-export function getStoredValue<T>(storage: Storage, key: string, defaultValue: T): T {
+// Overload signatures
+export function getStoredValue<T>(storage: Storage, key: string, defaultValue: T): T;
+// eslint-disable-next-line no-redeclare
+export function getStoredValue<T>(storage: Storage, key: string): T | null;
+
+/**
+ * Gets a value from the specified storage (localStorage or sessionStorage).
+ * If the value does not exist or cannot be parsed, returns the default value or null.
+ */
+// eslint-disable-next-line no-redeclare
+export function getStoredValue<T>(storage: Storage, key: string, defaultValue?: T | null): T | null {
+    const defaultValueToUse = defaultValue ?? null;
+
     if (typeof window === 'undefined') {
-        return defaultValue;
+        return defaultValueToUse;
     }
-    const storedValue = window[storage].getItem(key);
-    if (storedValue === null) {
-        return defaultValue;
-    }
+
     try {
+        const storedValue = window[storage].getItem(key);
+        if (storedValue === null) {
+            return defaultValueToUse;
+        }
         return JSON.parse(storedValue) as T;
     } catch {
-        return defaultValue;
+        return defaultValueToUse;
     }
 }
 
+/**
+ * Sets a value in the specified storage (localStorage or sessionStorage).
+ * The value is serialized to JSON before storing.
+ */
 export function setStoredValue<T>(storage: Storage, key: string, value: T): void {
     if (typeof window === 'undefined') {
         return;
@@ -51,6 +68,9 @@ export function setStoredValue<T>(storage: Storage, key: string, value: T): void
     window[storage].setItem(key, JSON.stringify(value));
 }
 
+/**
+ * Navigates the window to the main menu (root URL).
+ */
 export function returnToMainMenu(): void {
     if (typeof window === 'undefined') {
         return;
@@ -58,6 +78,9 @@ export function returnToMainMenu(): void {
     window.location.href = '/';
 }
 
+/**
+ * Adds an event listener to the window object.
+ */
 export function addEventListener<K extends keyof WindowEventMap>(
     type: K,
     listener: (this: Window, ev: WindowEventMap[K]) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -69,6 +92,9 @@ export function addEventListener<K extends keyof WindowEventMap>(
     window.addEventListener(type, listener, options);
 }
 
+/**
+ * Removes an event listener from the window object.
+ */
 export function removeEventListener<K extends keyof WindowEventMap>(
     type: K,
     listener: (this: Window, ev: WindowEventMap[K]) => any, // eslint-disable-line @typescript-eslint/no-explicit-any

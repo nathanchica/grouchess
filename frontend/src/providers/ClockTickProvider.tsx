@@ -44,6 +44,7 @@ function ClockTickProvider({ children }: Props) {
         };
         rafId.current = requestAnimationFrame(tick);
         return () => {
+            /* v8 ignore else -- @preserve */
             if (rafId.current) cancelAnimationFrame(rafId.current);
             rafId.current = null;
         };
