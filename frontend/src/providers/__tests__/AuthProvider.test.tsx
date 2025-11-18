@@ -41,9 +41,9 @@ describe('AuthProvider', () => {
         const playerId = getByTestId('player-id');
         const token = getByTestId('token');
 
-        expect(roomId).toHaveTextContent('');
-        expect(playerId).toHaveTextContent('');
-        expect(token).toHaveTextContent('');
+        await expect.element(roomId).toHaveTextContent('');
+        await expect.element(playerId).toHaveTextContent('');
+        await expect.element(token).toHaveTextContent('');
     });
 
     it('loads auth data correctly', async () => {
@@ -56,9 +56,9 @@ describe('AuthProvider', () => {
         const playerId = getByTestId('player-id');
         const token = getByTestId('token');
 
-        expect(roomId).toHaveTextContent('123');
-        expect(playerId).toHaveTextContent('p1');
-        expect(token).toHaveTextContent('t1');
+        await expect.element(roomId).toHaveTextContent('123');
+        await expect.element(playerId).toHaveTextContent('p1');
+        await expect.element(token).toHaveTextContent('t1');
     });
 
     it('clears auth data correctly', async () => {
@@ -74,9 +74,9 @@ describe('AuthProvider', () => {
         const playerId = getByTestId('player-id');
         const token = getByTestId('token');
 
-        expect(roomId).toHaveTextContent('');
-        expect(playerId).toHaveTextContent('');
-        expect(token).toHaveTextContent('');
+        await expect.element(roomId).toHaveTextContent('');
+        await expect.element(playerId).toHaveTextContent('');
+        await expect.element(token).toHaveTextContent('');
     });
 });
 
@@ -84,7 +84,7 @@ describe('useAuth', () => {
     it('returns auth context values when used within AuthProvider', async () => {
         const { getByTestId } = await renderAuthProvider();
         const consumer = getByTestId('auth-consumer');
-        expect(consumer).toBeInTheDocument();
+        await expect.element(consumer).toBeInTheDocument();
     });
 
     it('throws error when used outside of AuthProvider', async () => {

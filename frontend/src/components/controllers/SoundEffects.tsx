@@ -5,7 +5,8 @@ import type { ChessGameStatus } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { useChessGame } from '../../providers/ChessGameRoomProvider';
-import { useSound, type SoundName } from '../../providers/SoundProvider';
+import { useSound } from '../../providers/SoundProvider';
+import { type SoundName } from '../../providers/SoundProvider.schema';
 import { clearTimeout, setTimeout } from '../../utils/window';
 
 export const CHECK_DELAY_MS = 120;

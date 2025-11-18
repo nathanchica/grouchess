@@ -131,11 +131,16 @@ describe('ImagesProvider', () => {
         const revokeObjectURLSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
         vi.spyOn(preloadModule, 'preloadToObjectURLs').mockResolvedValue(mockImgSrcMap);
 
-        const { unmount } = await renderImagesProvider({ imgSrcs });
+        const { unmount, getByTestId } = await renderImagesProvider({ imgSrcs });
 
         // Wait for preload to complete
         await vi.waitFor(() => {
             expect(preloadModule.preloadToObjectURLs).toHaveBeenCalled();
+        });
+
+        await vi.waitFor(() => {
+            const imgSrcMapElement = getByTestId('img-src-map');
+            expect(imgSrcMapElement).toHaveTextContent(JSON.stringify(mockImgSrcMap));
         });
 
         unmount();
