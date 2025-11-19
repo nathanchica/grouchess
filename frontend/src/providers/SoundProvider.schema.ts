@@ -1,5 +1,3 @@
-import * as z from 'zod';
-
 export type SoundName = 'move' | 'capture' | 'castle' | 'promote' | 'check' | 'victory' | 'defeat' | 'draw';
 
 export type PlayOptions = {
@@ -13,12 +11,6 @@ export type AudioPool = {
 
 export type AudioPoolMap = Partial<Record<SoundName, AudioPool>>;
 
-export const StoredSettingsSchema = z.object({
-    enabled: z.boolean(),
-    volume: z.number(),
-});
-export type StoredSettings = z.infer<typeof StoredSettingsSchema>;
-
 export const SOUND_FILE_MAP: Record<SoundName, string> = {
     move: '/sounds/lisp/Move.mp3',
     capture: '/sounds/lisp/Capture.mp3',
@@ -30,6 +22,5 @@ export const SOUND_FILE_MAP: Record<SoundName, string> = {
     draw: '/sounds/lisp/Draw.mp3',
 };
 
-export const DEFAULT_VOLUME = 0.7;
+export const DEFAULT_VOLUME = 0.5;
 export const POOL_SIZE = 3;
-export const LOCAL_STORAGE_KEY = 'grouchess:sound-settings';

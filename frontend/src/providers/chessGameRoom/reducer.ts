@@ -181,6 +181,7 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
                 clockState,
             };
         }
+        /* v8 ignore next -- @preserve */
         default:
             return state;
     }

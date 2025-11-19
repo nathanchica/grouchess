@@ -3,12 +3,12 @@ import { type ReactNode } from 'react';
 import { render } from 'vitest-browser-react';
 
 import * as soundUtilsModule from '../../utils/sounds';
-import * as windowUtilsModule from '../../utils/window';
 import SoundProvider, { useSound } from '../SoundProvider';
-import { DEFAULT_VOLUME, LOCAL_STORAGE_KEY, POOL_SIZE, SOUND_FILE_MAP, type SoundName } from '../SoundProvider.schema';
+import { POOL_SIZE, SOUND_FILE_MAP, type SoundName } from '../SoundProvider.schema';
+import { StoredSettingsContext } from '../StoredSettingsProvider';
+import { createMockStoredSettingsContextValues } from '../__mocks__/StoredSettingsProvider';
 
 // Browser mode limitation: https://vitest.dev/guide/browser/#spying-on-module-exports
-vi.mock('../../utils/window', { spy: true });
 vi.mock('../../utils/sounds', { spy: true });
 
 const defaultSoundName: SoundName = 'move';
@@ -50,10 +50,33 @@ const SoundConsumer = () => {
 
 type RenderSoundProviderOptions = {
     children?: ReactNode;
+    initialStoredSettingsContextValues?: ReturnType<typeof createMockStoredSettingsContextValues>;
 };
 
-function renderSoundProvider({ children = <SoundConsumer /> }: RenderSoundProviderOptions = {}) {
-    return render(<SoundProvider>{children}</SoundProvider>);
+async function renderSoundProvider({
+    children = <SoundConsumer />,
+    initialStoredSettingsContextValues = createMockStoredSettingsContextValues(),
+}: RenderSoundProviderOptions = {}) {
+    function buildSoundProvider(storedSettingsContextValues: ReturnType<typeof createMockStoredSettingsContextValues>) {
+        return (
+            <StoredSettingsContext.Provider value={storedSettingsContextValues}>
+                <SoundProvider>{children}</SoundProvider>
+            </StoredSettingsContext.Provider>
+        );
+    }
+
+    const renderResult = await render(buildSoundProvider(initialStoredSettingsContextValues));
+
+    const rerenderSoundProvider = async (
+        nextStoredSettingsContextValues: ReturnType<typeof createMockStoredSettingsContextValues>
+    ) => {
+        await renderResult.rerender(buildSoundProvider(nextStoredSettingsContextValues));
+    };
+
+    return {
+        ...renderResult,
+        rerenderSoundProvider,
+    };
 }
 
 describe('SoundProvider', () => {
@@ -103,121 +126,127 @@ describe('SoundProvider', () => {
         vi.clearAllMocks();
         mockAudioInstances.length = 0;
 
-        vi.spyOn(soundUtilsModule, 'readStoredSettings').mockReturnValue(null);
         vi.spyOn(soundUtilsModule, 'buildInitialPools').mockReturnValue({});
         vi.spyOn(soundUtilsModule, 'createAudioElement').mockImplementation(() =>
             (createMockAudioElement as unknown as () => HTMLAudioElement)()
         );
         vi.spyOn(soundUtilsModule, 'clampVolume').mockImplementation((value) => {
-            if (Number.isNaN(value)) return DEFAULT_VOLUME;
+            if (Number.isNaN(value)) return 0.5;
             return Math.min(1, Math.max(0, value));
         });
     });
 
-    describe('initialization and stored settings', () => {
-        it('uses default settings when no stored settings exist', async () => {
-            vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(null);
+    describe('initialization from StoredSettingsProvider', () => {
+        it('uses default settings from StoredSettingsProvider context', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            initialStoredSettingsContextValues.soundsEnabled = true;
+            initialStoredSettingsContextValues.soundsVolume = 0.5;
 
-            const { getByTestId } = await renderSoundProvider();
+            const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
 
             const enabled = getByTestId('enabled');
             const volume = getByTestId('volume');
 
             await expect.element(enabled).toHaveTextContent('true');
-            await expect.element(volume).toHaveTextContent(String(DEFAULT_VOLUME));
+            await expect.element(volume).toHaveTextContent('0.5');
         });
 
-        it('initializes from valid stored settings in localStorage', async () => {
-            vi.spyOn(soundUtilsModule, 'readStoredSettings').mockReturnValue({
-                enabled: false,
-                volume: 0.5,
-            });
+        it('uses custom settings from StoredSettingsProvider context', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            initialStoredSettingsContextValues.soundsEnabled = false;
+            initialStoredSettingsContextValues.soundsVolume = 0.8;
 
-            const { getByTestId } = await renderSoundProvider();
+            const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
 
             const enabled = getByTestId('enabled');
             const volume = getByTestId('volume');
 
             await expect.element(enabled).toHaveTextContent('false');
-            await expect.element(volume).toHaveTextContent('0.5');
+            await expect.element(volume).toHaveTextContent('0.8');
         });
     });
 
-    describe('persistence to localStorage', () => {
-        it('persists enabled and volume changes to localStorage', async () => {
-            vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(null);
-            const setStoredValueSpy = vi.spyOn(windowUtilsModule, 'setStoredValue');
+    describe('integration with StoredSettingsProvider', () => {
+        it('calls setSetting when enabled changes', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            const setSettingSpy = vi.fn();
+            initialStoredSettingsContextValues.setSetting = setSettingSpy;
 
-            const { getByTestId } = await renderSoundProvider();
-
-            // Initial render should persist default settings
-            expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
-                enabled: true,
-                volume: DEFAULT_VOLUME,
-            });
-
-            setStoredValueSpy.mockClear();
+            const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
 
             // Change enabled to false
             const disableButton = getByTestId('disable-sound-button');
             await disableButton.click();
 
-            expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
-                enabled: false,
-                volume: DEFAULT_VOLUME,
-            });
+            expect(setSettingSpy).toHaveBeenCalledWith('soundsEnabled', false);
 
-            setStoredValueSpy.mockClear();
+            setSettingSpy.mockClear();
 
-            // Change volume to 0.5
+            // Change enabled to true
+            const enableButton = getByTestId('enable-sound-button');
+            await enableButton.click();
+
+            expect(setSettingSpy).toHaveBeenCalledWith('soundsEnabled', true);
+        });
+
+        it('calls setSetting when volume changes', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            const setSettingSpy = vi.fn();
+            initialStoredSettingsContextValues.setSetting = setSettingSpy;
+
+            const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
+
             const setVolumeButton = getByTestId('set-volume-half-button');
             await setVolumeButton.click();
 
-            expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
-                enabled: false,
-                volume: 0.5,
-            });
+            expect(setSettingSpy).toHaveBeenCalledWith('soundsVolume', 0.5);
         });
 
-        it('swallows errors when localStorage.setItem throws', async () => {
-            vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(null);
-            vi.spyOn(windowUtilsModule, 'setStoredValue').mockImplementation(() => {
-                throw new Error('QuotaExceededError');
-            });
+        it('clamps volume values before calling setSetting', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            const setSettingSpy = vi.fn();
+            initialStoredSettingsContextValues.setSetting = setSettingSpy;
 
-            // Should not throw despite setStoredValue throwing
-            const { getByTestId } = await renderSoundProvider();
+            const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
 
-            const enabled = getByTestId('enabled');
-            const volume = getByTestId('volume');
+            // Test with volume > 1
+            const setVolumeFullButton = getByTestId('set-volume-full-button');
+            await setVolumeFullButton.click();
 
-            // Component should still render with default values
-            await expect.element(enabled).toHaveTextContent('true');
-            await expect.element(volume).toHaveTextContent(String(DEFAULT_VOLUME));
+            expect(setSettingSpy).toHaveBeenCalledWith('soundsVolume', 1);
 
-            // Should still be able to change state even though persistence fails
-            const disableButton = getByTestId('disable-sound-button');
-            await disableButton.click();
+            setSettingSpy.mockClear();
 
-            // UI should update despite persistence error
-            await expect.element(enabled).toHaveTextContent('false');
+            // Test with volume = 0
+            const setVolumeZeroButton = getByTestId('set-volume-zero-button');
+            await setVolumeZeroButton.click();
+
+            expect(setSettingSpy).toHaveBeenCalledWith('soundsVolume', 0);
         });
     });
 
     describe('enabled and volume controls', () => {
         it('provides initial enabled and volume values via context', async () => {
-            vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(null);
-            const { getByTestId } = await renderSoundProvider();
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            initialStoredSettingsContextValues.soundsEnabled = true;
+            initialStoredSettingsContextValues.soundsVolume = 0.7;
+
+            const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
 
             const enabled = getByTestId('enabled');
             const volume = getByTestId('volume');
 
             await expect.element(enabled).toHaveTextContent('true');
-            await expect.element(volume).toHaveTextContent(String(DEFAULT_VOLUME));
+            await expect.element(volume).toHaveTextContent('0.7');
         });
 
-        it('updates enabled when setEnabled is called', async () => {
-            const { getByTestId } = await renderSoundProvider();
+        it('updates enabled when setEnabled is called and context changes', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            initialStoredSettingsContextValues.soundsEnabled = true;
+
+            const { getByTestId, rerenderSoundProvider } = await renderSoundProvider({
+                initialStoredSettingsContextValues,
+            });
 
             const enabled = getByTestId('enabled');
             const disableButton = getByTestId('disable-sound-button');
@@ -225,25 +254,46 @@ describe('SoundProvider', () => {
 
             await expect.element(enabled).toHaveTextContent('true');
 
+            // Simulate disabling sound
+            const disabledContextValues = createMockStoredSettingsContextValues();
+            disabledContextValues.soundsEnabled = false;
             await disableButton.click();
+            await rerenderSoundProvider(disabledContextValues);
             await expect.element(enabled).toHaveTextContent('false');
 
+            // Simulate enabling sound
+            const enabledContextValues = createMockStoredSettingsContextValues();
+            enabledContextValues.soundsEnabled = true;
             await enableButton.click();
+            await rerenderSoundProvider(enabledContextValues);
             await expect.element(enabled).toHaveTextContent('true');
         });
 
-        it('toggles enabled flag when toggleEnabled is called', async () => {
-            const { getByTestId } = await renderSoundProvider();
+        it('toggles enabled flag when toggleEnabled is called and context changes', async () => {
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            initialStoredSettingsContextValues.soundsEnabled = true;
+
+            const { getByTestId, rerenderSoundProvider } = await renderSoundProvider({
+                initialStoredSettingsContextValues,
+            });
 
             const enabled = getByTestId('enabled');
             const toggleButton = getByTestId('toggle-sound-button');
 
             await expect.element(enabled).toHaveTextContent('true');
 
+            // First toggle: disable
+            const disabledContextValues = createMockStoredSettingsContextValues();
+            disabledContextValues.soundsEnabled = false;
             await toggleButton.click();
+            await rerenderSoundProvider(disabledContextValues);
             await expect.element(enabled).toHaveTextContent('false');
 
+            // Second toggle: enable
+            const enabledContextValues = createMockStoredSettingsContextValues();
+            enabledContextValues.soundsEnabled = true;
             await toggleButton.click();
+            await rerenderSoundProvider(enabledContextValues);
             await expect.element(enabled).toHaveTextContent('true');
         });
     });
@@ -265,17 +315,17 @@ describe('SoundProvider', () => {
                     src: SOUND_FILE_MAP[defaultSoundName],
                 },
             });
-            const { rerender } = await renderSoundProvider();
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            const { rerenderSoundProvider } = await renderSoundProvider({
+                initialStoredSettingsContextValues,
+                children: <SoundConsumer />,
+            });
 
             expect(buildInitialPoolsSpy).toHaveBeenCalledOnce();
 
             buildInitialPoolsSpy.mockClear();
 
-            await rerender(
-                <SoundProvider>
-                    <div>New Children</div>
-                </SoundProvider>
-            );
+            await rerenderSoundProvider(initialStoredSettingsContextValues);
 
             expect(buildInitialPoolsSpy).not.toHaveBeenCalled();
         });
@@ -301,14 +351,28 @@ describe('SoundProvider', () => {
             vi.spyOn(soundUtilsModule, 'buildInitialPools').mockReturnValue({});
             const createAudioElementSpy = vi.spyOn(soundUtilsModule, 'createAudioElement');
 
-            const { getByTestId } = await renderSoundProvider();
+            const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+            initialStoredSettingsContextValues.soundsEnabled = true;
 
+            const { getByTestId, rerenderSoundProvider } = await renderSoundProvider({
+                initialStoredSettingsContextValues,
+            });
+
+            // Clear spy after mount to only track calls during play
+            createAudioElementSpy.mockClear();
+
+            // Disable sounds
+            const disabledContextValues = createMockStoredSettingsContextValues();
+            disabledContextValues.soundsEnabled = false;
             const disableButton = getByTestId('disable-sound-button');
             await disableButton.click();
+            await rerenderSoundProvider(disabledContextValues);
 
+            // Try to play with sounds disabled
             const playButton = getByTestId('play-default-sound-button');
             await playButton.click();
 
+            // createAudioElement should not be called since sounds are disabled
             expect(createAudioElementSpy).not.toHaveBeenCalled();
         });
 
@@ -418,13 +482,17 @@ describe('SoundProvider', () => {
 
 describe('useSound', () => {
     it('provides context values when used inside SoundProvider', async () => {
-        const { getByTestId } = await renderSoundProvider();
+        const initialStoredSettingsContextValues = createMockStoredSettingsContextValues();
+        initialStoredSettingsContextValues.soundsEnabled = true;
+        initialStoredSettingsContextValues.soundsVolume = 0.5;
+
+        const { getByTestId } = await renderSoundProvider({ initialStoredSettingsContextValues });
 
         const enabled = getByTestId('enabled');
         const volume = getByTestId('volume');
 
         await expect.element(enabled).toHaveTextContent('true');
-        await expect.element(volume).toHaveTextContent(String(DEFAULT_VOLUME));
+        await expect.element(volume).toHaveTextContent('0.5');
     });
 
     it('throws an error when used outside SoundProvider', async () => {
