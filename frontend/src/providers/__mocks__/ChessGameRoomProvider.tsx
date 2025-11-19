@@ -33,9 +33,6 @@ export function createMockGameRoomContextValues(overrides?: Partial<GameRoomCont
         gameRoom: createMockChessGameRoom(),
         currentPlayerId: '',
         currentPlayerColor: 'white',
-        loadRoom: () => {},
-        loadCurrentPlayerId: () => {},
-        startSelfPlayRoom: () => {},
         ...overrides,
     };
 }

@@ -6,7 +6,6 @@ import type {
     Move,
     PawnPromotion,
     Player,
-    TimeControl,
 } from '@grouchess/models';
 
 import type { ChessGameUI } from '../../utils/types';
@@ -31,9 +30,6 @@ export type Action =
     | { type: 'cancel-promotion' }
     | { type: 'load-fen'; fenString: string }
     | { type: 'end-game'; input: EndGameInput }
-    | { type: 'start-self-play-room'; timeControlOption: TimeControl | null }
-    | { type: 'load-room'; gameRoom: ChessGameRoom; fen?: string }
     | { type: 'add-message'; message: ChessGameMessage }
-    | { type: 'load-current-player-id'; playerId: Player['id'] }
     | { type: 'set-clocks'; clockState: ChessClockState | null }
     | { type: 'reset-clocks' };

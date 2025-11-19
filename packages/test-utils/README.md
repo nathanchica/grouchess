@@ -240,6 +240,7 @@ const move = createMockMove({
 ### Game State
 
 - `createMockLegalMovesStore(overrides?: Partial<LegalMovesStore>): LegalMovesStore`
+- `createMockLegalMovesStoreWithMove(move: Move): LegalMovesStore`
 - `createMockChessGameState(overrides?: Partial<ChessGameState>): ChessGameState`
 - `createMockPieceCapture(overrides?: Partial<PieceCapture>): PieceCapture`
 - `createMockPositionCounts(overrides?: PositionCounts): PositionCounts`

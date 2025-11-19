@@ -177,6 +177,21 @@ export function createMockLegalMovesStore(overrides?: Partial<LegalMovesStore>):
 }
 
 /**
+ * Creates a mock LegalMovesStore with a single move
+ */
+export function createMockLegalMovesStoreWithMove(move: Move): LegalMovesStore {
+    return {
+        allMoves: [move],
+        byStartIndex: {
+            [move.startIndex]: [move],
+        },
+        typeAndEndIndexToStartIndex: {
+            [`${move.piece.type}:${move.endIndex}`]: [move.startIndex],
+        },
+    };
+}
+
+/**
  * Creates a mock ChessGameState
  */
 export function createMockChessGameState(overrides?: Partial<ChessGameState>): ChessGameState {
