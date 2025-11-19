@@ -37,7 +37,8 @@
         "test:run:browser": "pnpm --filter frontend test:run",
         "test:browser": "pnpm --filter frontend test",
         "test:watch:browser": "pnpm --filter frontend test:watch",
-        "scaffold-package": "node scripts/scaffold-package.js",
+        "scaffold:package": "node scripts/scaffold-package.js",
+        "scaffold:test": "tsx scripts/scaffold-tests.ts",
         "prepare": "husky || true"
     },
     "keywords": [],

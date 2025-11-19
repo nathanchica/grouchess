@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 
-import { DEFAULT_VOLUME, LOCAL_STORAGE_KEY, POOL_SIZE, SOUND_FILE_MAP } from './SoundProvider.schema';
-import type { AudioPoolMap, PlayOptions, SoundName, StoredSettings } from './SoundProvider.schema';
+import { POOL_SIZE, SOUND_FILE_MAP } from './SoundProvider.schema';
+import type { AudioPoolMap, PlayOptions, SoundName } from './SoundProvider.schema';
+import { useStoredSettings } from './StoredSettingsProvider';
 
-import { readStoredSettings, buildInitialPools, clampVolume, createAudioElement } from '../utils/sounds';
-import { setStoredValue } from '../utils/window';
+import { buildInitialPools, clampVolume, createAudioElement } from '../utils/sounds';
 
 export type SoundContextValue = {
     play: (sound: SoundName, options?: PlayOptions) => void;
@@ -30,38 +30,34 @@ type Props = {
 };
 
 function SoundProvider({ children }: Props) {
-    const storedSettings = useMemo(() => readStoredSettings(), []);
-    const [enabled, setEnabled] = useState<boolean>(storedSettings?.enabled ?? true);
-    const [volumeState, setVolumeState] = useState<number>(storedSettings?.volume ?? DEFAULT_VOLUME);
+    const { soundsEnabled, soundsVolume, setSetting } = useStoredSettings();
 
     const poolsRef = useRef<AudioPoolMap>({});
     if (Object.keys(poolsRef.current).length === 0) {
         poolsRef.current = buildInitialPools();
     }
 
-    useEffect(() => {
-        const settings: StoredSettings = {
-            enabled,
-            volume: volumeState,
-        };
-        try {
-            setStoredValue('localStorage', LOCAL_STORAGE_KEY, settings);
-        } catch {
-            // Swallow errors (e.g., QuotaExceededError, SecurityError in private browsing)
-        }
-    }, [enabled, volumeState]);
-
-    const setVolume = useCallback((nextVolume: number) => {
-        setVolumeState(clampVolume(nextVolume));
-    }, []);
+    const setVolume = useCallback(
+        (nextVolume: number) => {
+            setSetting('soundsVolume', clampVolume(nextVolume));
+        },
+        [setSetting]
+    );
 
     const toggleEnabled = useCallback(() => {
-        setEnabled((prev) => !prev);
-    }, []);
+        setSetting('soundsEnabled', !soundsEnabled);
+    }, [setSetting, soundsEnabled]);
+
+    const setEnabled = useCallback(
+        (nextEnabled: boolean) => {
+            setSetting('soundsEnabled', nextEnabled);
+        },
+        [setSetting]
+    );
 
     const play = useCallback(
         (sound: SoundName, options?: PlayOptions) => {
-            if (!enabled || typeof window === 'undefined') return;
+            if (!soundsEnabled || typeof window === 'undefined') return;
             const pools = poolsRef.current;
             const pool = (pools[sound] ??= {
                 src: SOUND_FILE_MAP[sound],
@@ -75,25 +71,25 @@ function SoundProvider({ children }: Props) {
             }
 
             audio.currentTime = 0;
-            audio.volume = volumeState;
+            audio.volume = soundsVolume;
             audio.playbackRate = options?.playbackRate ?? 1;
             void audio.play().catch(() => {
                 // Autoplay restrictions or other playback issues; ignored on purpose.
             });
         },
-        [enabled, volumeState]
+        [soundsEnabled, soundsVolume]
     );
 
     const contextValue = useMemo<SoundContextValue>(
         () => ({
             play,
-            enabled,
+            enabled: soundsEnabled,
             setEnabled,
             toggleEnabled,
-            volume: volumeState,
+            volume: soundsVolume,
             setVolume,
         }),
-        [enabled, play, setVolume, toggleEnabled, volumeState]
+        [soundsEnabled, setEnabled, play, setVolume, toggleEnabled, soundsVolume]
     );
 
     return <SoundContext.Provider value={contextValue}>{children}</SoundContext.Provider>;

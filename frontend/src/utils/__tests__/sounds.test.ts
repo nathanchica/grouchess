@@ -1,7 +1,6 @@
-import { DEFAULT_VOLUME, LOCAL_STORAGE_KEY, POOL_SIZE, SOUND_FILE_MAP } from '../../providers/SoundProvider.schema';
+import { DEFAULT_VOLUME, POOL_SIZE, SOUND_FILE_MAP } from '../../providers/SoundProvider.schema';
 import type { SoundName } from '../../providers/SoundProvider.schema';
-import { clampVolume, readStoredSettings, createAudioElement, buildInitialPools } from '../sounds';
-import * as windowUtilsModule from '../window';
+import { clampVolume, createAudioElement, buildInitialPools } from '../sounds';
 
 vi.mock('../window', { spy: true });
 
@@ -18,76 +17,6 @@ describe('clampVolume', () => {
     ])('$scenario', ({ input, expected }) => {
         const result = clampVolume(input);
         expect(result).toBe(expected);
-    });
-});
-
-describe('readStoredSettings', () => {
-    afterEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('returns null when getStoredValue returns null', () => {
-        vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(null);
-
-        const result = readStoredSettings();
-
-        expect(result).toBeNull();
-        expect(windowUtilsModule.getStoredValue).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, null);
-    });
-
-    it.each([
-        {
-            scenario: 'returns null when stored value fails schema validation (missing enabled field)',
-            storedValue: { volume: 0.5 },
-        },
-        {
-            scenario: 'returns null when stored value fails schema validation (missing volume field)',
-            storedValue: { enabled: true },
-        },
-        {
-            scenario: 'returns null when stored value fails schema validation (wrong types)',
-            storedValue: { enabled: 'true', volume: '0.5' },
-        },
-    ])('$scenario', ({ storedValue }) => {
-        vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(storedValue);
-
-        const result = readStoredSettings();
-
-        expect(result).toBeNull();
-    });
-
-    it.each([
-        {
-            scenario: 'returns settings with clamped volume when stored value is valid',
-            storedValue: { enabled: true, volume: 0.5 },
-            expected: { enabled: true, volume: 0.5 },
-        },
-        {
-            scenario: 'clamps volume to 0 when stored volume is negative',
-            storedValue: { enabled: false, volume: -0.5 },
-            expected: { enabled: false, volume: 0 },
-        },
-        {
-            scenario: 'clamps volume to 1 when stored volume exceeds 1',
-            storedValue: { enabled: true, volume: 2.0 },
-            expected: { enabled: true, volume: 1 },
-        },
-        {
-            scenario: 'handles volume at minimum boundary (0)',
-            storedValue: { enabled: false, volume: 0 },
-            expected: { enabled: false, volume: 0 },
-        },
-        {
-            scenario: 'handles volume at maximum boundary (1)',
-            storedValue: { enabled: true, volume: 1 },
-            expected: { enabled: true, volume: 1 },
-        },
-    ])('$scenario', ({ storedValue, expected }) => {
-        vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(storedValue);
-
-        const result = readStoredSettings();
-
-        expect(result).toEqual(expected);
     });
 });
 

@@ -9,12 +9,18 @@ vi.mock(import('../providers/AuthProvider'), () => ({
     default: vi.fn(({ children }: { children: ReactNode }) => <div data-testid="auth-provider">{children}</div>),
 }));
 
-vi.mock(import('../providers/SocketProvider'), () => ({
-    default: vi.fn(({ children }: { children: ReactNode }) => <div data-testid="socket-provider">{children}</div>),
-}));
-
 vi.mock(import('../providers/ImagesProvider'), () => ({
     default: vi.fn(({ children }: { children: ReactNode }) => <div data-testid="images-provider">{children}</div>),
+}));
+
+vi.mock(import('../providers/StoredSettingsProvider'), () => ({
+    default: vi.fn(({ children }: { children: ReactNode }) => (
+        <div data-testid="stored-settings-provider">{children}</div>
+    )),
+}));
+
+vi.mock(import('../providers/SocketProvider'), () => ({
+    default: vi.fn(({ children }: { children: ReactNode }) => <div data-testid="socket-provider">{children}</div>),
 }));
 
 vi.mock(import('../providers/SoundProvider'), () => ({
@@ -34,8 +40,9 @@ describe('App', () => {
         const { getByTestId } = await render(<App />);
 
         await expect.element(getByTestId('auth-provider')).toBeInTheDocument();
-        await expect.element(getByTestId('socket-provider')).toBeInTheDocument();
         await expect.element(getByTestId('images-provider')).toBeInTheDocument();
+        await expect.element(getByTestId('stored-settings-provider')).toBeInTheDocument();
+        await expect.element(getByTestId('socket-provider')).toBeInTheDocument();
         await expect.element(getByTestId('sound-provider')).toBeInTheDocument();
         await expect.element(getByTestId('clock-tick-provider')).toBeInTheDocument();
         await expect.element(getByTestId('view-controller')).toBeInTheDocument();
