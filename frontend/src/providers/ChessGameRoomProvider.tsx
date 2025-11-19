@@ -1,15 +1,7 @@
 import { useCallback, useContext, useMemo, useReducer, createContext, type ReactNode } from 'react';
 
 import { INITIAL_CHESS_BOARD_FEN } from '@grouchess/chess';
-import type {
-    ChessClockState,
-    ChessGameRoom,
-    Move,
-    PawnPromotion,
-    PieceColor,
-    Player,
-    TimeControl,
-} from '@grouchess/models';
+import type { ChessClockState, ChessGameRoom, Move, PawnPromotion, PieceColor, Player } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
 import { chessGameRoomReducer } from './chessGameRoom/reducer';
@@ -36,9 +28,6 @@ export type GameRoomContextType = {
     gameRoom: ChessGameRoom;
     currentPlayerId: Player['id'];
     currentPlayerColor: PieceColor;
-    loadRoom: (gameRoom: ChessGameRoom, fen?: string) => void;
-    loadCurrentPlayerId: (playerId: Player['id']) => void;
-    startSelfPlayRoom: (timeControlOption: TimeControl | null) => void;
 };
 
 export const ChessClockContext = createContext<ChessClockContextType | null>(null);
@@ -106,18 +95,6 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
         dispatch({ type: 'end-game', input });
     }, []);
 
-    const startSelfPlayRoom = useCallback((timeControlOption: TimeControl | null) => {
-        dispatch({ type: 'start-self-play-room', timeControlOption });
-    }, []);
-
-    const loadRoom = useCallback((gameRoom: ChessGameRoom, fen: string = INITIAL_CHESS_BOARD_FEN) => {
-        dispatch({ type: 'load-room', gameRoom, fen });
-    }, []);
-
-    const loadCurrentPlayerId = useCallback((playerId: Player['id']) => {
-        dispatch({ type: 'load-current-player-id', playerId });
-    }, []);
-
     const resetClocks = useCallback(() => {
         dispatch({ type: 'reset-clocks' });
     }, []);
@@ -152,11 +129,8 @@ function ChessGameRoomProvider({ initialData, children }: Props) {
             gameRoom: state.gameRoom,
             currentPlayerId: state.currentPlayerId,
             currentPlayerColor,
-            loadRoom,
-            loadCurrentPlayerId,
-            startSelfPlayRoom,
         }),
-        [state.gameRoom, state.currentPlayerId, currentPlayerColor, loadRoom, loadCurrentPlayerId, startSelfPlayRoom]
+        [state.gameRoom, state.currentPlayerId, currentPlayerColor]
     );
 
     return (

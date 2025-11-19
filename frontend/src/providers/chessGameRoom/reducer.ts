@@ -14,7 +14,6 @@ import { computePlayerScores } from '@grouchess/game-room';
 import type { ExpiredClockGameStatus } from '@grouchess/models';
 import invariant from 'tiny-invariant';
 
-import { createSelfPlayChessGameRoomState } from './state';
 import type { ChessGameRoomState, Action, EndGameInput } from './types';
 
 import type { ChessGameUI } from '../../utils/types';
@@ -166,35 +165,6 @@ export function chessGameRoomReducer(state: ChessGameRoomState, action: Action):
         }
         case 'end-game': {
             return endGame(action.input);
-        }
-        case 'start-self-play-room': {
-            const { timeControlOption } = action;
-            return createSelfPlayChessGameRoomState(timeControlOption);
-        }
-        case 'load-room': {
-            const { gameRoom, fen } = action;
-
-            return {
-                ...state,
-                gameRoom,
-                ...(fen
-                    ? {
-                          chessGame: {
-                              ...createChessGameFromFEN(fen),
-                              timelineVersion: state.chessGame.timelineVersion + 1,
-                              previousMoveIndices: [],
-                              pendingPromotion: null,
-                          },
-                      }
-                    : {}),
-            };
-        }
-        case 'load-current-player-id': {
-            const { playerId } = action;
-            return {
-                ...state,
-                currentPlayerId: playerId,
-            };
         }
         case 'reset-clocks': {
             const { gameRoom } = state;
