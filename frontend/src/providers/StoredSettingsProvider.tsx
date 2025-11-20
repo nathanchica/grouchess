@@ -10,18 +10,14 @@ import { getStoredValue, setStoredValue } from '../utils/window';
 export const LOCAL_STORAGE_KEY = 'grouchess:settings';
 
 export const StoredSettingsSchema = z.object({
-    soundsEnabled: z.boolean(),
-    soundsVolume: z.number().min(0).max(1),
+    soundsEnabled: z.boolean().default(true),
+    soundsVolume: z.number().min(0).max(1).default(DEFAULT_VOLUME),
+    notationStyle: z.enum(['san', 'figurine']).default('figurine'),
 });
 
-export type StoredSettings = {
-    soundsEnabled: boolean;
-    soundsVolume: number;
-};
+export type StoredSettings = z.infer<typeof StoredSettingsSchema>;
 
-export type StoredSettingsContextType = {
-    soundsEnabled: boolean;
-    soundsVolume: number;
+export type StoredSettingsContextType = StoredSettings & {
     setSetting: <K extends keyof StoredSettings>(key: K, value: StoredSettings[K]) => void;
 };
 
@@ -33,10 +29,7 @@ export function useStoredSettings(): StoredSettingsContextType {
     return context;
 }
 
-export const defaultStoredSettings: StoredSettings = {
-    soundsEnabled: true,
-    soundsVolume: DEFAULT_VOLUME,
-};
+export const defaultStoredSettings: StoredSettings = StoredSettingsSchema.parse({});
 
 function updateStoredSettings(newSettings: StoredSettings): void {
     try {
