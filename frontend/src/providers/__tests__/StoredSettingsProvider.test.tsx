@@ -16,12 +16,13 @@ vi.mock('../../utils/window', { spy: true });
 
 // Helper component to consume the context for testing
 const StoredSettingsConsumer = () => {
-    const { soundsEnabled, soundsVolume, setSetting } = useStoredSettings();
+    const { soundsEnabled, soundsVolume, moveNotationStyle, setSetting } = useStoredSettings();
 
     return (
         <div data-testid="stored-settings-consumer">
             <span data-testid="sounds-enabled">{soundsEnabled ? 'true' : 'false'}</span>
             <span data-testid="sounds-volume">{soundsVolume}</span>
+            <span data-testid="move-notation-style">{moveNotationStyle}</span>
             <button data-testid="enable-sounds-button" onClick={() => setSetting('soundsEnabled', true)}>
                 Enable sounds
             </button>
@@ -36,6 +37,15 @@ const StoredSettingsConsumer = () => {
             </button>
             <button data-testid="set-volume-high-button" onClick={() => setSetting('soundsVolume', 1)}>
                 Set volume to 1
+            </button>
+            <button data-testid="set-notation-san-button" onClick={() => setSetting('moveNotationStyle', 'san')}>
+                Set notation to SAN
+            </button>
+            <button
+                data-testid="set-notation-figurine-button"
+                onClick={() => setSetting('moveNotationStyle', 'figurine')}
+            >
+                Set notation to figurine
             </button>
         </div>
     );
@@ -56,6 +66,7 @@ describe('StoredSettingsProvider', () => {
         const mockSettings = {
             soundsEnabled: false,
             soundsVolume: 0.75,
+            moveNotationStyle: 'san' as const,
         };
         vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(mockSettings);
 
@@ -63,9 +74,11 @@ describe('StoredSettingsProvider', () => {
 
         const soundsEnabledElement = getByTestId('sounds-enabled');
         const soundsVolumeElement = getByTestId('sounds-volume');
+        const moveNotationStyleElement = getByTestId('move-notation-style');
 
         await expect.element(soundsEnabledElement).toHaveTextContent('false');
         await expect.element(soundsVolumeElement).toHaveTextContent('0.75');
+        await expect.element(moveNotationStyleElement).toHaveTextContent('san');
     });
 
     it('updates soundsEnabled and persists changes when setSetting is called', async () => {
@@ -86,6 +99,7 @@ describe('StoredSettingsProvider', () => {
         expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
             soundsEnabled: false,
             soundsVolume: DEFAULT_VOLUME,
+            moveNotationStyle: 'figurine',
         });
 
         await enableButton.click();
@@ -94,6 +108,7 @@ describe('StoredSettingsProvider', () => {
         expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
             soundsEnabled: true,
             soundsVolume: DEFAULT_VOLUME,
+            moveNotationStyle: 'figurine',
         });
     });
 
@@ -116,6 +131,7 @@ describe('StoredSettingsProvider', () => {
         expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
             soundsEnabled: true,
             soundsVolume: 0,
+            moveNotationStyle: 'figurine',
         });
 
         await setVolumeHighButton.click();
@@ -124,6 +140,7 @@ describe('StoredSettingsProvider', () => {
         expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
             soundsEnabled: true,
             soundsVolume: 1,
+            moveNotationStyle: 'figurine',
         });
 
         await setVolumeMediumButton.click();
@@ -132,6 +149,38 @@ describe('StoredSettingsProvider', () => {
         expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
             soundsEnabled: true,
             soundsVolume: DEFAULT_VOLUME,
+            moveNotationStyle: 'figurine',
+        });
+    });
+
+    it('updates moveNotationStyle and persists changes when setSetting is called', async () => {
+        vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(defaultStoredSettings);
+        const setStoredValueSpy = vi.spyOn(windowUtilsModule, 'setStoredValue');
+
+        const { getByTestId } = await renderStoredSettingsProvider();
+
+        const moveNotationStyleElement = getByTestId('move-notation-style');
+        const setNotationSanButton = getByTestId('set-notation-san-button');
+        const setNotationFigurineButton = getByTestId('set-notation-figurine-button');
+
+        await expect.element(moveNotationStyleElement).toHaveTextContent('figurine');
+
+        await setNotationSanButton.click();
+
+        await expect.element(moveNotationStyleElement).toHaveTextContent('san');
+        expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
+            soundsEnabled: true,
+            soundsVolume: DEFAULT_VOLUME,
+            moveNotationStyle: 'san',
+        });
+
+        await setNotationFigurineButton.click();
+
+        await expect.element(moveNotationStyleElement).toHaveTextContent('figurine');
+        expect(setStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY, {
+            soundsEnabled: true,
+            soundsVolume: DEFAULT_VOLUME,
+            moveNotationStyle: 'figurine',
         });
     });
 
@@ -182,6 +231,7 @@ describe('useStoredSettings', () => {
         const mockSettings = {
             soundsEnabled: false,
             soundsVolume: 0.8,
+            moveNotationStyle: 'san' as const,
         };
         vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(mockSettings);
 
@@ -189,9 +239,11 @@ describe('useStoredSettings', () => {
 
         const soundsEnabledElement = getByTestId('sounds-enabled');
         const soundsVolumeElement = getByTestId('sounds-volume');
+        const moveNotationStyleElement = getByTestId('move-notation-style');
 
         await expect.element(soundsEnabledElement).toHaveTextContent('false');
         await expect.element(soundsVolumeElement).toHaveTextContent('0.8');
+        await expect.element(moveNotationStyleElement).toHaveTextContent('san');
     });
 
     it('throws an error when used outside of StoredSettingsProvider', async () => {
@@ -250,6 +302,7 @@ describe('getStoredSettings', () => {
         const validSettings = {
             soundsEnabled: false,
             soundsVolume: 0.75,
+            moveNotationStyle: 'san' as const,
         };
         const getStoredValueSpy = vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(validSettings);
         const setStoredValueSpy = vi.spyOn(windowUtilsModule, 'setStoredValue');
@@ -259,5 +312,26 @@ describe('getStoredSettings', () => {
         expect(getStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY);
         expect(setStoredValueSpy).not.toHaveBeenCalled();
         expect(result).toEqual(validSettings);
+    });
+
+    it('applies default values for missing fields in stored settings (schema evolution)', () => {
+        const oldSettings = {
+            soundsEnabled: false,
+            soundsVolume: 0.75,
+            // moveNotationStyle is missing
+        };
+        const getStoredValueSpy = vi.spyOn(windowUtilsModule, 'getStoredValue').mockReturnValue(oldSettings);
+        const setStoredValueSpy = vi.spyOn(windowUtilsModule, 'setStoredValue');
+
+        const result = getStoredSettings();
+
+        expect(getStoredValueSpy).toHaveBeenCalledWith('localStorage', LOCAL_STORAGE_KEY);
+        expect(setStoredValueSpy).not.toHaveBeenCalled();
+        // Should preserve existing settings and apply default for missing field
+        expect(result).toEqual({
+            soundsEnabled: false,
+            soundsVolume: 0.75,
+            moveNotationStyle: 'figurine', // default value applied
+        });
     });
 });

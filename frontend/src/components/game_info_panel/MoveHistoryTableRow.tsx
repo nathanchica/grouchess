@@ -9,7 +9,7 @@ export type MoveHistoryTableRowProps = {
     moveNumber: number;
     isLastRow: boolean;
     lastMoveIsBlack: boolean;
-    notationStyle?: keyof MoveNotation;
+    moveNotationStyle?: keyof MoveNotation;
 };
 
 function MoveHistoryTableRow({
@@ -17,7 +17,7 @@ function MoveHistoryTableRow({
     moveNumber,
     isLastRow,
     lastMoveIsBlack,
-    notationStyle = 'figurine',
+    moveNotationStyle = 'figurine',
 }: MoveHistoryTableRowProps) {
     const [whiteMove, blackMove] = movePair;
 
@@ -38,7 +38,7 @@ function MoveHistoryTableRow({
                     aria-label={whiteMove.san}
                     {...(isWhiteHighlighted ? { 'aria-current': 'step' } : {})}
                 >
-                    {whiteMove[notationStyle] ?? whiteMove.san}
+                    {whiteMove[moveNotationStyle] ?? whiteMove.san}
                 </span>
             </td>
             <td {...(blackMove ? { className: MOVE_CELL_CLASSES } : {})}>
@@ -48,7 +48,7 @@ function MoveHistoryTableRow({
                         aria-label={blackMove.san}
                         {...(isBlackHighlighted ? { 'aria-current': 'step' } : {})}
                     >
-                        {blackMove[notationStyle] ?? blackMove.san}
+                        {blackMove[moveNotationStyle] ?? blackMove.san}
                     </span>
                 ) : (
                     <span className={`${MOVE_HISTORY_BASE_CLASSES} invisible`}>—</span>
