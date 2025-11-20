@@ -68,24 +68,24 @@ describe('MoveHistoryTableRow', () => {
         it.each([
             {
                 scenario: 'figurine notation (default)',
-                notationStyle: undefined,
+                moveNotationStyle: undefined,
                 expectedWhite: '\u265Ef3',
                 expectedBlack: '\u265Ec6',
             },
             {
                 scenario: 'san notation',
-                notationStyle: 'san' as const,
+                moveNotationStyle: 'san' as const,
                 expectedWhite: 'Nf3',
                 expectedBlack: 'Nc6',
             },
             {
                 scenario: 'uci notation',
-                notationStyle: 'uci' as const,
+                moveNotationStyle: 'uci' as const,
                 expectedWhite: 'g1f3',
                 expectedBlack: 'b8c6',
             },
-        ])('displays $scenario correctly', async ({ notationStyle, expectedWhite, expectedBlack }) => {
-            const { getByText } = await renderRow({ notationStyle });
+        ])('displays $scenario correctly', async ({ moveNotationStyle, expectedWhite, expectedBlack }) => {
+            const { getByText } = await renderRow({ moveNotationStyle });
 
             await expect.element(getByText(expectedWhite)).toBeInTheDocument();
             await expect.element(getByText(expectedBlack)).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe('MoveHistoryTableRow', () => {
         });
 
         it('aria-label uses san notation regardless of displayed notation style', async () => {
-            const { getByText } = await renderRow({ notationStyle: 'uci' });
+            const { getByText } = await renderRow({ moveNotationStyle: 'uci' });
 
             const whiteMoveElement = getByText(defaultWhiteMove.uci as string);
             const blackMoveElement = getByText(defaultBlackMove.uci as string);
@@ -175,7 +175,7 @@ describe('MoveHistoryTableRow', () => {
             const props = structuredClone(defaultProps);
             props.movePair[0].uci = undefined;
             props.movePair[1].uci = undefined;
-            const { getByText } = await renderRow({ ...props, notationStyle: 'uci' });
+            const { getByText } = await renderRow({ ...props, moveNotationStyle: 'uci' });
 
             const whiteMove = props.movePair[0];
             const blackMove = props.movePair[1];

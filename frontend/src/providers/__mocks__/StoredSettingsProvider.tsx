@@ -4,6 +4,7 @@ export function createMockStoredSettingsContextValues(): StoredSettingsContextTy
     return {
         soundsEnabled: true,
         soundsVolume: 0.5,
+        moveNotationStyle: 'figurine',
         setSetting: () => {},
     };
 }

@@ -7,7 +7,7 @@ function SoundControls() {
     return (
         <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between gap-4">
-                <span className="text-sm text-zinc-200">Sound Effects</span>
+                <span className="2xl:text-sm text-xs text-zinc-200">Sound Effects</span>
                 <button
                     type="button"
                     onClick={toggleEnabled}

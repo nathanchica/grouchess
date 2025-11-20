@@ -12,7 +12,7 @@ export const LOCAL_STORAGE_KEY = 'grouchess:settings';
 export const StoredSettingsSchema = z.object({
     soundsEnabled: z.boolean().default(true),
     soundsVolume: z.number().min(0).max(1).default(DEFAULT_VOLUME),
-    notationStyle: z.enum(['san', 'figurine']).default('figurine'),
+    moveNotationStyle: z.enum(['san', 'figurine']).default('figurine'),
 });
 
 export type StoredSettings = z.infer<typeof StoredSettingsSchema>;

@@ -10,9 +10,18 @@ vi.mock('../SoundControls', () => {
     };
 });
 
+vi.mock('../MoveNotationControls', () => {
+    return {
+        default: function MockMoveNotationControls() {
+            return <div>Mock MoveNotationControls</div>;
+        },
+    };
+});
+
 describe('PlayerSettingsView', () => {
-    it('renders SoundControls component', async () => {
+    it('renders settings components', async () => {
         const { getByText } = await render(<PlayerSettingsView />);
         await expect.element(getByText('Mock SoundControls')).toBeInTheDocument();
+        await expect.element(getByText('Mock MoveNotationControls')).toBeInTheDocument();
     });
 });

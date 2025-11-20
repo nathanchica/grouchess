@@ -8,18 +8,20 @@ import {
     GameRoomContext,
     type GameRoomContextType,
 } from '../../../providers/ChessGameRoomProvider';
+import { StoredSettingsContext, type StoredSettingsContextType } from '../../../providers/StoredSettingsProvider';
 import {
     createMockChessGameContextValues,
     createMockGameRoomContextValues,
 } from '../../../providers/__mocks__/ChessGameRoomProvider';
+import { createMockStoredSettingsContextValues } from '../../../providers/__mocks__/StoredSettingsProvider';
 import MoveHistoryTable, { type MoveHistoryTableProps, createMovePairs } from '../MoveHistoryTable';
 
 // Mock child components
 vi.mock('../MoveHistoryTableRow', () => ({
-    default: vi.fn(({ movePair, moveNumber, notationStyle = 'san', isLastRow, lastMoveIsBlack }) => (
+    default: vi.fn(({ movePair, moveNumber, moveNotationStyle = 'san', isLastRow, lastMoveIsBlack }) => (
         <tr data-testid={`mock-move-history-table-row-${moveNumber}`}>
-            <td>{movePair[0][notationStyle || 'san']}</td>
-            <td>{movePair[1]?.[notationStyle || 'san'] || '—'}</td>
+            <td>{movePair[0][moveNotationStyle || 'san']}</td>
+            <td>{movePair[1]?.[moveNotationStyle || 'san'] || '—'}</td>
             <td>isLastRow: {String(isLastRow)}</td>
             <td>lastMoveIsBlack: {String(lastMoveIsBlack)}</td>
         </tr>
@@ -39,10 +41,12 @@ function renderMoveHistoryTable({
     propsOverrides = {},
     chessGameOverrides = {},
     gameRoomOverrides = {},
+    storedSettingsOverrides = {},
 }: {
     propsOverrides?: Partial<MoveHistoryTableProps>;
     chessGameOverrides?: Partial<ChessGameContextType>;
     gameRoomOverrides?: Partial<GameRoomContextType>;
+    storedSettingsOverrides?: Partial<StoredSettingsContextType>;
 } = {}) {
     const props: MoveHistoryTableProps = {
         onExitClick: vi.fn(),
@@ -50,13 +54,19 @@ function renderMoveHistoryTable({
     };
     const chessGameContextValues = createMockChessGameContextValues(chessGameOverrides);
     const gameRoomContextValues = createMockGameRoomContextValues(gameRoomOverrides);
+    const storedSettingsContextValues = {
+        ...createMockStoredSettingsContextValues(),
+        ...storedSettingsOverrides,
+    };
 
     return render(
-        <GameRoomContext.Provider value={gameRoomContextValues}>
-            <ChessGameContext.Provider value={chessGameContextValues}>
-                <MoveHistoryTable {...props} />
-            </ChessGameContext.Provider>
-        </GameRoomContext.Provider>
+        <StoredSettingsContext.Provider value={storedSettingsContextValues}>
+            <GameRoomContext.Provider value={gameRoomContextValues}>
+                <ChessGameContext.Provider value={chessGameContextValues}>
+                    <MoveHistoryTable {...props} />
+                </ChessGameContext.Provider>
+            </GameRoomContext.Provider>
+        </StoredSettingsContext.Provider>
     );
 }
 
@@ -121,7 +131,7 @@ describe('MoveHistoryTable', () => {
 
             const { getByText } = await renderMoveHistoryTable({ chessGameOverrides });
 
-            expect(getByText(moveRecord.notation.san)).toBeInTheDocument();
+            expect(getByText(moveRecord.notation.figurine)).toBeInTheDocument();
         });
 
         it('renders complete move pair', async () => {
@@ -136,8 +146,8 @@ describe('MoveHistoryTable', () => {
 
             const { getByText } = await renderMoveHistoryTable({ chessGameOverrides });
 
-            expect(getByText(moves[0].notation.san)).toBeInTheDocument();
-            expect(getByText(moves[1].notation.san)).toBeInTheDocument();
+            expect(getByText(moves[0].notation.figurine)).toBeInTheDocument();
+            expect(getByText(moves[1].notation.figurine)).toBeInTheDocument();
         });
 
         it.each([
@@ -176,13 +186,28 @@ describe('MoveHistoryTable', () => {
                 const lastRow = getByTestId(`mock-move-history-table-row-${lastMoveNumber}`);
 
                 await expect.element(lastRow).toBeInTheDocument();
-                await expect.element(lastRow.getByText(moves[moves.length - 1].notation.san)).toBeInTheDocument();
+                await expect.element(lastRow.getByText(moves[moves.length - 1].notation.figurine)).toBeInTheDocument();
                 await expect.element(lastRow.getByText(`isLastRow: true`)).toBeInTheDocument();
                 await expect
                     .element(lastRow.getByText(`lastMoveIsBlack: ${expectedLastMoveIsBlack}`))
                     .toBeInTheDocument();
             }
         );
+
+        it('renders moves with SAN notation style when configured', async () => {
+            const moveRecord = createMockMoveRecord({
+                notation: createMockMoveNotation({ san: 'Nf3', figurine: '♘f3' }),
+            });
+            const chessGameOverrides = createMockChessGameContextValues();
+            chessGameOverrides.chessGame.moveHistory = [moveRecord];
+
+            const { getByText } = await renderMoveHistoryTable({
+                chessGameOverrides,
+                storedSettingsOverrides: { moveNotationStyle: 'san' },
+            });
+
+            expect(getByText('Nf3')).toBeInTheDocument();
+        });
     });
 
     describe('Auto-scroll behavior', () => {
@@ -195,16 +220,20 @@ describe('MoveHistoryTable', () => {
 
             // Add new move
             chessGameOverrides.chessGame.moveHistory = moves;
+            const gameRoomContextValues = createMockGameRoomContextValues();
+            const storedSettingsContextValues = createMockStoredSettingsContextValues();
             rerender(
-                <GameRoomContext.Provider value={createMockGameRoomContextValues()}>
-                    <ChessGameContext.Provider value={chessGameOverrides}>
-                        <MoveHistoryTable onExitClick={vi.fn()} />
-                    </ChessGameContext.Provider>
-                </GameRoomContext.Provider>
+                <StoredSettingsContext.Provider value={storedSettingsContextValues}>
+                    <GameRoomContext.Provider value={gameRoomContextValues}>
+                        <ChessGameContext.Provider value={chessGameOverrides}>
+                            <MoveHistoryTable onExitClick={vi.fn()} />
+                        </ChessGameContext.Provider>
+                    </GameRoomContext.Provider>
+                </StoredSettingsContext.Provider>
             );
 
             const lastMove = moves[moves.length - 1];
-            await expect.element(getByText(lastMove.notation.san)).toBeInViewport();
+            await expect.element(getByText(lastMove.notation.figurine)).toBeInViewport();
         });
 
         it('scrolls when game ends', async () => {
@@ -218,12 +247,16 @@ describe('MoveHistoryTable', () => {
 
             // End the game
             chessGameOverrides.chessGame.gameState.status = 'checkmate';
+            const gameRoomContextValues = createMockGameRoomContextValues();
+            const storedSettingsContextValues = createMockStoredSettingsContextValues();
             rerender(
-                <GameRoomContext.Provider value={createMockGameRoomContextValues()}>
-                    <ChessGameContext.Provider value={chessGameOverrides}>
-                        <MoveHistoryTable onExitClick={vi.fn()} />
-                    </ChessGameContext.Provider>
-                </GameRoomContext.Provider>
+                <StoredSettingsContext.Provider value={storedSettingsContextValues}>
+                    <GameRoomContext.Provider value={gameRoomContextValues}>
+                        <ChessGameContext.Provider value={chessGameOverrides}>
+                            <MoveHistoryTable onExitClick={vi.fn()} />
+                        </ChessGameContext.Provider>
+                    </GameRoomContext.Provider>
+                </StoredSettingsContext.Provider>
             );
 
             await expect.element(resultCard).toBeInViewport();

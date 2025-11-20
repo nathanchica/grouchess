@@ -6,6 +6,7 @@ import GameResultCardController from './GameResultCardController';
 import MoveHistoryTableRow from './MoveHistoryTableRow';
 
 import { useChessGame, useGameRoom } from '../../providers/ChessGameRoomProvider';
+import { useStoredSettings } from '../../providers/StoredSettingsProvider';
 
 export function createMovePairs(allMoves: MoveNotation[]): MoveNotation[][] {
     if (allMoves.length === 0) return [];
@@ -25,6 +26,7 @@ export type MoveHistoryTableProps = {
 function MoveHistoryTable({ onExitClick }: MoveHistoryTableProps) {
     const { chessGame } = useChessGame();
     const { gameRoom } = useGameRoom();
+    const { moveNotationStyle } = useStoredSettings();
     const { moveHistory, gameState } = chessGame;
     const containerEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -57,6 +59,7 @@ function MoveHistoryTable({ onExitClick }: MoveHistoryTableProps) {
                                 moveNumber={index + 1}
                                 isLastRow={isLastRow}
                                 lastMoveIsBlack={lastMoveIsBlack}
+                                moveNotationStyle={moveNotationStyle}
                             />
                         );
                     })}
