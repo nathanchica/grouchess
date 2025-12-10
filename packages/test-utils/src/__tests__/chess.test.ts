@@ -7,6 +7,7 @@ import {
     createMockChessGame,
     createMockChessGameState,
     createMockLegalMovesStore,
+    createMockLegalMovesStoreWithMove,
     createMockMove,
     createMockMoveNotation,
     createMockMoveRecord,
@@ -168,6 +169,28 @@ describe('Chess Mock Factories', () => {
             expect(store.allMoves).toEqual([]);
             expect(store.byStartIndex).toEqual({});
             expect(store.typeAndEndIndexToStartIndex).toEqual({});
+        });
+    });
+
+    describe('createMockLegalMovesStoreWithMove', () => {
+        it('should create legal moves store with move', () => {
+            const move = createMockMove({
+                startIndex: 52,
+                endIndex: 36,
+                type: 'standard',
+                piece: createMockPiece({
+                    type: 'knight',
+                    color: 'white',
+                }),
+            });
+            const store = createMockLegalMovesStoreWithMove(move);
+            expect(store.allMoves).toEqual([move]);
+            expect(store.byStartIndex).toEqual({
+                [move.startIndex]: [move],
+            });
+            expect(store.typeAndEndIndexToStartIndex).toEqual({
+                [`${move.piece.type}:${move.endIndex}`]: [move.startIndex],
+            });
         });
     });
 

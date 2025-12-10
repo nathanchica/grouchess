@@ -43,7 +43,7 @@ jobs:
               run: pnpm prettier --check package.json
 
             - name: Install Playwright Browsers
-              run: npx playwright@latest install --with-deps chromium
+              run: pnpm --filter frontend exec playwright install --with-deps
 
             - name: Run tests
               run: pnpm test:run
