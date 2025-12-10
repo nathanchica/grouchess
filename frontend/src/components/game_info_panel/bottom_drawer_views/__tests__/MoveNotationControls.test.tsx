@@ -44,6 +44,11 @@ describe('MoveNotationControls', () => {
         const sanButton = getByRole('button', { name: 'Text' });
         await sanButton.click();
 
-        expect(setSetting).toHaveBeenCalledWith('moveNotationStyle', 'san');
+        expect(setSetting).toHaveBeenNthCalledWith(1, 'moveNotationStyle', 'san');
+
+        const figurineButton = getByRole('button', { name: 'Figurine' });
+        await figurineButton.click();
+
+        expect(setSetting).toHaveBeenNthCalledWith(2, 'moveNotationStyle', 'figurine');
     });
 });
